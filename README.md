@@ -39,3 +39,7 @@ public/assets/    miejsce na tła, ikony, sample i statyczne zasoby
 ## Status
 
 To jest paczka startowa repozytorium: frontend/prototyp + dokumentacja projektowa. Backend/render video można dołożyć jako osobny moduł, np. Node + ffmpeg.wasm lub kolejka renderująca po stronie serwera.
+
+## Aktywny etap prac
+
+Następny duży etap to `project-engine`: autosave, snapshoty, eksport/import projektu, analiza audio i timeline sterowany metadanymi utworu.
