@@ -1,0 +1,93 @@
+FOTOBEAT.ME — MASTER PLAN
+
+1. CEL PRODUKTU
+FotoBeat.me ma robić krótkie filmy ze zdjęć i muzyki. Użytkownik wrzuca:
+- zbiór zdjęć/grafik,
+- plik MP3/WAV,
+a aplikacja selekcjonuje materiały, dobiera efekty i generuje klip pod rytm muzyki.
+
+2. GŁÓWNE MODUŁY
+A. Upload
+- Dropzone na zdjęcia.
+- Dropzone na audio.
+- Walidacja typów i rozmiarów.
+- Podgląd wrzuconych plików.
+
+B. AI/Auto-selekcja zdjęć
+- Odrzucanie duplikatów.
+- Ocena ostrości i kontrastu.
+- Preferowanie twarzy, centralnych kadrów, mocnej kompozycji.
+- Ręczne wymuszanie wybranych zdjęć jako późniejszy feature.
+
+C. Analiza audio
+- Detekcja beatów.
+- Sekcje: intro, build-up, drop, outro.
+- Energia utworu jako sterownik intensywności efektów.
+- Mapa cięć na timeline.
+
+D. Timeline
+- Klipy zdjęciowe.
+- Przejścia.
+- Efekty na klipach.
+- Autosave.
+- Snapshoty wersji.
+
+E. Render
+- 16:9 Full HD.
+- 9:16 Reels/TikTok.
+- 1:1 feed.
+- Eksport MP4.
+- Później: render queue i historia eksportów.
+
+F. Presety efektów
+- Neon Pulse.
+- Smoke Cut.
+- Matrix Glitch.
+- Sin City.
+- Cyberpunk.
+- Dark Loft.
+- Spiral/Fibonacci.
+- Dream Fade.
+
+3. STYL WIZUALNY
+Kierunek: ciemny, nowoczesny, dynamiczny.
+Elementy:
+- neon,
+- gradient FotoBeat.me,
+- czarne tło,
+- fiolet/cyjan/magenta,
+- glassmorphism,
+- mocne hero,
+- panel edycji jak narzędzie kreatywne.
+
+4. ROADMAPA
+V0.1
+- Landing + upload.
+- Prototyp timeline.
+- Presety efektów.
+- Dokumentacja.
+
+V0.2
+- Realny odczyt metadanych audio.
+- Mock render flow.
+- Panel projektów.
+
+V0.3
+- Analiza beatów.
+- Eksport JSON timeline.
+- Podgląd animacji.
+
+V0.4
+- Render MP4.
+- Kolejka renderowania.
+- Pobieranie gotowego filmu.
+
+V1.0
+- Produkcyjny edytor.
+- Konta użytkowników.
+- Projekty.
+- Szablony.
+- Płatne paczki presetów.
+
+5. ZASADA PRODUKTOWA
+Nie budujemy zwykłego slideshow. FotoBeat ma robić dynamiczny teledysk ze zdjęć, gdzie obraz reaguje na muzykę.
