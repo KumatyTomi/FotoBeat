@@ -33,7 +33,9 @@ a {
 .workspace-grid,
 .control-panel,
 .timeline-panel,
-.roadmap-panel {
+.roadmap-panel,
+.project-panel,
+.audio-panel {
   border: 1px solid rgba(255, 255, 255, 0.11);
   background: rgba(10, 10, 24, 0.72);
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
@@ -52,7 +54,12 @@ a {
 .eyebrow,
 .hero-actions,
 .button-row,
-.roadmap-list span {
+.roadmap-list span,
+.autosave-pill,
+.project-actions,
+.audio-stats,
+.timeline-meta,
+.compact {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -253,7 +260,9 @@ p {
 
 .control-panel,
 .timeline-panel,
-.roadmap-panel {
+.roadmap-panel,
+.project-panel,
+.audio-panel {
   margin-top: 24px;
   padding: 28px;
 }
@@ -286,7 +295,7 @@ p {
 
 .preset-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 14px;
 }
 
@@ -319,24 +328,42 @@ p {
 
 .section-heading p {
   max-width: 560px;
-  text-align: right;
+}
+
+.timeline-meta {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.timeline-meta span,
+.audio-stats span,
+.autosave-pill {
+  min-width: max-content;
+  padding: 9px 12px;
+  border-radius: 999px;
+  color: rgba(245, 247, 251, 0.78);
+  background: rgba(255, 255, 255, 0.07);
 }
 
 .timeline-strip {
   display: grid;
-  grid-template-columns: repeat(8, minmax(140px, 1fr));
+  grid-template-columns: repeat(8, minmax(150px, 1fr));
   gap: 12px;
   overflow-x: auto;
   padding-bottom: 8px;
 }
 
 .timeline-clip {
-  min-height: 132px;
+  min-height: 150px;
   border-radius: 18px;
   padding: 16px;
   background:
     linear-gradient(180deg, rgba(139, 233, 255, 0.13), rgba(124, 60, 255, 0.10)),
     rgba(255, 255, 255, 0.05);
+}
+
+.timeline-clip.section-drop {
+  border: 1px solid rgba(139, 233, 255, 0.38);
 }
 
 .timeline-clip span,
@@ -352,6 +379,106 @@ p {
   margin: 14px 0;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.energy-meter {
+  height: 6px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.energy-meter i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #7c3cff, #00d3ff);
+}
+
+.project-heading {
+  margin-bottom: 22px;
+}
+
+.panel-kicker {
+  margin-bottom: 6px;
+  color: #8be9ff;
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.project-grid {
+  display: grid;
+  grid-template-columns: minmax(260px, 0.7fr) minmax(280px, 1fr);
+  gap: 16px;
+}
+
+.field-block {
+  display: grid;
+  gap: 8px;
+  color: rgba(245, 247, 251, 0.72);
+  font-weight: 700;
+}
+
+.field-block input,
+.field-block textarea {
+  width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  outline: 0;
+  border-radius: 18px;
+  padding: 13px 14px;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.075);
+}
+
+.field-block textarea {
+  min-height: 94px;
+  resize: vertical;
+}
+
+.project-actions {
+  grid-column: 1 / -1;
+  flex-wrap: wrap;
+}
+
+.compact {
+  padding: 11px 14px;
+}
+
+.snapshot-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.snapshot-card {
+  display: grid;
+  gap: 4px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.055);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.snapshot-card span,
+.snapshot-card em {
+  color: rgba(245, 247, 251, 0.58);
+  font-size: 13px;
+  font-style: normal;
+}
+
+.audio-panel {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.audio-stats {
+  align-content: start;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  min-width: 280px;
 }
 
 .roadmap-panel {
@@ -373,11 +500,15 @@ p {
 @media (max-width: 860px) {
   .hero-panel,
   .workspace-grid,
-  .roadmap-panel {
+  .roadmap-panel,
+  .audio-panel {
     grid-template-columns: 1fr;
   }
 
-  .workspace-grid {
+  .workspace-grid,
+  .audio-panel,
+  .section-heading,
+  .roadmap-panel {
     display: grid;
   }
 
@@ -385,13 +516,13 @@ p {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .section-heading,
-  .roadmap-panel {
-    display: block;
+  .project-grid {
+    grid-template-columns: 1fr;
   }
 
-  .section-heading p {
-    text-align: left;
+  .timeline-meta,
+  .audio-stats {
+    justify-content: flex-start;
   }
 }
 
@@ -404,7 +535,9 @@ p {
   .hero-panel,
   .control-panel,
   .timeline-panel,
-  .roadmap-panel {
+  .roadmap-panel,
+  .project-panel,
+  .audio-panel {
     padding: 20px;
     border-radius: 22px;
   }
