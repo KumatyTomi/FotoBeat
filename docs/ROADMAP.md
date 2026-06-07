@@ -12,11 +12,12 @@
 
 ## Etap 2: Projekt użytkownika
 
-- [ ] model `Project`
-- [ ] autosave w localStorage
-- [ ] import/eksport projektu jako JSON
+- [x] model `Project` w stanie aplikacji
+- [x] autosave w localStorage
+- [x] eksport projektu jako JSON do schowka
+- [x] snapshot wersji timeline
+- [ ] import projektu JSON z pliku
 - [ ] panel listy projektów
-- [ ] snapshot wersji
 
 ## Etap 3: Analiza plików
 
@@ -24,15 +25,17 @@
 - [ ] wykrywanie orientacji zdjęć
 - [ ] ocena ostrości
 - [ ] podstawowa detekcja duplikatów
-- [ ] odczyt długości audio
+- [x] odczyt długości audio przez Web Audio API
+- [x] szacowanie energii audio
 - [ ] waveform preview
 
 ## Etap 4: Beat engine
 
-- [ ] detekcja beatów Web Audio API
-- [ ] wykrycie sekcji utworu
-- [ ] energia audio jako parametr efektów
-- [ ] automatyczne cięcia
+- [x] robocza beat mapa na podstawie BPM
+- [x] wykrycie sekcji timeline: intro, build, drop, outro
+- [x] energia audio jako parametr efektów
+- [x] automatyczne cięcia według beat grid
+- [ ] realna detekcja transientów zamiast heurystyki BPM
 - [ ] ręczna korekta timeline
 
 ## Etap 5: Render
@@ -51,3 +54,7 @@
 - [ ] presety premium
 - [ ] płatności
 - [ ] landing sprzedażowy
+
+## Najbliższy następny duży krok
+
+Render preview canvas: wykorzystać timeline, format eksportu, preset i beat mapę do wygenerowania animowanego podglądu bez eksportu MP4. To będzie pomost między edytorem a prawdziwym render queue.
