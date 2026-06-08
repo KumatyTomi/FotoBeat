@@ -13,14 +13,17 @@ import { useFrameSequenceRenderer } from './hooks/useFrameSequenceRenderer.js';
 import { useFrameSequenceZipExporter } from './hooks/useFrameSequenceZipExporter.js';
 import { useMediaAssets } from './hooks/useMediaAssets.js';
 import { useProjectState } from './hooks/useProjectState.js';
+import { useRenderJobs } from './hooks/useRenderJobs.js';
 import { describeAudioAnalysis } from './utils/audioAnalysis.js';
 import { getPinnedLabel, scoreMediaAsset } from './utils/mediaScoring.js';
+import { buildMp4ExportPlan, explainMp4ExportPlan } from './utils/mp4ExportPlan.js';
 import { buildProjectExportPayload, parseProjectFile, remapImportedMedia, safeFilename } from './utils/projectExport.js';
 import { buildDraftTimeline } from './utils/timeline.js';
 
 export default function App() {
   const [images, setImages] = useState([]);
   const [audio, setAudio] = useState(null);
+  const [mp4Plan, setMp4Plan] = useState(null);
 
   const {
     project,
@@ -40,6 +43,7 @@ export default function App() {
 
   const media = useMediaAssets(images, selectedFormat);
   const audioAnalysis = useAudioAnalysis(audio);
+  const renderJobs = useRenderJobs();
 
   const timeline = useMemo(() => buildDraftTimeline({
     images: media.selectedMediaAssets,
@@ -123,6 +127,30 @@ export default function App() {
   function copyProjectJson() {
     navigator.clipboard?.writeText(projectExportJson);
     setProjectIoStatus({ type: 'success', message: 'Projekt JSON skopiowany do schowka.' });
+  }
+
+  async function createMp4Plan(sequence) {
+    const plan = buildMp4ExportPlan({ sequence });
+    setMp4Plan(plan);
+    await renderJobs.addMp4PlanJob({
+      projectName: project.name,
+      format,
+      preset,
+      timelineDuration: timeline.estimatedDuration,
+      sequenceId: sequence.id,
+      plan
+    });
+  }
+
+  async function createZip(sequence) {
+    await frameZip.exportSequenceZip(sequence);
+    await renderJobs.addSequenceZipJob({
+      projectName: project.name,
+      format,
+      preset,
+      timelineDuration: timeline.estimatedDuration,
+      sequenceId: sequence.id
+    });
   }
 
   async function importProjectFile(event) {
@@ -241,6 +269,7 @@ export default function App() {
         </div>
         <p className={`render-status ${frameSequence.sequenceState.status}`}>{frameSequence.sequenceState.message}</p>
         <p className={`render-status ${frameZip.zipState.status}`}>{frameZip.zipState.message}{frameZip.zipState.size ? ` · ${formatBytes(frameZip.zipState.size)}` : ''}</p>
+        {mp4Plan && <p className={`render-status ${mp4Plan.status === 'blocked' ? 'error' : 'ready'}`}>{explainMp4ExportPlan(mp4Plan)}</p>}
         <div className="render-history">
           {frameSequence.sequenceHistory.length === 0 ? (
             <span className="empty-state">Brak zapisanych sekwencji. Wyrenderuj pierwszą serię PNG, aby przygotować materiał pod ffmpeg.wasm.</span>
@@ -251,12 +280,33 @@ export default function App() {
                 <span>{new Date(sequence.createdAt).toLocaleString('pl-PL')} · {sequence.seconds}s · {sequence.fps} fps · {sequence.width}×{sequence.height} · {formatBytes(sequence.totalSize)}</span>
               </div>
               <div className="render-history-actions">
-                <button className="ghost-button compact" onClick={() => frameZip.exportSequenceZip(sequence)} disabled={frameZip.zipState.status === 'building'}><Download size={16} />Spakuj ZIP</button>
+                <button className="ghost-button compact" onClick={() => createZip(sequence)} disabled={frameZip.zipState.status === 'building'}><Download size={16} />Spakuj ZIP</button>
                 {frameZip.zipState.sequenceId === sequence.id && frameZip.zipState.downloadUrl && (
                   <a className="ghost-button compact" href={frameZip.zipState.downloadUrl} download={frameZip.zipState.fileName}><Download size={16} />Pobierz ZIP</a>
                 )}
+                <button className="ghost-button compact" onClick={() => createMp4Plan(sequence)}><Film size={16} />Plan MP4</button>
                 <button className="ghost-button compact" onClick={() => frameSequence.removeSequence(sequence.id)}><Trash2 size={16} />Usuń</button>
               </div>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="render-export-panel">
+        <div>
+          <p className="panel-kicker">Render jobs</p>
+          <h2>Kolejka zadań renderu</h2>
+          <p>Lista lokalnych zadań przygotowująca workflow pod ZIP, MP4 i późniejszy backend renderujący.</p>
+        </div>
+        <div className="render-export-actions">
+          {renderJobs.jobs.length > 0 && <button className="ghost-button compact" onClick={renderJobs.clearJobs}><Trash2 size={16} />Wyczyść jobs</button>}
+        </div>
+        <p className={`render-status ${renderJobs.jobsState.status}`}>{renderJobs.jobsState.message}</p>
+        <div className="render-history">
+          {renderJobs.jobs.length === 0 ? <span className="empty-state">Brak render jobs. Spakuj ZIP lub przygotuj plan MP4, aby dodać zadanie.</span> : renderJobs.jobs.map((job) => (
+            <article key={job.id} className="render-history-item">
+              <div><strong>{job.target} · {job.status}</strong><span>{new Date(job.createdAt).toLocaleString('pl-PL')} · {job.progress}% · {job.message}</span></div>
+              <div className="render-history-actions"><button className="ghost-button compact" onClick={() => renderJobs.removeJob(job.id)}><Trash2 size={16} />Usuń</button></div>
             </article>
           ))}
         </div>
@@ -342,7 +392,7 @@ export default function App() {
       </section>
 
       <TimelinePreview timeline={timeline} />
-      <section id="roadmap" className="roadmap-panel"><div><h2>Następne moduły</h2><p>Kolejne kroki: przekazanie sekwencji klatek do ffmpeg.wasm i MP4.</p></div><div className="roadmap-list"><span><RefreshCcw size={16} /> Frame sequence ZIP</span><span><Film size={16} /> ffmpeg.wasm</span><span><Download size={16} /> MP4 export</span></div></section>
+      <section id="roadmap" className="roadmap-panel"><div><h2>Następne moduły</h2><p>Kolejne kroki: realny lazy-load ffmpeg.wasm i MP4.</p></div><div className="roadmap-list"><span><RefreshCcw size={16} /> Render jobs</span><span><Film size={16} /> MP4 plan</span><span><Download size={16} /> ffmpeg.wasm</span></div></section>
     </main>
   );
 }
