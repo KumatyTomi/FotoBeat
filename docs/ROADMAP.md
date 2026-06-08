@@ -57,20 +57,21 @@
 - [x] przypinanie zdjęcia do konkretnego klipu
 - [x] MediaRecorder/WebM proof of concept bez audio
 - [x] WebM z audio track przez Web Audio API
+- [x] render queue / historia eksportów WebM
+- [ ] persistent render history po odświeżeniu strony
 - [ ] ffmpeg.wasm proof of concept
 - [ ] eksport MP4 9:16
 - [ ] eksport MP4 16:9
-- [ ] render queue
 
 ## Etap 6: Produkt
 
 - [ ] logowanie
 - [ ] dashboard użytkownika
-- [ ] historia eksportów
+- [ ] historia eksportów w profilu użytkownika
 - [ ] presety premium
 - [ ] płatności
 - [ ] landing sprzedażowy
 
 ## Najbliższy następny duży krok
 
-Render queue/status panel: dodać kolejkę eksportów, historię nagrań WebM, statusy i przygotować interfejs pod późniejszy ffmpeg.wasm / MP4.
+Persistent render history albo ffmpeg.wasm proof of concept. Najpierw warto zdecydować, czy historia eksportów ma zostać lokalna w IndexedDB, czy wejść od razu w backend/storage.
