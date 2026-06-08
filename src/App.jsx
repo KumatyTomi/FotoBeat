@@ -7,6 +7,7 @@ import WaveformPreview from './components/WaveformPreview.jsx';
 import { EFFECT_PRESETS, EXPORT_FORMATS } from './data/effects.js';
 import { useAudioAnalysis } from './hooks/useAudioAnalysis.js';
 import { useCanvasPreview } from './hooks/useCanvasPreview.js';
+import { useCanvasRecorder } from './hooks/useCanvasRecorder.js';
 import { useMediaAssets } from './hooks/useMediaAssets.js';
 import { useProjectState } from './hooks/useProjectState.js';
 import { describeAudioAnalysis } from './utils/audioAnalysis.js';
@@ -69,6 +70,12 @@ export default function App() {
     selectedMediaAssets: media.selectedMediaAssets,
     pinnedAssetsByClip: media.pinnedAssetsByClip,
     projectName: project.name
+  });
+
+  const recorder = useCanvasRecorder({
+    canvasRef: previewRef,
+    projectName: project.name,
+    timelineDuration: timeline.estimatedDuration
   });
 
   function addSnapshot() {
@@ -172,6 +179,26 @@ export default function App() {
         <div className={`canvas-shell canvas-${selectedFormat.id}`}><canvas ref={previewRef} width={selectedFormat.width} height={selectedFormat.height} aria-label="Animowany podgląd renderu FotoBeat" /></div>
       </section>
 
+      <section className="render-export-panel">
+        <div>
+          <p className="panel-kicker">Video export proof of concept</p>
+          <h2>Eksport canvas preview do WebM</h2>
+          <p>Eksperymentalny zapis aktualnego canvas preview przez MediaRecorder. Pierwsza wersja eksportuje obraz WebM bez ścieżki audio.</p>
+        </div>
+        <div className="render-export-actions">
+          <button className="primary-button compact" onClick={recorder.startRecording} disabled={recorder.recordingState.status === 'recording'}>
+            <Film size={16} />
+            {recorder.recordingState.status === 'recording' ? 'Nagrywanie...' : `Nagraj ${recorder.maxDuration}s WebM`}
+          </button>
+          {recorder.recordingState.downloadUrl && (
+            <a className="ghost-button compact" href={recorder.recordingState.downloadUrl} download={recorder.recordingState.fileName}>
+              <Download size={16} />Pobierz WebM
+            </a>
+          )}
+        </div>
+        <p className={`render-status ${recorder.recordingState.status}`}>{recorder.recordingState.message}</p>
+      </section>
+
       <section id="upload" className="workspace-grid">
         <FileDropzone icon={<ImagePlus />} title="Zdjęcia" description="JPG, PNG, WEBP. Możesz wrzucić całą paczkę kadrów." accept="image/*" multiple files={images} onFiles={setImages} />
         <FileDropzone icon={<Music />} title="Muzyka" description="MP3/WAV. Jeden plik audio do synchronizacji montażu." accept="audio/*" multiple={false} files={audio ? [audio] : []} onFiles={(next) => setAudio(next[0] ?? null)} />
@@ -216,7 +243,7 @@ export default function App() {
       </section>
 
       <TimelinePreview timeline={timeline} />
-      <section id="roadmap" className="roadmap-panel"><div><h2>Następne moduły</h2><p>Kolejne kroki: realniejsza detekcja transientów, scoring ostrości i pierwsze proof of concept eksportu MP4.</p></div><div className="roadmap-list"><span><RefreshCcw size={16} /> Autosave + snapshots</span><span><Film size={16} /> Render MP4 16:9 / 9:16</span><span><Download size={16} /> Paczki eksportowe ZIP</span></div></section>
+      <section id="roadmap" className="roadmap-panel"><div><h2>Następne moduły</h2><p>Kolejne kroki: audio track w eksporcie, realniejsza detekcja transientów i MP4 przez ffmpeg.wasm.</p></div><div className="roadmap-list"><span><RefreshCcw size={16} /> Autosave + snapshots</span><span><Film size={16} /> WebM proof of concept</span><span><Download size={16} /> Paczki eksportowe ZIP</span></div></section>
     </main>
   );
 }
