@@ -129,6 +129,25 @@ Commits wykonane w tym etapie:
 - Repo ma konfigurację ESLint.
 - Repo ma workflow CI uruchamiający lint i build.
 
+## 2026-06-08 — MediaRecorder WebM proof of concept
+
+Commits wykonane w tym etapie:
+
+- `f72ecd5` — dodany hook `useCanvasRecorder` do nagrywania canvas preview przez MediaRecorder.
+- `f888836` — dodany panel eksportu WebM w aplikacji.
+- `333498e` — style panelu eksportu i statusów nagrywania.
+- `11b7480` — uproszczony skrypt lint dla ESLint flat config.
+- `2bd568e` — roadmapa oznacza WebM proof of concept jako wykonany etap.
+
+## Zakres funkcjonalny
+
+- Canvas preview można nagrać do pliku `.webm`.
+- Eksport używa `canvas.captureStream(30)` i `MediaRecorder`.
+- Aplikacja wybiera wspierany MIME: VP9, VP8 albo podstawowy WebM.
+- Maksymalny czas nagrania jest ograniczony do 30 sekund.
+- Po nagraniu UI pokazuje link pobierania WebM.
+- Pierwsza wersja eksportuje obraz bez ścieżki audio.
+
 ## Następny rekomendowany etap
 
-Po potwierdzeniu CI: MediaRecorder/WebM proof of concept jako pierwszy bezpieczny eksport video przed ffmpeg.wasm.
+Dodać audio track do WebM albo przygotować render queue/status panel przed wejściem w ffmpeg.wasm i MP4.
