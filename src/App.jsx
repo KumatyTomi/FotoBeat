@@ -205,7 +205,7 @@ export default function App() {
             <article key={item.id} className="render-history-item">
               <div>
                 <strong>{item.fileName}</strong>
-                <span>{new Date(item.createdAt).toLocaleString('pl-PL')} · {item.duration}s · {formatBytes(item.size)} · {item.hasAudio ? 'audio + video' : 'video only'}</span>
+                <span>{new Date(item.createdAt).toLocaleString('pl-PL')} · {item.duration}s · {formatBytes(item.size)} · {item.hasAudio ? 'audio + video' : 'video only'} · {item.persisted ? 'zapisane lokalnie' : 'sesyjne'}</span>
               </div>
               <div className="render-history-actions">
                 <a className="ghost-button compact" href={item.downloadUrl} download={item.fileName}><Download size={16} />Pobierz</a>
@@ -260,7 +260,7 @@ export default function App() {
       </section>
 
       <TimelinePreview timeline={timeline} />
-      <section id="roadmap" className="roadmap-panel"><div><h2>Następne moduły</h2><p>Kolejne kroki: persistent render history, realniejsza detekcja transientów i MP4 przez ffmpeg.wasm.</p></div><div className="roadmap-list"><span><RefreshCcw size={16} /> Autosave + snapshots</span><span><Film size={16} /> Render queue</span><span><Download size={16} /> Paczki eksportowe ZIP</span></div></section>
+      <section id="roadmap" className="roadmap-panel"><div><h2>Następne moduły</h2><p>Kolejne kroki: realniejsza detekcja transientów, scoring ostrości i MP4 przez ffmpeg.wasm.</p></div><div className="roadmap-list"><span><RefreshCcw size={16} /> Persistent render history</span><span><Film size={16} /> Render queue</span><span><Download size={16} /> Paczki eksportowe ZIP</span></div></section>
     </main>
   );
 }
