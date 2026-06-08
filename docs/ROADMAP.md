@@ -66,7 +66,8 @@
 - [x] ffmpeg readiness checklist
 - [x] deterministic frame renderer
 - [x] testowy eksport pojedynczej klatki PNG
-- [ ] frame sequence renderer do IndexedDB
+- [x] frame sequence renderer do IndexedDB
+- [ ] frame sequence ZIP export
 - [ ] ffmpeg.wasm proof of concept
 - [ ] eksport MP4 9:16
 - [ ] eksport MP4 16:9
@@ -87,4 +88,4 @@
 
 ## Najbliższy następny duży krok
 
-Render frame sequence to IndexedDB: generować serię klatek PNG z `renderFrameAtTime`, zapisać je do IndexedDB, pokazać progress/cancel i przygotować wejście dla ffmpeg.wasm / MP4.
+Frame sequence ZIP export albo ffmpeg.wasm proof of concept: wykorzystać zapisane sekwencje PNG z IndexedDB jako wejście do paczki ZIP lub do kodera MP4.
