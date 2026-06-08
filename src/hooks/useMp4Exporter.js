@@ -6,7 +6,6 @@ import { safeFilename } from '../utils/projectExport.js';
 const MAX_MP4_HISTORY = 8;
 
 export function useMp4Exporter() {
-  const ffmpegRef = useRef(null);
   const objectUrlsRef = useRef(new Set());
   const [mp4Exports, setMp4Exports] = useState([]);
   const [mp4State, setMp4State] = useState({
@@ -19,13 +18,19 @@ export function useMp4Exporter() {
   useEffect(() => {
     let cancelled = false;
 
-    loadPersistentMp4Exports()
-      .then((items) => {
-        if (!cancelled) {
-          setMp4Exports(items);
-          if (items.length > 0) {
-            setMp4State((current) => ({ ...current, message: `Wczytano ${items.length} lokalnych eksportów MP4.` }));
-          }
+    loadMp4Exports(MAX_MP4_HISTORY)
+      .then((storedItems) => {
+        if (cancelled) return;
+
+        const items = storedItems.map((item) => {
+          const downloadUrl = URL.createObjectURL(item.blob);
+          objectUrlsRef.current.add(downloadUrl);
+          return { ...item, downloadUrl };
+        });
+
+        setMp4Exports(items);
+        if (items.length > 0) {
+          setMp4State((current) => ({ ...current, message: `Wczytano ${items.length} lokalnych eksportów MP4.` }));
         }
       })
       .catch(() => {
@@ -83,7 +88,7 @@ export function useMp4Exporter() {
       await ffmpeg.exec(plan.command);
 
       const outputData = await ffmpeg.readFile('fotobeat-output.mp4');
-      const outputBlob = new Blob([outputData.buffer], { type: 'video/mp4' });
+      const outputBlob = new Blob([outputData], { type: 'video/mp4' });
       const downloadUrl = URL.createObjectURL(outputBlob);
       const fileName = `${safeFilename(sequence.projectName)}-poc-${sequence.id}.mp4`;
       const exportItem = {
@@ -167,10 +172,6 @@ async function getLoadedFfmpeg(onLoadProgress) {
   ]);
   const ffmpeg = new FFmpeg();
 
-  ffmpeg.on('log', ({ message }) => {
-    // Useful while debugging in browser devtools without polluting app state.
-    console.debug('[ffmpeg]', message);
-  });
   ffmpeg.on('progress', ({ progress }) => {
     onLoadProgress?.(progress);
   });
@@ -210,17 +211,5 @@ async function cleanupVirtualFrames({ ffmpeg, sequence }) {
     // Output cleanup is best-effort.
   }
 }
-
-async function loadPersistentMp4Exports() {
-  const storedItems = await loadMp4Exports(MAX_MP4_HISTORY);
-
-  return storedItems.map((item) => {
-    const downloadUrl = URL.createObjectURL(item.blob);
-    objectUrlRegistry.add(downloadUrl);
-    return { ...item, downloadUrl };
-  });
-}
-
-const objectUrlRegistry = new Set();
 
 getLoadedFfmpeg.cache = null;
