@@ -1,38 +1,29 @@
 # Work log
 
-## 2026-06-08 — Frame sequence ZIP export
+## 2026-06-08 — Broad render planning batch
 
 Commits wykonane w tym etapie:
 
-- `b94eb7e` — dodany `zipExport.js`: ZIP builder bez zależności npm, z CRC32 i central directory.
-- `5998d72` — dodany `useFrameSequenceZipExporter`.
-- `2211970` — UI frame sequence dostało przyciski `Spakuj ZIP` i `Pobierz ZIP`.
-- `726628d` — ESLint dostał global `TextEncoder`.
-- `b75d14e` — roadmapa oznacza frame sequence ZIP export jako wykonany.
-- `e14ab14` — masterplan 100 etapów zaktualizowany po ZIP export.
+- `603a134` — dodany render job model: statusy, targety, create/patch helpers.
+- `f7e4bfe` — dodany IndexedDB storage dla render jobs.
+- `f9529be` — dodana walidacja frame sequence przed ffmpeg.
+- `e285d1f` — dodany ffmpeg command builder dla PNG sequence -> MP4.
+- `d35d744` — dodany MP4 export plan adapter bez zależności ffmpeg.
+- `6d9ee27` — dodany hook `useRenderJobs`.
+- `4f0d178` — UI dostało render jobs panel i akcję `Plan MP4`.
+- `1263cb0` — roadmapa zaktualizowana po batchu render jobs / MP4 planning.
 
 ## Zakres funkcjonalny
 
-- Zapisane sekwencje PNG można spakować do ZIP bez dodawania zależności npm.
-- ZIP używa trybu `store`, czyli bez kompresji, ale z poprawnym CRC32.
-- Paczka zawiera klatki w strukturze:
-
-```txt
-frames/frame_0001.png
-frames/frame_0002.png
-frames/frame_0003.png
-```
-
-- Paczka zawiera `manifest.json` z metadanymi sekwencji.
-- UI pozwala zbudować ZIP dla wybranej sekwencji i pobrać plik.
-- To przygotowuje wejście dla ffmpeg.wasm, gdzie klatki muszą mieć stabilne nazwy.
-
-## Ograniczenia
-
-- ZIP nie kompresuje danych, bo PNG i tak jest już skompresowany.
-- Brak jeszcze ffmpeg.wasm.
-- Brak jeszcze MP4.
+- Projekt ma model render jobów gotowy pod WebM, ZIP, PNG sequence i przyszłe MP4.
+- Render jobs są zapisywane w IndexedDB.
+- Sekwencje klatek mają walidację: blockery, warnings i statystyki.
+- ffmpeg command builder generuje komendę dla PNG sequence -> MP4 bez audio.
+- Dodano też wariant komendy z audio jako przygotowanie do muxingu.
+- MP4 export plan buduje virtual file plan, komendę ffmpeg i shell preview.
+- UI pozwala utworzyć lokalny render job dla ZIP i planu MP4.
+- Ten batch nie dodaje jeszcze ciężkiej zależności ffmpeg.wasm, żeby nie rozwalić CI po poprzednim failu.
 
 ## Następny rekomendowany etap
 
-Lazy-load ffmpeg.wasm: dodać zależności, ładować core dopiero po kliknięciu MP4, pokazać progress i wygenerować pierwszy MP4 bez audio z zapisanej sekwencji PNG.
+ffmpeg.wasm proof of concept: dodać dependency, lazy-load core, wrzucić klatki z zapisanej sekwencji do virtual FS i wygenerować pierwszy krótki MP4 bez audio.
