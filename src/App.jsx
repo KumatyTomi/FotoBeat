@@ -9,6 +9,7 @@ import { useAudioAnalysis } from './hooks/useAudioAnalysis.js';
 import { useCanvasPreview } from './hooks/useCanvasPreview.js';
 import { useCanvasRecorder } from './hooks/useCanvasRecorder.js';
 import { useFrameExporter } from './hooks/useFrameExporter.js';
+import { useFrameSequenceRenderer } from './hooks/useFrameSequenceRenderer.js';
 import { useMediaAssets } from './hooks/useMediaAssets.js';
 import { useProjectState } from './hooks/useProjectState.js';
 import { describeAudioAnalysis } from './utils/audioAnalysis.js';
@@ -81,6 +82,16 @@ export default function App() {
   });
 
   const frameExporter = useFrameExporter({
+    canvasRef: previewRef,
+    projectName: project.name,
+    timeline,
+    selectedFormat,
+    selectedPreset,
+    selectedMediaAssets: media.selectedMediaAssets,
+    pinnedAssetsByClip: media.pinnedAssetsByClip
+  });
+
+  const frameSequence = useFrameSequenceRenderer({
     canvasRef: previewRef,
     projectName: project.name,
     timeline,
@@ -207,6 +218,44 @@ export default function App() {
 
       <section className="render-export-panel">
         <div>
+          <p className="panel-kicker">Frame sequence</p>
+          <h2>Sekwencja klatek PNG do MP4</h2>
+          <p>Testowy render do IndexedDB: maksymalnie {frameSequence.limits.maxSeconds}s @ {frameSequence.limits.maxFps} fps. To wejście pod późniejsze ffmpeg.wasm.</p>
+        </div>
+        <div className="render-export-actions">
+          <button className="primary-button compact" onClick={() => frameSequence.renderSequence()} disabled={frameSequence.sequenceState.status === 'rendering'}>
+            <Film size={16} />Renderuj klatki PNG
+          </button>
+          {frameSequence.sequenceState.status === 'rendering' && (
+            <button className="ghost-button compact" onClick={frameSequence.cancelSequenceRender}>Przerwij</button>
+          )}
+          {frameSequence.sequenceHistory.length > 0 && (
+            <button className="ghost-button compact" onClick={frameSequence.clearSequences}><Trash2 size={16} />Wyczyść sekwencje</button>
+          )}
+        </div>
+        <div className="sequence-progress" aria-label="Postęp renderu sekwencji">
+          <span style={{ width: `${frameSequence.sequenceState.progress}%` }} />
+        </div>
+        <p className={`render-status ${frameSequence.sequenceState.status}`}>{frameSequence.sequenceState.message}</p>
+        <div className="render-history">
+          {frameSequence.sequenceHistory.length === 0 ? (
+            <span className="empty-state">Brak zapisanych sekwencji. Wyrenderuj pierwszą serię PNG, aby przygotować materiał pod ffmpeg.wasm.</span>
+          ) : frameSequence.sequenceHistory.map((sequence) => (
+            <article key={sequence.id} className="render-history-item">
+              <div>
+                <strong>{sequence.projectName} · {sequence.frameCount} klatek</strong>
+                <span>{new Date(sequence.createdAt).toLocaleString('pl-PL')} · {sequence.seconds}s · {sequence.fps} fps · {sequence.width}×{sequence.height} · {formatBytes(sequence.totalSize)}</span>
+              </div>
+              <div className="render-history-actions">
+                <button className="ghost-button compact" onClick={() => frameSequence.removeSequence(sequence.id)}><Trash2 size={16} />Usuń</button>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="render-export-panel">
+        <div>
           <p className="panel-kicker">Render queue</p>
           <h2>Eksport WebM {audio ? 'z audio' : 'bez audio'}</h2>
           <p>{audio ? 'MediaRecorder połączy obraz z canvas i ścieżkę audio z Web Audio API.' : 'Dodaj MP3/WAV, aby eksport WebM zawierał także ścieżkę audio.'}</p>
@@ -285,7 +334,7 @@ export default function App() {
       </section>
 
       <TimelinePreview timeline={timeline} />
-      <section id="roadmap" className="roadmap-panel"><div><h2>Następne moduły</h2><p>Kolejne kroki: sekwencja klatek, ffmpeg.wasm i MP4.</p></div><div className="roadmap-list"><span><RefreshCcw size={16} /> Deterministic frame renderer</span><span><Film size={16} /> Render queue</span><span><Download size={16} /> PNG frame export</span></div></section>
+      <section id="roadmap" className="roadmap-panel"><div><h2>Następne moduły</h2><p>Kolejne kroki: przekazanie sekwencji klatek do ffmpeg.wasm i MP4.</p></div><div className="roadmap-list"><span><RefreshCcw size={16} /> Frame sequence</span><span><Film size={16} /> ffmpeg.wasm</span><span><Download size={16} /> MP4 export</span></div></section>
     </main>
   );
 }
