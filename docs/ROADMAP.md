@@ -72,9 +72,11 @@
 - [x] frame sequence validation
 - [x] ffmpeg command builder
 - [x] MP4 export plan adapter bez zależności ffmpeg
-- [ ] ffmpeg.wasm proof of concept
-- [ ] eksport MP4 9:16
-- [ ] eksport MP4 16:9
+- [x] ffmpeg.wasm proof of concept bez audio
+- [x] lokalna historia eksportów MP4 w IndexedDB
+- [ ] MP4 audio mux
+- [ ] eksport MP4 9:16 produkcyjny
+- [ ] eksport MP4 16:9 produkcyjny
 
 ## Etap 6: Produkt
 
@@ -92,4 +94,4 @@
 
 ## Najbliższy następny duży krok
 
-ffmpeg.wasm proof of concept: lazy-load encodera, zapisać klatki do virtual FS, uruchomić przygotowaną komendę i wygenerować pierwszy krótki MP4 bez audio.
+MP4 audio mux: dodać wejście audio do ffmpeg.wasm, przyciąć audio do długości renderu, dodać AAC i sprawdzić synchronizację audio/video.
