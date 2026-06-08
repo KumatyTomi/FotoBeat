@@ -87,6 +87,72 @@
   border: 1px solid rgba(255, 90, 120, 0.24);
 }
 
+.waveform-panel {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.8fr) minmax(240px, 0.4fr);
+  gap: 18px;
+}
+
+.range-control {
+  display: grid;
+  gap: 10px;
+  color: rgba(245, 247, 251, 0.82);
+  font-weight: 800;
+}
+
+.range-control input {
+  width: min(420px, 100%);
+}
+
+.waveform-box,
+.waveform-empty {
+  grid-column: 1 / -1;
+  position: relative;
+  min-height: 150px;
+  overflow: hidden;
+  border-radius: 22px;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.055);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.waveform-empty {
+  display: grid;
+  place-items: center;
+  color: rgba(245, 247, 251, 0.52);
+}
+
+.waveform-bars {
+  position: absolute;
+  inset: 20px;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.waveform-bars span {
+  flex: 1;
+  min-width: 2px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(139, 233, 255, 0.92), rgba(124, 60, 255, 0.42));
+}
+
+.beat-grid {
+  position: absolute;
+  inset: 12px 20px;
+  pointer-events: none;
+}
+
+.beat-grid i {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 0 18px rgba(139, 233, 255, 0.55);
+}
+
 .media-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
@@ -201,6 +267,10 @@
 @media (max-width: 860px) {
   .preview-hud {
     justify-content: flex-start;
+  }
+
+  .waveform-panel {
+    grid-template-columns: 1fr;
   }
 }
 
