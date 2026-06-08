@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
-import { ImagePlus, Music, Sparkles, Wand2, Film, Download, RefreshCcw, Save, FileJson } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { ImagePlus, Music, Sparkles, Wand2, Film, Download, RefreshCcw, Save, FileJson, Play } from 'lucide-react';
 import FileDropzone from './components/FileDropzone.jsx';
 import TimelinePreview from './components/TimelinePreview.jsx';
 import EffectCard from './components/EffectCard.jsx';
@@ -21,6 +21,8 @@ export default function App() {
   const [project, setProject] = useState(() => loadProject());
   const [audioAnalysis, setAudioAnalysis] = useState(null);
   const [lastSavedAt, setLastSavedAt] = useState(project.updatedAt ?? null);
+  const [previewPlayback, setPreviewPlayback] = useState({ time: 0, clipIndex: 1 });
+  const previewRef = useRef(null);
 
   const format = project.format;
   const preset = project.preset;
@@ -69,8 +71,45 @@ export default function App() {
     return buildDraftTimeline({ images, audio, format, preset, audioAnalysis });
   }, [images, audio, format, preset, audioAnalysis]);
 
-  const selectedFormat = EXPORT_FORMATS.find((item) => item.id === format);
-  const selectedPreset = EFFECT_PRESETS.find((item) => item.id === preset);
+  const selectedFormat = EXPORT_FORMATS.find((item) => item.id === format) ?? EXPORT_FORMATS[1];
+  const selectedPreset = EFFECT_PRESETS.find((item) => item.id === preset) ?? EFFECT_PRESETS[0];
+
+  useEffect(() => {
+    const canvas = previewRef.current;
+    if (!canvas) return undefined;
+
+    let frameId;
+    let lastHudUpdate = 0;
+    const startedAt = performance.now();
+
+    function frame(now) {
+      const totalDuration = Math.max(timeline.estimatedDuration || 1, 1);
+      const time = ((now - startedAt) / 1000) % totalDuration;
+      const clip = findClipAtTime(timeline.clips, time);
+      const clipIndex = Math.max(1, timeline.clips.indexOf(clip) + 1);
+
+      drawRenderPreview(canvas, {
+        time,
+        clip,
+        clipIndex,
+        totalClips: timeline.clips.length,
+        format: selectedFormat,
+        preset: selectedPreset,
+        imageCount: images.length,
+        projectName: project.name
+      });
+
+      if (now - lastHudUpdate > 220) {
+        setPreviewPlayback({ time: Number(time.toFixed(1)), clipIndex });
+        lastHudUpdate = now;
+      }
+
+      frameId = requestAnimationFrame(frame);
+    }
+
+    frameId = requestAnimationFrame(frame);
+    return () => cancelAnimationFrame(frameId);
+  }, [images.length, project.name, selectedFormat, selectedPreset, timeline]);
 
   function patchProject(patch) {
     setProject((current) => ({
@@ -124,8 +163,8 @@ export default function App() {
           </div>
           <h1>Zdjęcia + muzyka = klip zsynchronizowany z beatem.</h1>
           <p>
-            Wrzuć zdjęcia i MP3. Prototyp buduje roboczy timeline, analizuje energię audio
-            i zapisuje stan projektu lokalnie pod dalszy render.
+            Wrzuć zdjęcia i MP3. Prototyp buduje roboczy timeline, analizuje energię audio,
+            rysuje animowany canvas preview i zapisuje stan projektu lokalnie pod dalszy render.
           </p>
 
           <div className="hero-actions">
@@ -133,9 +172,9 @@ export default function App() {
               <Wand2 size={18} />
               Zbuduj projekt
             </a>
-            <a className="ghost-button" href="#project">
-              <FileJson size={18} />
-              Panel projektu
+            <a className="ghost-button" href="#preview">
+              <Play size={18} />
+              Render preview
             </a>
           </div>
         </div>
@@ -207,6 +246,33 @@ export default function App() {
               </article>
             ))
           )}
+        </div>
+      </section>
+
+      <section id="preview" className="render-preview-panel">
+        <div className="section-heading project-heading">
+          <div>
+            <p className="panel-kicker">Render preview</p>
+            <h2>Canvas pod timeline i beat</h2>
+            <p>
+              To jest pierwszy most do prawdziwego renderu MP4: canvas używa formatu eksportu,
+              presetu, energii klipu, sekcji timeline i czasu odtwarzania.
+            </p>
+          </div>
+          <div className="preview-hud">
+            <span>{selectedFormat.width}×{selectedFormat.height}</span>
+            <span>{previewPlayback.time}s</span>
+            <span>Klip {previewPlayback.clipIndex}/{timeline.clips.length}</span>
+          </div>
+        </div>
+
+        <div className={`canvas-shell canvas-${selectedFormat.id}`}>
+          <canvas
+            ref={previewRef}
+            width={selectedFormat.width}
+            height={selectedFormat.height}
+            aria-label="Animowany podgląd renderu FotoBeat"
+          />
         </div>
       </section>
 
@@ -282,7 +348,7 @@ export default function App() {
         <div>
           <h2>Następne moduły</h2>
           <p>
-            Ten frontend jest bazą pod Base44/Vite. Kolejne kroki: render preview canvas,
+            Ten frontend jest bazą pod Base44/Vite. Kolejne kroki: render preview na realnych miniaturach,
             import projektu JSON, kolejka renderowania i eksport MP4.
           </p>
         </div>
@@ -364,4 +430,171 @@ function describeAudioAnalysis(audioAnalysis) {
   }
 
   return `Plik ${audioAnalysis.fileName}: długość ${audioAnalysis.duration}s, szacunkowe BPM ${audioAnalysis.bpm}.`;
+}
+
+function findClipAtTime(clips, time) {
+  return [...clips].reverse().find((clip) => time >= clip.start) ?? clips[0];
+}
+
+function drawRenderPreview(canvas, { time, clip, clipIndex, totalClips, format, preset, imageCount, projectName }) {
+  const ctx = canvas.getContext('2d');
+  const width = canvas.width;
+  const height = canvas.height;
+  const progress = getClipProgress(clip, time);
+  const pulse = Math.sin(progress * Math.PI);
+  const energy = clip?.energy ?? 0.5;
+  const colors = getPresetColors(preset.id);
+
+  ctx.clearRect(0, 0, width, height);
+
+  const background = ctx.createLinearGradient(0, 0, width, height);
+  background.addColorStop(0, '#05050a');
+  background.addColorStop(0.45, colors.deep);
+  background.addColorStop(1, '#10101f');
+  ctx.fillStyle = background;
+  ctx.fillRect(0, 0, width, height);
+
+  drawGlow(ctx, width * (0.28 + pulse * 0.12), height * 0.22, width * 0.38, colors.primary, 0.45 + energy * 0.28);
+  drawGlow(ctx, width * (0.74 - pulse * 0.08), height * 0.76, width * 0.44, colors.secondary, 0.25 + energy * 0.22);
+
+  ctx.save();
+  ctx.translate(width / 2, height / 2);
+  ctx.rotate(getPresetRotation(preset.id, progress, energy));
+  ctx.scale(1 + pulse * 0.035 + energy * 0.018, 1 + pulse * 0.035 + energy * 0.018);
+  drawFrameStack(ctx, width, height, colors, clipIndex, imageCount, progress);
+  ctx.restore();
+
+  drawScanlines(ctx, width, height, preset.id, progress);
+  drawPreviewText(ctx, width, height, {
+    projectName,
+    clip,
+    clipIndex,
+    totalClips,
+    preset,
+    format,
+    progress,
+    colors
+  });
+}
+
+function getClipProgress(clip, time) {
+  if (!clip) return 0;
+  return Math.min(1, Math.max(0, (time - clip.start) / Math.max(clip.duration, 0.1)));
+}
+
+function getPresetColors(presetId) {
+  const map = {
+    neonPulse: { primary: '#00d3ff', secondary: '#7c3cff', deep: '#10103a' },
+    smokeCut: { primary: '#c8d0ff', secondary: '#6d7188', deep: '#171927' },
+    matrixGlitch: { primary: '#6cff8d', secondary: '#00d3ff', deep: '#061b13' },
+    sinCity: { primary: '#ff3b5c', secondary: '#f4f4f4', deep: '#17080c' },
+    spiralZoom: { primary: '#ffb86b', secondary: '#7c3cff', deep: '#1c102f' },
+    dreamFade: { primary: '#ffd6f2', secondary: '#8be9ff', deep: '#171429' }
+  };
+
+  return map[presetId] ?? map.neonPulse;
+}
+
+function getPresetRotation(presetId, progress, energy) {
+  if (presetId === 'spiralZoom') return progress * 0.16;
+  if (presetId === 'matrixGlitch') return Math.sin(progress * 24) * 0.006 * energy;
+  if (presetId === 'dreamFade') return Math.sin(progress * Math.PI) * 0.01;
+  return Math.sin(progress * Math.PI * 2) * 0.018 * energy;
+}
+
+function drawGlow(ctx, x, y, radius, color, alpha) {
+  const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
+  gradient.addColorStop(0, hexToRgba(color, alpha));
+  gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+  ctx.fillStyle = gradient;
+  ctx.beginPath();
+  ctx.arc(x, y, radius, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function drawFrameStack(ctx, width, height, colors, clipIndex, imageCount, progress) {
+  const frameCount = 5;
+  const baseWidth = width * 0.58;
+  const baseHeight = height * 0.58;
+
+  for (let index = frameCount - 1; index >= 0; index -= 1) {
+    const offset = (index - 2) * width * 0.025;
+    const lift = Math.sin(progress * Math.PI + index) * height * 0.012;
+    const alpha = 0.18 + (frameCount - index) * 0.08;
+
+    ctx.fillStyle = index % 2 === 0 ? hexToRgba(colors.primary, alpha) : hexToRgba(colors.secondary, alpha);
+    ctx.strokeStyle = hexToRgba('#ffffff', 0.16 + alpha * 0.22);
+    ctx.lineWidth = Math.max(2, width * 0.002);
+    roundRect(ctx, -baseWidth / 2 + offset, -baseHeight / 2 + lift, baseWidth, baseHeight, width * 0.025);
+    ctx.fill();
+    ctx.stroke();
+  }
+
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.88)';
+  ctx.font = `700 ${Math.max(26, width * 0.028)}px Inter, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.fillText(imageCount ? `PHOTO ${clipIndex}` : 'DROP PHOTOS', 0, 0);
+
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.48)';
+  ctx.font = `500 ${Math.max(18, width * 0.016)}px Inter, sans-serif`;
+  ctx.fillText(imageCount ? `${imageCount} plików w projekcie` : 'upload zdjęć aktywuje prawdziwe kadry', 0, height * 0.045);
+}
+
+function drawScanlines(ctx, width, height, presetId, progress) {
+  if (presetId !== 'matrixGlitch' && presetId !== 'sinCity') return;
+
+  ctx.save();
+  ctx.globalAlpha = presetId === 'matrixGlitch' ? 0.18 : 0.08;
+  ctx.strokeStyle = '#ffffff';
+  ctx.lineWidth = 1;
+
+  const gap = Math.max(12, height * 0.012);
+  const shift = progress * gap * 2;
+  for (let y = -gap; y < height + gap; y += gap) {
+    ctx.beginPath();
+    ctx.moveTo(0, y + shift);
+    ctx.lineTo(width, y + shift);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawPreviewText(ctx, width, height, { projectName, clip, clipIndex, totalClips, preset, format, colors }) {
+  const margin = width * 0.06;
+  const bottom = height - margin;
+
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.92)';
+  ctx.font = `800 ${Math.max(24, width * 0.025)}px Inter, sans-serif`;
+  ctx.textAlign = 'left';
+  ctx.fillText(projectName || 'FotoBeat Project', margin, margin * 1.25);
+
+  ctx.fillStyle = hexToRgba(colors.primary, 0.92);
+  ctx.font = `900 ${Math.max(16, width * 0.014)}px Inter, sans-serif`;
+  ctx.fillText(`${preset.name} · ${format.label}`, margin, margin * 1.75);
+
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.78)';
+  ctx.font = `700 ${Math.max(18, width * 0.017)}px Inter, sans-serif`;
+  ctx.fillText(`Clip ${clipIndex}/${totalClips} · ${clip?.section ?? 'intro'} · ${clip?.effect ?? 'fade'}`, margin, bottom);
+
+  ctx.textAlign = 'right';
+  ctx.fillText('FotoBeat.me', width - margin, bottom);
+}
+
+function roundRect(ctx, x, y, width, height, radius) {
+  ctx.beginPath();
+  ctx.moveTo(x + radius, y);
+  ctx.arcTo(x + width, y, x + width, y + height, radius);
+  ctx.arcTo(x + width, y + height, x, y + height, radius);
+  ctx.arcTo(x, y + height, x, y, radius);
+  ctx.arcTo(x, y, x + width, y, radius);
+  ctx.closePath();
+}
+
+function hexToRgba(hex, alpha) {
+  const normalized = hex.replace('#', '');
+  const value = Number.parseInt(normalized, 16);
+  const red = (value >> 16) & 255;
+  const green = (value >> 8) & 255;
+  const blue = value & 255;
+  return `rgba(${red}, ${green}, ${blue}, ${alpha})`;
 }
