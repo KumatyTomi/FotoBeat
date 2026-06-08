@@ -1,33 +1,35 @@
 # Work log
 
-## 2026-06-08 — ffmpeg.wasm MP4 proof of concept
+## 2026-06-08 — ffmpeg runtime stability + MP4 audio foundation batch
 
 Commits wykonane w tym etapie:
 
-- `4e8a6b3` — dodane zależności `@ffmpeg/ffmpeg` i `@ffmpeg/util`.
-- `48f9543` — dodany IndexedDB storage dla eksportów MP4.
-- `6b057c5` — dodany hook `useMp4Exporter` z lazy-load ffmpeg.wasm, virtual FS i MP4 Blob.
-- `8f5b6c0` — hook MP4 exporter utwardzony pod lint i object URL cleanup.
-- `7587b25` — UI dostało `Eksport MP4 POC`, progress, historię MP4 i pobieranie.
-- `4a36d23` — roadmapa oznacza ffmpeg.wasm MP4 POC jako wykonany.
+- `338f47d` — dodany `ffmpegCoreConfig.js` z konfiguracją ładowania core przez `toBlobURL`.
+- `5375f6f` — `mp4ExportPlan.js` obsługuje wariant MP4 z audio i bez audio.
+- `1210a3a` — `useMp4Exporter` dostał opcjonalny audio mux: `audio.input`, AAC i cleanup audio z virtual FS.
+- `3ecf5bf` — dodany `useStorageHealth`.
+- `782ae8a` — dodany `AppBoundary` jako safety boundary dla UI.
+- `738c163` — aplikacja została owinięta w `AppBoundary`.
+- `7983f18` — dodany `vite.config.js` z nagłówkami COOP/COEP.
+- `8f6b67a` — dodane `docs/FFMPEG_RUNTIME_NOTES.md`.
+- `0cd1392` — roadmapa zaktualizowana po batchu stabilizacji ffmpeg runtime.
 
 ## Zakres funkcjonalny
 
-- ffmpeg.wasm jest ładowany dynamicznie dopiero po kliknięciu eksportu MP4.
-- Eksport używa zapisanej sekwencji PNG z IndexedDB.
-- Klatki trafiają do virtual FS jako `frames/frame_0001.png`, `frames/frame_0002.png` itd.
-- Aplikacja uruchamia przygotowaną komendę PNG sequence -> MP4 bez audio.
-- Wynik jest odczytywany jako `fotobeat-output.mp4`.
-- MP4 trafia do IndexedDB jako Blob.
-- UI pokazuje progress loading/preparing/encoding.
-- UI pozwala pobrać lokalny MP4 i usuwać eksporty z historii.
+- ffmpeg core ma jawny runtime config i używa `toBlobURL`.
+- Vite dev/preview ma nagłówki `Cross-Origin-Opener-Policy` i `Cross-Origin-Embedder-Policy`.
+- MP4 exporter potrafi przyjąć opcjonalny plik audio, zapisać go jako `audio.input` i uruchomić komendę z AAC.
+- MP4 export plan rozróżnia wariant bez audio i z audio.
+- Dodano hook diagnostyki storage przeglądarki.
+- Dodano safety boundary, żeby crash UI nie zostawiał pustej strony.
+- Dodano dokument runtime notes dla ffmpeg.wasm.
 
 ## Ograniczenia
 
-- POC eksportuje MP4 bez audio.
-- ffmpeg.wasm może być ciężki i wolny w przeglądarce.
-- Obecny frame sequence limit 5s @ 12fps jest celowy, żeby ograniczyć ryzyko pamięci.
+- UI dla MP4 audio mux nie jest jeszcze podpięte, choć warstwa eksportera już to obsługuje.
+- Produkcyjny eksport 1080p/30fps nadal wymaga ostrożnego zwiększania limitów.
+- Deployment produkcyjny może wymagać lokalnego hostowania ffmpeg core zamiast CDN.
 
 ## Następny rekomendowany etap
 
-MP4 audio mux: dodać wejście audio do ffmpeg.wasm, przyciąć audio do długości renderu, dodać AAC i sprawdzić synchronizację audio/video.
+Podpiąć UI dla MP4 audio mux i przetestować synchronizację audio/video na krótkim materiale.
