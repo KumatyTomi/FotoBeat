@@ -8,6 +8,7 @@ import { EFFECT_PRESETS, EXPORT_FORMATS } from './data/effects.js';
 import { useAudioAnalysis } from './hooks/useAudioAnalysis.js';
 import { useCanvasPreview } from './hooks/useCanvasPreview.js';
 import { useCanvasRecorder } from './hooks/useCanvasRecorder.js';
+import { useFrameExporter } from './hooks/useFrameExporter.js';
 import { useMediaAssets } from './hooks/useMediaAssets.js';
 import { useProjectState } from './hooks/useProjectState.js';
 import { describeAudioAnalysis } from './utils/audioAnalysis.js';
@@ -77,6 +78,16 @@ export default function App() {
     projectName: project.name,
     timelineDuration: timeline.estimatedDuration,
     audioFile: audio
+  });
+
+  const frameExporter = useFrameExporter({
+    canvasRef: previewRef,
+    projectName: project.name,
+    timeline,
+    selectedFormat,
+    selectedPreset,
+    selectedMediaAssets: media.selectedMediaAssets,
+    pinnedAssetsByClip: media.pinnedAssetsByClip
   });
 
   function addSnapshot() {
@@ -178,6 +189,20 @@ export default function App() {
           <div className="preview-hud"><span>{selectedFormat.width}×{selectedFormat.height}</span><span>{previewPlayback.time}s</span><span>Klip {previewPlayback.clipIndex}/{timeline.clips.length}</span><span>{media.selectedMediaAssets.length} kadrów</span><span>Tempo ×{clipDurationScale}</span></div>
         </div>
         <div className={`canvas-shell canvas-${selectedFormat.id}`}><canvas ref={previewRef} width={selectedFormat.width} height={selectedFormat.height} aria-label="Animowany podgląd renderu FotoBeat" /></div>
+        <div className="frame-export-actions">
+          <button className="ghost-button compact" onClick={() => frameExporter.exportFrameAtTime(previewPlayback.time)}>
+            <Download size={16} />Eksportuj klatkę PNG
+          </button>
+          {frameExporter.frameExport.downloadHref && (
+            <a className="ghost-button compact" href={frameExporter.frameExport.downloadHref} download={frameExporter.frameExport.fileName}>
+              <Download size={16} />Pobierz PNG
+            </a>
+          )}
+          {frameExporter.frameExport.downloadHref && (
+            <button className="ghost-button compact" onClick={frameExporter.clearFrameExport}>Wyczyść PNG</button>
+          )}
+        </div>
+        <p className={`frame-export-status ${frameExporter.frameExport.status}`}>{frameExporter.frameExport.message}</p>
       </section>
 
       <section className="render-export-panel">
@@ -260,7 +285,7 @@ export default function App() {
       </section>
 
       <TimelinePreview timeline={timeline} />
-      <section id="roadmap" className="roadmap-panel"><div><h2>Następne moduły</h2><p>Kolejne kroki: realniejsza detekcja transientów, scoring ostrości i MP4 przez ffmpeg.wasm.</p></div><div className="roadmap-list"><span><RefreshCcw size={16} /> Persistent render history</span><span><Film size={16} /> Render queue</span><span><Download size={16} /> Paczki eksportowe ZIP</span></div></section>
+      <section id="roadmap" className="roadmap-panel"><div><h2>Następne moduły</h2><p>Kolejne kroki: sekwencja klatek, ffmpeg.wasm i MP4.</p></div><div className="roadmap-list"><span><RefreshCcw size={16} /> Deterministic frame renderer</span><span><Film size={16} /> Render queue</span><span><Download size={16} /> PNG frame export</span></div></section>
     </main>
   );
 }
