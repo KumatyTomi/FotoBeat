@@ -1,33 +1,38 @@
 # Work log
 
-## 2026-06-08 — Frame sequence renderer to IndexedDB
+## 2026-06-08 — Frame sequence ZIP export
 
 Commits wykonane w tym etapie:
 
-- `44713d6` — dodany `frameSequenceStorage.js` z IndexedDB dla sekwencji PNG.
-- `751c145` — dodany `useFrameSequenceRenderer` z renderem klatek, progress, cancel i zapisem do IndexedDB.
-- `1a6a4d3` — UI dostało panel Frame sequence, listę sekwencji i usuwanie.
-- `9842fea` — style dla progress baru, statusów i listy sekwencji.
-- `69d7d36` — roadmapa oznacza frame sequence renderer jako wykonany.
-- `bf8c967` — masterplan 100 etapów zaktualizowany po frame sequence renderer.
+- `b94eb7e` — dodany `zipExport.js`: ZIP builder bez zależności npm, z CRC32 i central directory.
+- `5998d72` — dodany `useFrameSequenceZipExporter`.
+- `2211970` — UI frame sequence dostało przyciski `Spakuj ZIP` i `Pobierz ZIP`.
+- `726628d` — ESLint dostał global `TextEncoder`.
+- `b75d14e` — roadmapa oznacza frame sequence ZIP export jako wykonany.
+- `e14ab14` — masterplan 100 etapów zaktualizowany po ZIP export.
 
 ## Zakres funkcjonalny
 
-- Aplikacja potrafi wygenerować sekwencję klatek PNG z `renderFrameAtTime`.
-- Sekwencja jest zapisywana jako tablica PNG Blobów w IndexedDB.
-- Render ma limit bezpieczeństwa: maksymalnie 5 sekund i 12 fps.
-- UI pokazuje progress renderu.
-- Render można przerwać przez cancel.
-- Historia sekwencji jest wczytywana po refreshu.
-- Można usunąć pojedynczą sekwencję lub wyczyścić całą historię sekwencji.
-- Ten etap przygotowuje bezpośrednie wejście pod ffmpeg.wasm.
+- Zapisane sekwencje PNG można spakować do ZIP bez dodawania zależności npm.
+- ZIP używa trybu `store`, czyli bez kompresji, ale z poprawnym CRC32.
+- Paczka zawiera klatki w strukturze:
+
+```txt
+frames/frame_0001.png
+frames/frame_0002.png
+frames/frame_0003.png
+```
+
+- Paczka zawiera `manifest.json` z metadanymi sekwencji.
+- UI pozwala zbudować ZIP dla wybranej sekwencji i pobrać plik.
+- To przygotowuje wejście dla ffmpeg.wasm, gdzie klatki muszą mieć stabilne nazwy.
 
 ## Ograniczenia
 
-- Brak jeszcze pobierania ZIP z klatkami.
+- ZIP nie kompresuje danych, bo PNG i tak jest już skompresowany.
 - Brak jeszcze ffmpeg.wasm.
-- Limit 5s @ 12fps jest celowy, żeby nie przeciążyć pamięci przeglądarki.
+- Brak jeszcze MP4.
 
 ## Następny rekomendowany etap
 
-Frame sequence ZIP export: odczytać zapisaną sekwencję PNG z IndexedDB, przygotować paczkę klatek albo manifest nazw `frame_0001.png`, a następnie wejść w ffmpeg.wasm proof of concept.
+Lazy-load ffmpeg.wasm: dodać zależności, ładować core dopiero po kliknięciu MP4, pokazać progress i wygenerować pierwszy MP4 bez audio z zapisanej sekwencji PNG.
