@@ -1,29 +1,33 @@
 # Work log
 
-## 2026-06-08 — Broad render planning batch
+## 2026-06-08 — ffmpeg.wasm MP4 proof of concept
 
 Commits wykonane w tym etapie:
 
-- `603a134` — dodany render job model: statusy, targety, create/patch helpers.
-- `f7e4bfe` — dodany IndexedDB storage dla render jobs.
-- `f9529be` — dodana walidacja frame sequence przed ffmpeg.
-- `e285d1f` — dodany ffmpeg command builder dla PNG sequence -> MP4.
-- `d35d744` — dodany MP4 export plan adapter bez zależności ffmpeg.
-- `6d9ee27` — dodany hook `useRenderJobs`.
-- `4f0d178` — UI dostało render jobs panel i akcję `Plan MP4`.
-- `1263cb0` — roadmapa zaktualizowana po batchu render jobs / MP4 planning.
+- `4e8a6b3` — dodane zależności `@ffmpeg/ffmpeg` i `@ffmpeg/util`.
+- `48f9543` — dodany IndexedDB storage dla eksportów MP4.
+- `6b057c5` — dodany hook `useMp4Exporter` z lazy-load ffmpeg.wasm, virtual FS i MP4 Blob.
+- `8f5b6c0` — hook MP4 exporter utwardzony pod lint i object URL cleanup.
+- `7587b25` — UI dostało `Eksport MP4 POC`, progress, historię MP4 i pobieranie.
+- `4a36d23` — roadmapa oznacza ffmpeg.wasm MP4 POC jako wykonany.
 
 ## Zakres funkcjonalny
 
-- Projekt ma model render jobów gotowy pod WebM, ZIP, PNG sequence i przyszłe MP4.
-- Render jobs są zapisywane w IndexedDB.
-- Sekwencje klatek mają walidację: blockery, warnings i statystyki.
-- ffmpeg command builder generuje komendę dla PNG sequence -> MP4 bez audio.
-- Dodano też wariant komendy z audio jako przygotowanie do muxingu.
-- MP4 export plan buduje virtual file plan, komendę ffmpeg i shell preview.
-- UI pozwala utworzyć lokalny render job dla ZIP i planu MP4.
-- Ten batch nie dodaje jeszcze ciężkiej zależności ffmpeg.wasm, żeby nie rozwalić CI po poprzednim failu.
+- ffmpeg.wasm jest ładowany dynamicznie dopiero po kliknięciu eksportu MP4.
+- Eksport używa zapisanej sekwencji PNG z IndexedDB.
+- Klatki trafiają do virtual FS jako `frames/frame_0001.png`, `frames/frame_0002.png` itd.
+- Aplikacja uruchamia przygotowaną komendę PNG sequence -> MP4 bez audio.
+- Wynik jest odczytywany jako `fotobeat-output.mp4`.
+- MP4 trafia do IndexedDB jako Blob.
+- UI pokazuje progress loading/preparing/encoding.
+- UI pozwala pobrać lokalny MP4 i usuwać eksporty z historii.
+
+## Ograniczenia
+
+- POC eksportuje MP4 bez audio.
+- ffmpeg.wasm może być ciężki i wolny w przeglądarce.
+- Obecny frame sequence limit 5s @ 12fps jest celowy, żeby ograniczyć ryzyko pamięci.
 
 ## Następny rekomendowany etap
 
-ffmpeg.wasm proof of concept: dodać dependency, lazy-load core, wrzucić klatki z zapisanej sekwencji do virtual FS i wygenerować pierwszy krótki MP4 bez audio.
+MP4 audio mux: dodać wejście audio do ffmpeg.wasm, przyciąć audio do długości renderu, dodać AAC i sprawdzić synchronizację audio/video.
