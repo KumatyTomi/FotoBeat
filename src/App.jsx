@@ -75,7 +75,8 @@ export default function App() {
   const recorder = useCanvasRecorder({
     canvasRef: previewRef,
     projectName: project.name,
-    timelineDuration: timeline.estimatedDuration
+    timelineDuration: timeline.estimatedDuration,
+    audioFile: audio
   });
 
   function addSnapshot() {
@@ -182,11 +183,11 @@ export default function App() {
       <section className="render-export-panel">
         <div>
           <p className="panel-kicker">Video export proof of concept</p>
-          <h2>Eksport canvas preview do WebM</h2>
-          <p>Eksperymentalny zapis aktualnego canvas preview przez MediaRecorder. Pierwsza wersja eksportuje obraz WebM bez ścieżki audio.</p>
+          <h2>Eksport canvas preview do WebM {audio ? 'z audio' : 'bez audio'}</h2>
+          <p>{audio ? 'MediaRecorder połączy obraz z canvas i ścieżkę audio z Web Audio API.' : 'Dodaj MP3/WAV, aby eksport WebM zawierał także ścieżkę audio.'}</p>
         </div>
         <div className="render-export-actions">
-          <button className="primary-button compact" onClick={recorder.startRecording} disabled={recorder.recordingState.status === 'recording'}>
+          <button className="primary-button compact" onClick={recorder.startRecording} disabled={recorder.recordingState.status === 'recording' || recorder.recordingState.status === 'preparing'}>
             <Film size={16} />
             {recorder.recordingState.status === 'recording' ? 'Nagrywanie...' : `Nagraj ${recorder.maxDuration}s WebM`}
           </button>
@@ -243,7 +244,7 @@ export default function App() {
       </section>
 
       <TimelinePreview timeline={timeline} />
-      <section id="roadmap" className="roadmap-panel"><div><h2>Następne moduły</h2><p>Kolejne kroki: audio track w eksporcie, realniejsza detekcja transientów i MP4 przez ffmpeg.wasm.</p></div><div className="roadmap-list"><span><RefreshCcw size={16} /> Autosave + snapshots</span><span><Film size={16} /> WebM proof of concept</span><span><Download size={16} /> Paczki eksportowe ZIP</span></div></section>
+      <section id="roadmap" className="roadmap-panel"><div><h2>Następne moduły</h2><p>Kolejne kroki: render queue, realniejsza detekcja transientów i MP4 przez ffmpeg.wasm.</p></div><div className="roadmap-list"><span><RefreshCcw size={16} /> Autosave + snapshots</span><span><Film size={16} /> WebM z audio track</span><span><Download size={16} /> Paczki eksportowe ZIP</span></div></section>
     </main>
   );
 }
