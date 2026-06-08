@@ -1,0 +1,155 @@
+.single-shell-blueprint {
+  margin-top: 24px;
+  padding: 28px;
+  border-radius: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  background:
+    radial-gradient(circle at 10% 0%, rgba(139, 233, 255, 0.14), transparent 34%),
+    radial-gradient(circle at 90% 20%, rgba(124, 60, 255, 0.18), transparent 36%),
+    rgba(10, 10, 24, 0.72);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.36);
+}
+
+.single-shell-blueprint__header,
+.single-shell-blueprint__footer {
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) auto;
+  gap: 18px;
+  align-items: start;
+}
+
+.single-shell-blueprint__profiles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.single-shell-blueprint__profiles span,
+.single-shell-region__sections em {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 10px;
+  border-radius: 999px;
+  color: rgba(245, 247, 251, 0.72);
+  background: rgba(255, 255, 255, 0.07);
+  font-style: normal;
+  font-size: 12px;
+}
+
+.single-shell-blueprint__profiles span.active {
+  color: #05050a;
+  background: linear-gradient(135deg, #8be9ff, #c6a8ff);
+  font-weight: 900;
+}
+
+.single-shell-blueprint__grid {
+  display: grid;
+  grid-template-columns: 0.7fr 1.35fr 0.8fr;
+  grid-template-areas:
+    "topbar topbar topbar"
+    "left center right"
+    "bottom bottom bottom"
+    "overlay overlay overlay";
+  gap: 12px;
+  margin-top: 22px;
+}
+
+.single-shell-region {
+  min-height: 132px;
+  padding: 18px;
+  border-radius: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.055);
+}
+
+.single-shell-region span,
+.single-shell-blueprint__footer span {
+  display: block;
+  color: #8be9ff;
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.single-shell-region strong,
+.single-shell-blueprint__footer strong {
+  display: block;
+  margin-top: 8px;
+  color: #fff;
+}
+
+.single-shell-region__sections {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 14px;
+}
+
+.single-shell-region--topbar {
+  grid-area: topbar;
+}
+
+.single-shell-region--left_rail {
+  grid-area: left;
+}
+
+.single-shell-region--center_workspace {
+  grid-area: center;
+  min-height: 280px;
+  background:
+    radial-gradient(circle at 50% 30%, rgba(139, 233, 255, 0.15), transparent 42%),
+    rgba(255, 255, 255, 0.06);
+}
+
+.single-shell-region--right_drawer {
+  grid-area: right;
+}
+
+.single-shell-region--bottom_status_queue {
+  grid-area: bottom;
+}
+
+.single-shell-region--overlay_transition {
+  grid-area: overlay;
+  min-height: 86px;
+  border-color: rgba(139, 233, 255, 0.2);
+}
+
+.single-shell-blueprint__footer {
+  margin-top: 16px;
+}
+
+.single-shell-blueprint__footer article {
+  padding: 16px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.055);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.single-shell-blueprint__footer p {
+  color: rgba(245, 247, 251, 0.62);
+}
+
+@media (max-width: 980px) {
+  .single-shell-blueprint__header,
+  .single-shell-blueprint__footer,
+  .single-shell-blueprint__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .single-shell-blueprint__grid {
+    grid-template-areas:
+      "topbar"
+      "left"
+      "center"
+      "right"
+      "bottom"
+      "overlay";
+  }
+
+  .single-shell-blueprint__profiles {
+    justify-content: flex-start;
+  }
+}
