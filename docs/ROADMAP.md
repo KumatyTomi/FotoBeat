@@ -31,7 +31,7 @@
 - [ ] podstawowa detekcja duplikatów
 - [x] odczyt długości audio przez Web Audio API
 - [x] szacowanie energii audio
-- [ ] waveform preview
+- [x] waveform preview
 
 ## Etap 4: Beat engine
 
@@ -39,8 +39,9 @@
 - [x] wykrycie sekcji timeline: intro, build, drop, outro
 - [x] energia audio jako parametr efektów
 - [x] automatyczne cięcia według beat grid
+- [x] wizualny beat grid na waveform
+- [x] ręczna korekta długości klipów przez `clipDurationScale`
 - [ ] realna detekcja transientów zamiast heurystyki BPM
-- [ ] ręczna korekta długości klipów
 
 ## Etap 5: Render
 
@@ -68,4 +69,4 @@
 
 ## Najbliższy następny duży krok
 
-Waveform + beat upgrade: narysować waveform audio, zaznaczyć beat grid na osi czasu i dodać prostą ręczną korektę długości klipów. Po tym można zrobić pierwsze ffmpeg.wasm proof of concept eksportu MP4.
+ffmpeg.wasm proof of concept: przygotować pierwszy eksperymentalny eksport MP4 z canvas/timeline albo dodać prosty render klatek do sekwencji. Alternatywa przed eksportem: realniejsza detekcja transientów i scoring ostrości zdjęć.
