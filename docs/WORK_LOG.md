@@ -148,6 +148,23 @@ Commits wykonane w tym etapie:
 - Po nagraniu UI pokazuje link pobierania WebM.
 - Pierwsza wersja eksportuje obraz bez ścieżki audio.
 
+## 2026-06-08 — WebM audio track stage
+
+Commits wykonane w tym etapie:
+
+- `ca24ce0` — recorder łączy canvas video track z audio track przez Web Audio API.
+- `3e5c8c2` — UI przekazuje audio file do eksportu WebM i aktualizuje copy panelu.
+- `8bd87d3` — roadmapa oznacza WebM z audio track jako wykonany etap.
+
+## Zakres funkcjonalny
+
+- Eksport WebM może zawierać obraz z canvas i audio z wrzuconego pliku.
+- Audio jest dekodowane przez `AudioContext.decodeAudioData`.
+- Ścieżka audio trafia do `MediaStreamDestination`.
+- MediaRecorder nagrywa połączony stream: video track + audio track.
+- MIME preferuje warianty z `opus`: VP9/Opus lub VP8/Opus.
+- Gdy brak pliku audio, eksport nadal działa jako WebM z samym obrazem.
+
 ## Następny rekomendowany etap
 
-Dodać audio track do WebM albo przygotować render queue/status panel przed wejściem w ffmpeg.wasm i MP4.
+Render queue/status panel: historia eksportów WebM, statusy nagrań, lista plików do pobrania i przygotowanie interfejsu pod późniejszy ffmpeg.wasm / MP4.
