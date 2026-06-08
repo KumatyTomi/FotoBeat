@@ -11,6 +11,7 @@
 - [x] dokumentacja startowa
 - [x] GitHub Actions CI
 - [x] ESLint flat config
+- [x] Vite config z COOP/COEP dla ffmpeg.wasm
 
 ## Etap 2: Projekt użytkownika
 
@@ -71,10 +72,12 @@
 - [x] render job model i IndexedDB job queue
 - [x] frame sequence validation
 - [x] ffmpeg command builder
-- [x] MP4 export plan adapter bez zależności ffmpeg
+- [x] MP4 export plan adapter
 - [x] ffmpeg.wasm proof of concept bez audio
 - [x] lokalna historia eksportów MP4 w IndexedDB
-- [ ] MP4 audio mux
+- [x] MP4 audio mux foundation w exporterze
+- [x] ffmpeg core load config przez toBlobURL
+- [ ] UI dla MP4 audio mux
 - [ ] eksport MP4 9:16 produkcyjny
 - [ ] eksport MP4 16:9 produkcyjny
 
@@ -85,6 +88,9 @@
 - [x] ffmpeg / MP4 implementation plan
 - [x] next 10 large stages documentation
 - [x] masterplan 100 etapów
+- [x] React safety boundary
+- [x] storage health hook
+- [x] ffmpeg runtime notes
 - [ ] logowanie
 - [ ] dashboard użytkownika
 - [ ] historia eksportów w profilu użytkownika
@@ -94,4 +100,4 @@
 
 ## Najbliższy następny duży krok
 
-MP4 audio mux: dodać wejście audio do ffmpeg.wasm, przyciąć audio do długości renderu, dodać AAC i sprawdzić synchronizację audio/video.
+Podpiąć UI dla MP4 audio mux i przetestować synchronizację audio/video na krótkim materiale. Potem zwiększać parametry renderu stopniowo, nie od razu 1080p/30fps.
