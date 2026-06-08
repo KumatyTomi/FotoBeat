@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ImagePlus, Music, Sparkles, Wand2, Film, Download, RefreshCcw, Save, FileJson, Play } from 'lucide-react';
+import { ImagePlus, Music, Sparkles, Wand2, Film, Download, RefreshCcw, Save, FileJson, Play, CheckCircle2 } from 'lucide-react';
 import FileDropzone from './components/FileDropzone.jsx';
 import TimelinePreview from './components/TimelinePreview.jsx';
 import EffectCard from './components/EffectCard.jsx';
@@ -18,6 +18,8 @@ const DEFAULT_PROJECT = {
 export default function App() {
   const [images, setImages] = useState([]);
   const [audio, setAudio] = useState(null);
+  const [mediaAssets, setMediaAssets] = useState([]);
+  const [selectedAssetIds, setSelectedAssetIds] = useState([]);
   const [project, setProject] = useState(() => loadProject());
   const [audioAnalysis, setAudioAnalysis] = useState(null);
   const [lastSavedAt, setLastSavedAt] = useState(project.updatedAt ?? null);
@@ -35,6 +37,62 @@ export default function App() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(nextProject));
     setLastSavedAt(nextProject.updatedAt);
   }, [project]);
+
+  useEffect(() => {
+    if (images.length === 0) {
+      setMediaAssets([]);
+      setSelectedAssetIds([]);
+      return undefined;
+    }
+
+    let cancelled = false;
+    const nextAssets = images.map((file, index) => ({
+      id: buildMediaId(file, index),
+      name: file.name,
+      size: file.size,
+      type: file.type,
+      file,
+      url: URL.createObjectURL(file),
+      status: 'loading',
+      width: 0,
+      height: 0,
+      orientation: 'unknown',
+      image: null
+    }));
+
+    setMediaAssets(nextAssets);
+    setSelectedAssetIds(nextAssets.map((asset) => asset.id));
+
+    nextAssets.forEach((asset) => {
+      const image = new Image();
+      image.onload = () => {
+        if (cancelled) return;
+        setMediaAssets((current) => current.map((item) => {
+          if (item.id !== asset.id) return item;
+          return {
+            ...item,
+            status: 'ready',
+            width: image.naturalWidth,
+            height: image.naturalHeight,
+            orientation: getOrientation(image.naturalWidth, image.naturalHeight),
+            image
+          };
+        }));
+      };
+      image.onerror = () => {
+        if (cancelled) return;
+        setMediaAssets((current) => current.map((item) => (
+          item.id === asset.id ? { ...item, status: 'error' } : item
+        )));
+      };
+      image.src = asset.url;
+    });
+
+    return () => {
+      cancelled = true;
+      nextAssets.forEach((asset) => URL.revokeObjectURL(asset.url));
+    };
+  }, [images]);
 
   useEffect(() => {
     if (!audio) {
@@ -67,9 +125,14 @@ export default function App() {
     };
   }, [audio]);
 
+  const selectedMediaAssets = useMemo(() => {
+    const selected = mediaAssets.filter((asset) => selectedAssetIds.includes(asset.id));
+    return selected.length ? selected : mediaAssets;
+  }, [mediaAssets, selectedAssetIds]);
+
   const timeline = useMemo(() => {
-    return buildDraftTimeline({ images, audio, format, preset, audioAnalysis });
-  }, [images, audio, format, preset, audioAnalysis]);
+    return buildDraftTimeline({ images: selectedMediaAssets, audio, format, preset, audioAnalysis });
+  }, [selectedMediaAssets, audio, format, preset, audioAnalysis]);
 
   const selectedFormat = EXPORT_FORMATS.find((item) => item.id === format) ?? EXPORT_FORMATS[1];
   const selectedPreset = EFFECT_PRESETS.find((item) => item.id === preset) ?? EFFECT_PRESETS[0];
@@ -87,6 +150,7 @@ export default function App() {
       const time = ((now - startedAt) / 1000) % totalDuration;
       const clip = findClipAtTime(timeline.clips, time);
       const clipIndex = Math.max(1, timeline.clips.indexOf(clip) + 1);
+      const mediaAsset = selectedMediaAssets[(clipIndex - 1) % Math.max(selectedMediaAssets.length, 1)];
 
       drawRenderPreview(canvas, {
         time,
@@ -95,7 +159,8 @@ export default function App() {
         totalClips: timeline.clips.length,
         format: selectedFormat,
         preset: selectedPreset,
-        imageCount: images.length,
+        imageCount: selectedMediaAssets.length,
+        mediaAsset,
         projectName: project.name
       });
 
@@ -109,13 +174,28 @@ export default function App() {
 
     frameId = requestAnimationFrame(frame);
     return () => cancelAnimationFrame(frameId);
-  }, [images.length, project.name, selectedFormat, selectedPreset, timeline]);
+  }, [project.name, selectedFormat, selectedMediaAssets, selectedPreset, timeline]);
 
   function patchProject(patch) {
     setProject((current) => ({
       ...current,
       ...patch
     }));
+  }
+
+  function toggleMediaAsset(assetId) {
+    setSelectedAssetIds((current) => {
+      if (current.includes(assetId)) {
+        const next = current.filter((id) => id !== assetId);
+        return next.length ? next : current;
+      }
+
+      return [...current, assetId];
+    });
+  }
+
+  function selectAllMedia() {
+    setSelectedAssetIds(mediaAssets.map((asset) => asset.id));
   }
 
   function addSnapshot() {
@@ -130,7 +210,8 @@ export default function App() {
           preset,
           notes: current.notes,
           summary: timeline.summary,
-          estimatedDuration: timeline.estimatedDuration
+          estimatedDuration: timeline.estimatedDuration,
+          selectedMediaCount: selectedMediaAssets.length
         },
         ...current.snapshots
       ].slice(0, 10)
@@ -144,7 +225,16 @@ export default function App() {
       project,
       timeline,
       media: {
-        imageCount: images.length,
+        imageCount: mediaAssets.length,
+        selectedImageCount: selectedMediaAssets.length,
+        selectedImages: selectedMediaAssets.map((asset) => ({
+          id: asset.id,
+          name: asset.name,
+          width: asset.width,
+          height: asset.height,
+          orientation: asset.orientation,
+          status: asset.status
+        })),
         audioName: audio?.name ?? null
       }
     };
@@ -163,8 +253,8 @@ export default function App() {
           </div>
           <h1>Zdjęcia + muzyka = klip zsynchronizowany z beatem.</h1>
           <p>
-            Wrzuć zdjęcia i MP3. Prototyp buduje roboczy timeline, analizuje energię audio,
-            rysuje animowany canvas preview i zapisuje stan projektu lokalnie pod dalszy render.
+            Wrzuć zdjęcia i MP3. Prototyp buduje timeline, analizuje audio,
+            tworzy miniatury i rysuje realne kadry na canvas pod dalszy render.
           </p>
 
           <div className="hero-actions">
@@ -253,16 +343,17 @@ export default function App() {
         <div className="section-heading project-heading">
           <div>
             <p className="panel-kicker">Render preview</p>
-            <h2>Canvas pod timeline i beat</h2>
+            <h2>Canvas pod realne kadry, timeline i beat</h2>
             <p>
-              To jest pierwszy most do prawdziwego renderu MP4: canvas używa formatu eksportu,
-              presetu, energii klipu, sekcji timeline i czasu odtwarzania.
+              Canvas używa wybranych zdjęć, formatu eksportu, presetu, energii klipu,
+              sekcji timeline i czasu odtwarzania.
             </p>
           </div>
           <div className="preview-hud">
             <span>{selectedFormat.width}×{selectedFormat.height}</span>
             <span>{previewPlayback.time}s</span>
             <span>Klip {previewPlayback.clipIndex}/{timeline.clips.length}</span>
+            <span>{selectedMediaAssets.length} kadrów</span>
           </div>
         </div>
 
@@ -296,6 +387,47 @@ export default function App() {
           files={audio ? [audio] : []}
           onFiles={(next) => setAudio(next[0] ?? null)}
         />
+      </section>
+
+      <section className="media-panel">
+        <div className="section-heading project-heading">
+          <div>
+            <p className="panel-kicker">Media pipeline</p>
+            <h2>Miniatury i ręczna selekcja kadrów</h2>
+            <p>Wybierz zdjęcia, które mają wejść do timeline. Canvas automatycznie użyje tylko wybranych kadrów.</p>
+          </div>
+          <div className="preview-hud">
+            <span>{mediaAssets.length} plików</span>
+            <span>{selectedMediaAssets.length} aktywnych</span>
+            {mediaAssets.length > 0 && (
+              <button className="ghost-button compact" onClick={selectAllMedia}>Zaznacz wszystko</button>
+            )}
+          </div>
+        </div>
+
+        {mediaAssets.length === 0 ? (
+          <span className="empty-state">Wrzuć zdjęcia, a tutaj pojawią się miniatury, orientacja i status ładowania.</span>
+        ) : (
+          <div className="media-grid">
+            {mediaAssets.map((asset) => {
+              const selected = selectedAssetIds.includes(asset.id);
+              return (
+                <button
+                  key={asset.id}
+                  className={selected ? 'media-card selected' : 'media-card'}
+                  onClick={() => toggleMediaAsset(asset.id)}
+                >
+                  <span className="media-thumb">
+                    <img src={asset.url} alt={asset.name} />
+                    {selected && <i><CheckCircle2 size={18} /></i>}
+                  </span>
+                  <strong>{asset.name}</strong>
+                  <em>{asset.status} · {asset.orientation} · {asset.width || '—'}×{asset.height || '—'}</em>
+                </button>
+              );
+            })}
+          </div>
+        )}
       </section>
 
       <section className="audio-panel">
@@ -348,8 +480,8 @@ export default function App() {
         <div>
           <h2>Następne moduły</h2>
           <p>
-            Ten frontend jest bazą pod Base44/Vite. Kolejne kroki: render preview na realnych miniaturach,
-            import projektu JSON, kolejka renderowania i eksport MP4.
+            Ten frontend jest bazą pod Base44/Vite. Kolejne kroki: scoring zdjęć,
+            ręczna kolejność timeline, import projektu JSON i eksport MP4.
           </p>
         </div>
 
@@ -370,6 +502,16 @@ function loadProject() {
   } catch {
     return DEFAULT_PROJECT;
   }
+}
+
+function buildMediaId(file, index) {
+  return `${file.name}-${file.size}-${file.lastModified}-${index}`;
+}
+
+function getOrientation(width, height) {
+  if (!width || !height) return 'unknown';
+  if (Math.abs(width - height) < Math.max(width, height) * 0.05) return 'square';
+  return width > height ? 'landscape' : 'portrait';
 }
 
 async function analyzeAudioFile(file) {
@@ -436,7 +578,7 @@ function findClipAtTime(clips, time) {
   return [...clips].reverse().find((clip) => time >= clip.start) ?? clips[0];
 }
 
-function drawRenderPreview(canvas, { time, clip, clipIndex, totalClips, format, preset, imageCount, projectName }) {
+function drawRenderPreview(canvas, { time, clip, clipIndex, totalClips, format, preset, imageCount, mediaAsset, projectName }) {
   const ctx = canvas.getContext('2d');
   const width = canvas.width;
   const height = canvas.height;
@@ -461,7 +603,7 @@ function drawRenderPreview(canvas, { time, clip, clipIndex, totalClips, format, 
   ctx.translate(width / 2, height / 2);
   ctx.rotate(getPresetRotation(preset.id, progress, energy));
   ctx.scale(1 + pulse * 0.035 + energy * 0.018, 1 + pulse * 0.035 + energy * 0.018);
-  drawFrameStack(ctx, width, height, colors, clipIndex, imageCount, progress);
+  drawFrameStack(ctx, width, height, colors, clipIndex, imageCount, progress, mediaAsset);
   ctx.restore();
 
   drawScanlines(ctx, width, height, preset.id, progress);
@@ -473,7 +615,8 @@ function drawRenderPreview(canvas, { time, clip, clipIndex, totalClips, format, 
     preset,
     format,
     progress,
-    colors
+    colors,
+    mediaAsset
   });
 }
 
@@ -512,7 +655,7 @@ function drawGlow(ctx, x, y, radius, color, alpha) {
   ctx.fill();
 }
 
-function drawFrameStack(ctx, width, height, colors, clipIndex, imageCount, progress) {
+function drawFrameStack(ctx, width, height, colors, clipIndex, imageCount, progress, mediaAsset) {
   const frameCount = 5;
   const baseWidth = width * 0.58;
   const baseHeight = height * 0.58;
@@ -530,14 +673,40 @@ function drawFrameStack(ctx, width, height, colors, clipIndex, imageCount, progr
     ctx.stroke();
   }
 
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.88)';
-  ctx.font = `700 ${Math.max(26, width * 0.028)}px Inter, sans-serif`;
-  ctx.textAlign = 'center';
-  ctx.fillText(imageCount ? `PHOTO ${clipIndex}` : 'DROP PHOTOS', 0, 0);
+  const heroWidth = baseWidth * 0.92;
+  const heroHeight = baseHeight * 0.92;
+  const heroX = -heroWidth / 2;
+  const heroY = -heroHeight / 2;
 
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.48)';
-  ctx.font = `500 ${Math.max(18, width * 0.016)}px Inter, sans-serif`;
-  ctx.fillText(imageCount ? `${imageCount} plików w projekcie` : 'upload zdjęć aktywuje prawdziwe kadry', 0, height * 0.045);
+  if (mediaAsset?.status === 'ready' && mediaAsset.image) {
+    drawImageCover(ctx, mediaAsset.image, heroX, heroY, heroWidth, heroHeight, width * 0.022);
+    ctx.fillStyle = hexToRgba(colors.deep, 0.18);
+    roundRect(ctx, heroX, heroY, heroWidth, heroHeight, width * 0.022);
+    ctx.fill();
+  } else {
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.88)';
+    ctx.font = `700 ${Math.max(26, width * 0.028)}px Inter, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.fillText(imageCount ? `PHOTO ${clipIndex}` : 'DROP PHOTOS', 0, 0);
+
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.48)';
+    ctx.font = `500 ${Math.max(18, width * 0.016)}px Inter, sans-serif`;
+    ctx.fillText(imageCount ? `${imageCount} plików w projekcie` : 'upload zdjęć aktywuje prawdziwe kadry', 0, height * 0.045);
+  }
+}
+
+function drawImageCover(ctx, image, x, y, width, height, radius) {
+  const ratio = Math.max(width / image.naturalWidth, height / image.naturalHeight);
+  const drawWidth = image.naturalWidth * ratio;
+  const drawHeight = image.naturalHeight * ratio;
+  const drawX = x + (width - drawWidth) / 2;
+  const drawY = y + (height - drawHeight) / 2;
+
+  ctx.save();
+  roundRect(ctx, x, y, width, height, radius);
+  ctx.clip();
+  ctx.drawImage(image, drawX, drawY, drawWidth, drawHeight);
+  ctx.restore();
 }
 
 function drawScanlines(ctx, width, height, presetId, progress) {
@@ -559,7 +728,7 @@ function drawScanlines(ctx, width, height, presetId, progress) {
   ctx.restore();
 }
 
-function drawPreviewText(ctx, width, height, { projectName, clip, clipIndex, totalClips, preset, format, colors }) {
+function drawPreviewText(ctx, width, height, { projectName, clip, clipIndex, totalClips, preset, format, colors, mediaAsset }) {
   const margin = width * 0.06;
   const bottom = height - margin;
 
@@ -575,6 +744,12 @@ function drawPreviewText(ctx, width, height, { projectName, clip, clipIndex, tot
   ctx.fillStyle = 'rgba(255, 255, 255, 0.78)';
   ctx.font = `700 ${Math.max(18, width * 0.017)}px Inter, sans-serif`;
   ctx.fillText(`Clip ${clipIndex}/${totalClips} · ${clip?.section ?? 'intro'} · ${clip?.effect ?? 'fade'}`, margin, bottom);
+
+  if (mediaAsset?.name) {
+    ctx.font = `500 ${Math.max(15, width * 0.013)}px Inter, sans-serif`;
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.58)';
+    ctx.fillText(mediaAsset.name.slice(0, 42), margin, bottom - margin * 0.42);
+  }
 
   ctx.textAlign = 'right';
   ctx.fillText('FotoBeat.me', width - margin, bottom);
