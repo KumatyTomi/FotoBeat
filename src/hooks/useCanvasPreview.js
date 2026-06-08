@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { drawRenderPreview, findClipAtTime } from '../utils/canvasRenderer.js';
-import { resolveMediaForClip } from '../utils/mediaScoring.js';
+import { renderFrameAtTime } from '../utils/canvasRenderer.js';
 
 export function useCanvasPreview({ timeline, selectedFormat, selectedPreset, selectedMediaAssets, pinnedAssetsByClip, projectName }) {
   const previewRef = useRef(null);
@@ -17,24 +16,18 @@ export function useCanvasPreview({ timeline, selectedFormat, selectedPreset, sel
     function frame(now) {
       const totalDuration = Math.max(timeline.estimatedDuration || 1, 1);
       const time = ((now - startedAt) / 1000) % totalDuration;
-      const clip = findClipAtTime(timeline.clips, time);
-      const clipIndex = Math.max(1, timeline.clips.indexOf(clip) + 1);
-      const mediaAsset = resolveMediaForClip(clipIndex, selectedMediaAssets, pinnedAssetsByClip);
-
-      drawRenderPreview(canvas, {
+      const frameMeta = renderFrameAtTime(canvas, {
         time,
-        clip,
-        clipIndex,
-        totalClips: timeline.clips.length,
-        format: selectedFormat,
-        preset: selectedPreset,
-        imageCount: selectedMediaAssets.length,
-        mediaAsset,
+        timeline,
+        selectedFormat,
+        selectedPreset,
+        selectedMediaAssets,
+        pinnedAssetsByClip,
         projectName
       });
 
       if (now - lastHudUpdate > 220) {
-        setPreviewPlayback({ time: Number(time.toFixed(1)), clipIndex });
+        setPreviewPlayback({ time: Number(frameMeta.time.toFixed(1)), clipIndex: frameMeta.clipIndex });
         lastHudUpdate = now;
       }
 
