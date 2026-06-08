@@ -9,6 +9,8 @@
 - [x] roboczy timeline
 - [x] presety efektów
 - [x] dokumentacja startowa
+- [x] GitHub Actions CI
+- [x] ESLint flat config
 
 ## Etap 2: Projekt użytkownika
 
@@ -53,6 +55,8 @@
 - [x] ręczna selekcja aktywnych kadrów do timeline
 - [x] ręczna kolejność kadrów na timeline
 - [x] przypinanie zdjęcia do konkretnego klipu
+- [x] MediaRecorder/WebM proof of concept bez audio
+- [ ] WebM z audio track
 - [ ] ffmpeg.wasm proof of concept
 - [ ] eksport MP4 9:16
 - [ ] eksport MP4 16:9
@@ -69,4 +73,4 @@
 
 ## Najbliższy następny duży krok
 
-ffmpeg.wasm proof of concept: przygotować pierwszy eksperymentalny eksport MP4 z canvas/timeline albo dodać prosty render klatek do sekwencji. Alternatywa przed eksportem: realniejsza detekcja transientów i scoring ostrości zdjęć.
+Dodać audio track do eksportu WebM albo zrobić pierwszą wersję render queue/status panel. Dopiero potem sensownie wchodzić w ffmpeg.wasm i MP4.
