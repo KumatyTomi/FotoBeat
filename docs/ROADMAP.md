@@ -40,7 +40,11 @@
 
 ## Etap 5: Render
 
-- [ ] render preview w canvas
+- [x] render preview w canvas
+- [x] animacja `requestAnimationFrame`
+- [x] HUD renderu: format, czas, aktualny klip
+- [x] style canvas dla 16:9, 9:16 i 1:1
+- [ ] preview na realnych miniaturach zdjęć
 - [ ] ffmpeg.wasm proof of concept
 - [ ] eksport MP4 9:16
 - [ ] eksport MP4 16:9
@@ -57,4 +61,4 @@
 
 ## Najbliższy następny duży krok
 
-Render preview canvas: wykorzystać timeline, format eksportu, preset i beat mapę do wygenerowania animowanego podglądu bez eksportu MP4. To będzie pomost między edytorem a prawdziwym render queue.
+Media pipeline: wygenerować miniatury z wrzuconych zdjęć, trzymać je jako obiekty URL, rysować aktualny kadr na canvas i dodać ręczny wybór zdjęć do timeline. Dopiero po tym warto robić eksport MP4.
