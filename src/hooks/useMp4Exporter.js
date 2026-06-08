@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { buildFfmpegLoadOptions } from '../utils/ffmpegCoreConfig.js';
 import { buildMp4ExportPlan } from '../utils/mp4ExportPlan.js';
 import { clearMp4Exports, deleteMp4Export, loadMp4Exports, saveMp4Export } from '../utils/mp4Storage.js';
 import { safeFilename } from '../utils/projectExport.js';
@@ -46,8 +47,8 @@ export function useMp4Exporter() {
     };
   }, []);
 
-  async function exportSequenceToMp4(sequence) {
-    const plan = buildMp4ExportPlan({ sequence });
+  async function exportSequenceToMp4(sequence, audioFile = null) {
+    const plan = buildMp4ExportPlan({ sequence, audioFile });
     const exportId = `mp4-${Date.now()}`;
 
     if (plan.status === 'blocked') {
@@ -75,22 +76,27 @@ export function useMp4Exporter() {
       setMp4State({ status: 'preparing', message: `Zapisuję ${sequence.frames.length} klatek do virtual FS...`, progress: 25, activeExportId: exportId });
       await prepareVirtualFrames({ ffmpeg, fetchFile, sequence });
 
+      if (audioFile) {
+        setMp4State({ status: 'preparing', message: 'Zapisuję audio do virtual FS...', progress: 28, activeExportId: exportId });
+        await ffmpeg.writeFile('audio.input', await fetchFile(audioFile));
+      }
+
       ffmpeg.on('progress', ({ progress }) => {
         setMp4State({
           status: 'encoding',
-          message: `Koduję MP4... ${Math.round(progress * 100)}%`,
+          message: `Koduję MP4${audioFile ? ' + audio' : ''}... ${Math.round(progress * 100)}%`,
           progress: 30 + Math.round(progress * 60),
           activeExportId: exportId
         });
       });
 
-      setMp4State({ status: 'encoding', message: 'Uruchamiam ffmpeg MP4 POC bez audio...', progress: 30, activeExportId: exportId });
+      setMp4State({ status: 'encoding', message: `Uruchamiam ffmpeg MP4 ${audioFile ? 'z audio' : 'bez audio'}...`, progress: 30, activeExportId: exportId });
       await ffmpeg.exec(plan.command);
 
       const outputData = await ffmpeg.readFile('fotobeat-output.mp4');
       const outputBlob = new Blob([outputData], { type: 'video/mp4' });
       const downloadUrl = URL.createObjectURL(outputBlob);
-      const fileName = `${safeFilename(sequence.projectName)}-poc-${sequence.id}.mp4`;
+      const fileName = `${safeFilename(sequence.projectName)}-${audioFile ? 'audio' : 'poc'}-${sequence.id}.mp4`;
       const exportItem = {
         id: exportId,
         createdAt: new Date().toISOString(),
@@ -103,19 +109,20 @@ export function useMp4Exporter() {
         width: sequence.width,
         height: sequence.height,
         sequenceId: sequence.id,
-        hasAudio: false,
+        hasAudio: Boolean(audioFile),
+        audioName: audioFile?.name ?? '',
         blob: outputBlob,
         plan
       };
 
-      await cleanupVirtualFrames({ ffmpeg, sequence });
+      await cleanupVirtualFiles({ ffmpeg, sequence, hasAudio: Boolean(audioFile) });
       await saveMp4Export(exportItem);
       objectUrlsRef.current.add(downloadUrl);
 
       setMp4Exports((current) => [{ ...exportItem, downloadUrl }, ...current].slice(0, MAX_MP4_HISTORY));
       setMp4State({
         status: 'ready',
-        message: `MP4 POC gotowy: ${fileName}.`,
+        message: `MP4 gotowy: ${fileName}.`,
         progress: 100,
         activeExportId: exportId
       });
@@ -166,7 +173,7 @@ export function useMp4Exporter() {
 async function getLoadedFfmpeg(onLoadProgress) {
   if (getLoadedFfmpeg.cache) return getLoadedFfmpeg.cache;
 
-  const [{ FFmpeg }, { fetchFile }] = await Promise.all([
+  const [{ FFmpeg }, { fetchFile, toBlobURL }] = await Promise.all([
     import('@ffmpeg/ffmpeg'),
     import('@ffmpeg/util')
   ]);
@@ -176,7 +183,8 @@ async function getLoadedFfmpeg(onLoadProgress) {
     onLoadProgress?.(progress);
   });
 
-  await ffmpeg.load();
+  const loadOptions = await buildFfmpegLoadOptions(toBlobURL);
+  await ffmpeg.load(loadOptions);
   getLoadedFfmpeg.cache = { ffmpeg, fetchFile };
   return getLoadedFfmpeg.cache;
 }
@@ -195,7 +203,7 @@ async function prepareVirtualFrames({ ffmpeg, fetchFile, sequence }) {
   }
 }
 
-async function cleanupVirtualFrames({ ffmpeg, sequence }) {
+async function cleanupVirtualFiles({ ffmpeg, sequence, hasAudio }) {
   await Promise.all(sequence.frames.map(async (_, index) => {
     const virtualPath = `frames/frame_${String(index + 1).padStart(4, '0')}.png`;
     try {
@@ -204,6 +212,14 @@ async function cleanupVirtualFrames({ ffmpeg, sequence }) {
       // File cleanup is best-effort.
     }
   }));
+
+  if (hasAudio) {
+    try {
+      await ffmpeg.deleteFile('audio.input');
+    } catch {
+      // Audio cleanup is best-effort.
+    }
+  }
 
   try {
     await ffmpeg.deleteFile('fotobeat-output.mp4');
