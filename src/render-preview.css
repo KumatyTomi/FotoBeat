@@ -104,6 +104,7 @@
 }
 
 .render-status.preparing,
+.render-status.rendering,
 .render-status.recording {
   color: #8be9ff;
   border: 1px solid rgba(139, 233, 255, 0.22);
@@ -114,9 +115,30 @@
   border: 1px solid rgba(128, 255, 170, 0.22);
 }
 
+.render-status.cancelled {
+  color: #ffe3a3;
+  border: 1px solid rgba(255, 227, 163, 0.24);
+}
+
 .render-status.error {
   color: #ffb9c2;
   border: 1px solid rgba(255, 90, 120, 0.24);
+}
+
+.sequence-progress {
+  grid-column: 1 / -1;
+  height: 10px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.sequence-progress span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, rgba(139, 233, 255, 0.92), rgba(124, 60, 255, 0.75));
+  transition: width 160ms ease;
 }
 
 .render-history {
