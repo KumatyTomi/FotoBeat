@@ -1,30 +1,33 @@
 # Work log
 
-## 2026-06-08 — Masterplan 100 stages + deterministic frame renderer
+## 2026-06-08 — Frame sequence renderer to IndexedDB
 
 Commits wykonane w tym etapie:
 
-- `23fd313` — wydzielony `renderFrameAtTime` i `normalizeFrameTime` w `canvasRenderer.js`.
-- `3ee0cc6` — `useCanvasPreview` używa deterministic frame renderer.
-- `b27b396` — dodany `useFrameExporter` do eksportu pojedynczej klatki PNG.
-- `9c7db06` — UI dostało eksport aktualnej klatki PNG i link pobierania.
-- `ae0844f` — style dla kontrolek i statusu eksportu PNG.
-- `bfc851f` — dodany `docs/MASTERPLAN_100_STAGES.md`.
-- `1b8ac29` — roadmapa oznacza deterministic renderer i PNG frame export jako wykonane.
+- `44713d6` — dodany `frameSequenceStorage.js` z IndexedDB dla sekwencji PNG.
+- `751c145` — dodany `useFrameSequenceRenderer` z renderem klatek, progress, cancel i zapisem do IndexedDB.
+- `1a6a4d3` — UI dostało panel Frame sequence, listę sekwencji i usuwanie.
+- `9842fea` — style dla progress baru, statusów i listy sekwencji.
+- `69d7d36` — roadmapa oznacza frame sequence renderer jako wykonany.
+- `bf8c967` — masterplan 100 etapów zaktualizowany po frame sequence renderer.
 
 ## Zakres funkcjonalny
 
-- Render pojedynczej klatki został wydzielony z animowanego preview.
-- Ten sam renderer obsługuje teraz preview i eksport testowej klatki.
-- `useCanvasPreview` nie zna już szczegółów wyboru klipu ani mediów dla klatki.
-- `useFrameExporter` renderuje aktualny czas preview i generuje PNG przez `canvas.toDataURL`.
-- UI ma przycisk `Eksportuj klatkę PNG`, link `Pobierz PNG` i status eksportu.
-- Dodano masterplan 100 etapów rozwoju FotoBeat.
+- Aplikacja potrafi wygenerować sekwencję klatek PNG z `renderFrameAtTime`.
+- Sekwencja jest zapisywana jako tablica PNG Blobów w IndexedDB.
+- Render ma limit bezpieczeństwa: maksymalnie 5 sekund i 12 fps.
+- UI pokazuje progress renderu.
+- Render można przerwać przez cancel.
+- Historia sekwencji jest wczytywana po refreshu.
+- Można usunąć pojedynczą sekwencję lub wyczyścić całą historię sekwencji.
+- Ten etap przygotowuje bezpośrednie wejście pod ffmpeg.wasm.
 
-## Dlaczego to ważne
+## Ograniczenia
 
-To pierwszy praktyczny krok pod MP4. ffmpeg.wasm potrzebuje sekwencji deterministycznych klatek. Teraz aplikacja potrafi wyrenderować konkretną klatkę po czasie `t`, niezależnie od pętli `requestAnimationFrame`.
+- Brak jeszcze pobierania ZIP z klatkami.
+- Brak jeszcze ffmpeg.wasm.
+- Limit 5s @ 12fps jest celowy, żeby nie przeciążyć pamięci przeglądarki.
 
 ## Następny rekomendowany etap
 
-Render frame sequence to IndexedDB: generować serię klatek PNG z `renderFrameAtTime`, zapisać je do IndexedDB, pokazać progress/cancel i przygotować wejście dla ffmpeg.wasm / MP4.
+Frame sequence ZIP export: odczytać zapisaną sekwencję PNG z IndexedDB, przygotować paczkę klatek albo manifest nazw `frame_0001.png`, a następnie wejść w ffmpeg.wasm proof of concept.
