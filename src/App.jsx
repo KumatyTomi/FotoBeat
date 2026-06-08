@@ -20,6 +20,7 @@ export default function App() {
   const [audio, setAudio] = useState(null);
   const [mediaAssets, setMediaAssets] = useState([]);
   const [selectedAssetIds, setSelectedAssetIds] = useState([]);
+  const [pinnedAssetsByClip, setPinnedAssetsByClip] = useState({});
   const [project, setProject] = useState(() => loadProject());
   const [audioAnalysis, setAudioAnalysis] = useState(null);
   const [lastSavedAt, setLastSavedAt] = useState(project.updatedAt ?? null);
@@ -42,6 +43,7 @@ export default function App() {
     if (images.length === 0) {
       setMediaAssets([]);
       setSelectedAssetIds([]);
+      setPinnedAssetsByClip({});
       return undefined;
     }
 
@@ -62,6 +64,7 @@ export default function App() {
 
     setMediaAssets(nextAssets);
     setSelectedAssetIds(nextAssets.map((asset) => asset.id));
+    setPinnedAssetsByClip({});
 
     nextAssets.forEach((asset) => {
       const image = new Image();
@@ -125,17 +128,38 @@ export default function App() {
     };
   }, [audio]);
 
+  const selectedFormat = EXPORT_FORMATS.find((item) => item.id === format) ?? EXPORT_FORMATS[1];
+  const selectedPreset = EFFECT_PRESETS.find((item) => item.id === preset) ?? EFFECT_PRESETS[0];
+
+  const mediaById = useMemo(() => new Map(mediaAssets.map((asset) => [asset.id, asset])), [mediaAssets]);
+
+  const scoredMediaAssets = useMemo(() => {
+    return mediaAssets.map((asset) => ({
+      ...asset,
+      score: scoreMediaAsset(asset, selectedFormat)
+    }));
+  }, [mediaAssets, selectedFormat]);
+
   const selectedMediaAssets = useMemo(() => {
-    const selected = mediaAssets.filter((asset) => selectedAssetIds.includes(asset.id));
+    const selected = selectedAssetIds
+      .map((assetId) => mediaById.get(assetId))
+      .filter(Boolean);
     return selected.length ? selected : mediaAssets;
-  }, [mediaAssets, selectedAssetIds]);
+  }, [mediaAssets, mediaById, selectedAssetIds]);
+
+  useEffect(() => {
+    const activeIds = new Set(selectedMediaAssets.map((asset) => asset.id));
+    setPinnedAssetsByClip((current) => {
+      const next = Object.fromEntries(
+        Object.entries(current).filter(([, assetId]) => activeIds.has(assetId))
+      );
+      return Object.keys(next).length === Object.keys(current).length ? current : next;
+    });
+  }, [selectedMediaAssets]);
 
   const timeline = useMemo(() => {
     return buildDraftTimeline({ images: selectedMediaAssets, audio, format, preset, audioAnalysis });
   }, [selectedMediaAssets, audio, format, preset, audioAnalysis]);
-
-  const selectedFormat = EXPORT_FORMATS.find((item) => item.id === format) ?? EXPORT_FORMATS[1];
-  const selectedPreset = EFFECT_PRESETS.find((item) => item.id === preset) ?? EFFECT_PRESETS[0];
 
   useEffect(() => {
     const canvas = previewRef.current;
@@ -150,7 +174,7 @@ export default function App() {
       const time = ((now - startedAt) / 1000) % totalDuration;
       const clip = findClipAtTime(timeline.clips, time);
       const clipIndex = Math.max(1, timeline.clips.indexOf(clip) + 1);
-      const mediaAsset = selectedMediaAssets[(clipIndex - 1) % Math.max(selectedMediaAssets.length, 1)];
+      const mediaAsset = resolveMediaForClip(clipIndex, selectedMediaAssets, pinnedAssetsByClip);
 
       drawRenderPreview(canvas, {
         time,
@@ -174,7 +198,7 @@ export default function App() {
 
     frameId = requestAnimationFrame(frame);
     return () => cancelAnimationFrame(frameId);
-  }, [project.name, selectedFormat, selectedMediaAssets, selectedPreset, timeline]);
+  }, [pinnedAssetsByClip, project.name, selectedFormat, selectedMediaAssets, selectedPreset, timeline]);
 
   function patchProject(patch) {
     setProject((current) => ({
@@ -198,6 +222,34 @@ export default function App() {
     setSelectedAssetIds(mediaAssets.map((asset) => asset.id));
   }
 
+  function moveMediaAsset(assetId, direction) {
+    setSelectedAssetIds((current) => {
+      const index = current.indexOf(assetId);
+      const nextIndex = index + direction;
+      if (index < 0 || nextIndex < 0 || nextIndex >= current.length) return current;
+
+      const next = [...current];
+      const [asset] = next.splice(index, 1);
+      next.splice(nextIndex, 0, asset);
+      return next;
+    });
+  }
+
+  function pinAssetToCurrentClip(assetId) {
+    setPinnedAssetsByClip((current) => ({
+      ...current,
+      [previewPlayback.clipIndex]: assetId
+    }));
+  }
+
+  function clearPinnedClip(clipIndex) {
+    setPinnedAssetsByClip((current) => {
+      const next = { ...current };
+      delete next[clipIndex];
+      return next;
+    });
+  }
+
   function addSnapshot() {
     setProject((current) => ({
       ...current,
@@ -211,7 +263,8 @@ export default function App() {
           notes: current.notes,
           summary: timeline.summary,
           estimatedDuration: timeline.estimatedDuration,
-          selectedMediaCount: selectedMediaAssets.length
+          selectedMediaCount: selectedMediaAssets.length,
+          pinnedClipCount: Object.keys(pinnedAssetsByClip).length
         },
         ...current.snapshots
       ].slice(0, 10)
@@ -227,13 +280,16 @@ export default function App() {
       media: {
         imageCount: mediaAssets.length,
         selectedImageCount: selectedMediaAssets.length,
+        selectedOrder: selectedAssetIds,
+        pinnedAssetsByClip,
         selectedImages: selectedMediaAssets.map((asset) => ({
           id: asset.id,
           name: asset.name,
           width: asset.width,
           height: asset.height,
           orientation: asset.orientation,
-          status: asset.status
+          status: asset.status,
+          score: scoreMediaAsset(asset, selectedFormat)
         })),
         audioName: audio?.name ?? null
       }
@@ -254,7 +310,7 @@ export default function App() {
           <h1>Zdjęcia + muzyka = klip zsynchronizowany z beatem.</h1>
           <p>
             Wrzuć zdjęcia i MP3. Prototyp buduje timeline, analizuje audio,
-            tworzy miniatury i rysuje realne kadry na canvas pod dalszy render.
+            tworzy miniatury, pozwala ustawić kolejność kadrów i przypinać zdjęcia do klipów.
           </p>
 
           <div className="hero-actions">
@@ -346,7 +402,7 @@ export default function App() {
             <h2>Canvas pod realne kadry, timeline i beat</h2>
             <p>
               Canvas używa wybranych zdjęć, formatu eksportu, presetu, energii klipu,
-              sekcji timeline i czasu odtwarzania.
+              sekcji timeline i czasu odtwarzania. Przypięte kadry nadpisują automatyczną kolejność.
             </p>
           </div>
           <div className="preview-hud">
@@ -354,6 +410,7 @@ export default function App() {
             <span>{previewPlayback.time}s</span>
             <span>Klip {previewPlayback.clipIndex}/{timeline.clips.length}</span>
             <span>{selectedMediaAssets.length} kadrów</span>
+            <span>{Object.keys(pinnedAssetsByClip).length} przypięć</span>
           </div>
         </div>
 
@@ -392,38 +449,57 @@ export default function App() {
       <section className="media-panel">
         <div className="section-heading project-heading">
           <div>
-            <p className="panel-kicker">Media pipeline</p>
-            <h2>Miniatury i ręczna selekcja kadrów</h2>
-            <p>Wybierz zdjęcia, które mają wejść do timeline. Canvas automatycznie użyje tylko wybranych kadrów.</p>
+            <p className="panel-kicker">Timeline control</p>
+            <h2>Kolejność, scoring i przypięcia kadrów</h2>
+            <p>
+              Zaznacz aktywne zdjęcia, ustaw kolejność przyciskami góra/dół i przypnij wybrane zdjęcie
+              do aktualnego klipu widocznego w render preview.
+            </p>
           </div>
           <div className="preview-hud">
             <span>{mediaAssets.length} plików</span>
             <span>{selectedMediaAssets.length} aktywnych</span>
+            <span>{Object.keys(pinnedAssetsByClip).length} przypięć</span>
             {mediaAssets.length > 0 && (
               <button className="ghost-button compact" onClick={selectAllMedia}>Zaznacz wszystko</button>
+            )}
+            {pinnedAssetsByClip[previewPlayback.clipIndex] && (
+              <button className="ghost-button compact" onClick={() => clearPinnedClip(previewPlayback.clipIndex)}>
+                Odepnij klip {previewPlayback.clipIndex}
+              </button>
             )}
           </div>
         </div>
 
         {mediaAssets.length === 0 ? (
-          <span className="empty-state">Wrzuć zdjęcia, a tutaj pojawią się miniatury, orientacja i status ładowania.</span>
+          <span className="empty-state">Wrzuć zdjęcia, a tutaj pojawią się miniatury, scoring, orientacja i kontrola timeline.</span>
         ) : (
           <div className="media-grid">
-            {mediaAssets.map((asset) => {
+            {scoredMediaAssets.map((asset) => {
               const selected = selectedAssetIds.includes(asset.id);
+              const activeIndex = selectedAssetIds.indexOf(asset.id);
+              const pinnedLabel = getPinnedLabel(asset.id, pinnedAssetsByClip);
               return (
-                <button
-                  key={asset.id}
-                  className={selected ? 'media-card selected' : 'media-card'}
-                  onClick={() => toggleMediaAsset(asset.id)}
-                >
-                  <span className="media-thumb">
-                    <img src={asset.url} alt={asset.name} />
-                    {selected && <i><CheckCircle2 size={18} /></i>}
-                  </span>
+                <article key={asset.id} className={selected ? 'media-card selected' : 'media-card'}>
+                  <button className="media-thumb-button" onClick={() => toggleMediaAsset(asset.id)}>
+                    <span className="media-thumb">
+                      <img src={asset.url} alt={asset.name} />
+                      {selected && <i><CheckCircle2 size={18} /></i>}
+                    </span>
+                  </button>
                   <strong>{asset.name}</strong>
                   <em>{asset.status} · {asset.orientation} · {asset.width || '—'}×{asset.height || '—'}</em>
-                </button>
+                  <div className="score-row">
+                    <span>Score {asset.score}</span>
+                    {selected && <span>#{activeIndex + 1}</span>}
+                    {pinnedLabel && <span>{pinnedLabel}</span>}
+                  </div>
+                  <div className="media-actions">
+                    <button onClick={() => moveMediaAsset(asset.id, -1)} disabled={!selected || activeIndex <= 0}>↑</button>
+                    <button onClick={() => moveMediaAsset(asset.id, 1)} disabled={!selected || activeIndex === selectedAssetIds.length - 1}>↓</button>
+                    <button onClick={() => pinAssetToCurrentClip(asset.id)} disabled={!selected}>Przypnij</button>
+                  </div>
+                </article>
               );
             })}
           </div>
@@ -480,8 +556,8 @@ export default function App() {
         <div>
           <h2>Następne moduły</h2>
           <p>
-            Ten frontend jest bazą pod Base44/Vite. Kolejne kroki: scoring zdjęć,
-            ręczna kolejność timeline, import projektu JSON i eksport MP4.
+            Ten frontend jest bazą pod Base44/Vite. Kolejne kroki: import projektu JSON,
+            scoring ostrości, waveform i pierwsze proof of concept eksportu MP4.
           </p>
         </div>
 
@@ -512,6 +588,40 @@ function getOrientation(width, height) {
   if (!width || !height) return 'unknown';
   if (Math.abs(width - height) < Math.max(width, height) * 0.05) return 'square';
   return width > height ? 'landscape' : 'portrait';
+}
+
+function scoreMediaAsset(asset, selectedFormat) {
+  let score = 0;
+
+  if (asset.status === 'ready') score += 25;
+  if (asset.width >= 1080 && asset.height >= 1080) score += 25;
+  if (asset.width >= selectedFormat.width * 0.55 || asset.height >= selectedFormat.height * 0.55) score += 15;
+  if (isOrientationFit(asset.orientation, selectedFormat.id)) score += 25;
+  if (asset.size > 120000) score += 10;
+
+  return Math.min(100, score);
+}
+
+function isOrientationFit(orientation, formatId) {
+  if (formatId === 'vertical') return orientation === 'portrait';
+  if (formatId === 'wide') return orientation === 'landscape';
+  if (formatId === 'square') return orientation === 'square' || orientation === 'portrait';
+  return false;
+}
+
+function resolveMediaForClip(clipIndex, selectedMediaAssets, pinnedAssetsByClip) {
+  const pinnedAssetId = pinnedAssetsByClip[clipIndex];
+  const pinnedAsset = selectedMediaAssets.find((asset) => asset.id === pinnedAssetId);
+  if (pinnedAsset) return pinnedAsset;
+  return selectedMediaAssets[(clipIndex - 1) % Math.max(selectedMediaAssets.length, 1)];
+}
+
+function getPinnedLabel(assetId, pinnedAssetsByClip) {
+  const clipNumbers = Object.entries(pinnedAssetsByClip)
+    .filter(([, pinnedAssetId]) => pinnedAssetId === assetId)
+    .map(([clipNumber]) => clipNumber);
+
+  return clipNumbers.length ? `Klip ${clipNumbers.join(', ')}` : '';
 }
 
 async function analyzeAudioFile(file) {
