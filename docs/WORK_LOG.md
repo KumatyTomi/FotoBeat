@@ -23,13 +23,6 @@ Commits wykonane w tym etapie:
 - Aplikacja szacuje energię i BPM.
 - Timeline dostaje beat mapę, sekcje i warianty efektów.
 
-## Świadome ograniczenia
-
-- Eksport JSON jest teraz do schowka, nie do pliku. To bezpieczny wariant bez helpera pobierania.
-- BPM jest heurystyką na bazie energii, jeszcze nie realną detekcją transientów.
-- Snapshoty nie przechowują binarnych plików zdjęć/audio, tylko stan montażu.
-- Import JSON jest zaplanowany jako następny mniejszy krok.
-
 ## 2026-06-07 — Render preview canvas stage
 
 Commits wykonane w tym etapie:
@@ -46,7 +39,6 @@ Commits wykonane w tym etapie:
 - `requestAnimationFrame` animuje podgląd bez eksportu MP4.
 - HUD pokazuje rozdzielczość, czas i numer aktualnego klipu.
 - Presety mają własne palety, rotacje, glow i scanlines.
-- Preview rysuje placeholdery kadrów, dopóki media pipeline nie przygotuje miniatur zdjęć.
 
 ## 2026-06-07 — Media pipeline stage
 
@@ -59,13 +51,10 @@ Commits wykonane w tym etapie:
 ## Zakres funkcjonalny
 
 - Upload zdjęć tworzy listę `mediaAssets`.
-- Każdy asset ma ID, nazwę, rozmiar, typ, URL, status, wymiary, orientację i obiekt `Image`.
 - Aplikacja czyści `objectURL` w cleanupie efektu React.
 - Galeria pokazuje miniatury zdjęć, status ładowania, orientację i rozdzielczość.
-- Użytkownik może ręcznie wybrać aktywne kadry do timeline.
 - Timeline i canvas używają tylko aktywnych kadrów.
 - Canvas rysuje prawdziwe zdjęcie przez `drawImage`, z kadrowaniem cover.
-- Eksport JSON zawiera podsumowanie aktywnych mediów bez binarnych danych.
 
 ## 2026-06-07 — Timeline control stage
 
@@ -79,10 +68,7 @@ Commits wykonane w tym etapie:
 
 - Aktywne kadry mają własną kolejność w `selectedAssetIds`.
 - Karty mediów mają przyciski góra/dół do ręcznego sortowania timeline.
-- Można przypiąć wybrane zdjęcie do aktualnego klipu render preview.
-- Można odpiąć zdjęcie od aktualnego klipu.
 - Canvas respektuje przypięcia przed automatyczną kolejnością.
-- Scoring zdjęcia uwzględnia status, rozdzielczość, zgodność orientacji z formatem i rozmiar pliku.
 - Eksport JSON zawiera kolejność kadrów, przypięcia oraz score aktywnych zdjęć.
 
 ## 2026-06-07 — Project import/export upgrade
@@ -100,8 +86,6 @@ Commits wykonane w tym etapie:
 - Import projektu działa przez input pliku JSON.
 - Import waliduje schemat `fotobeat.project.v1`.
 - Import odtwarza ustawienia projektu, kolejność kadrów i przypięcia.
-- Media po imporcie są mapowane do aktualnie wrzuconych zdjęć po ID albo nazwie pliku.
-- UI pokazuje status sukcesu lub błąd importu.
 
 ## 2026-06-07 — Waveform + beat upgrade
 
@@ -118,15 +102,33 @@ Commits wykonane w tym etapie:
 - UI pokazuje waveform jako słupki.
 - Beat grid jest nakładany na waveform jako znaczniki.
 - Projekt ma `clipDurationScale` zapisywany w autosave i eksporcie JSON.
-- Suwak pozwala skracać albo wydłużać długość klipów w zakresie ×0.5–×2.
 - Timeline przelicza start i duration klipów według korekty.
-- Snapshoty zapisują wartość korekty klipów.
+
+## 2026-06-08 — P0 refactor and quality gate
+
+Commits wykonane w tym etapie:
+
+- `db7499b` — dodany audyt techniczny w `docs/AUDIT.md`.
+- `e2bc320` — wydzielone utils importu/eksportu projektu.
+- `022f2bc` — wydzielone utils scoringu i mapowania mediów.
+- `707628c` — wydzielone utils analizy audio.
+- `61b1255` — wydzielony renderer canvas.
+- `af48ba9` — dodany hook `useProjectState`.
+- `d263873` — dodany hook `useMediaAssets`.
+- `8f07bc2` — dodany hook `useAudioAnalysis`.
+- `2d70c63` — dodany hook `useCanvasPreview`.
+- `64e6387` — wydzielony komponent `WaveformPreview`.
+- `64d7f1b` — `App.jsx` używa wydzielonych hooków i utils.
+- `35e3cdb` — dodana konfiguracja ESLint flat config.
+- `12f065a` — dodany GitHub Actions CI.
+
+## Zakres funkcjonalny
+
+- `App.jsx` przestał być monolitem z całą logiką domenową.
+- Logika projektu, mediów, audio i canvas jest wydzielona do osobnych modułów.
+- Repo ma konfigurację ESLint.
+- Repo ma workflow CI uruchamiający lint i build.
 
 ## Następny rekomendowany etap
 
-ffmpeg.wasm proof of concept:
-
-1. Eksperymentalny eksport MP4 albo WebM z canvas/timeline.
-2. Render klatek z aktualnego canvas preview.
-3. Rozważyć MediaRecorder jako lżejszy etap pośredni przed ffmpeg.wasm.
-4. Dodać panel render status.
+Po potwierdzeniu CI: MediaRecorder/WebM proof of concept jako pierwszy bezpieczny eksport video przed ffmpeg.wasm.
