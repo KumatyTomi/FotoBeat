@@ -5,16 +5,16 @@ Cel: doprowadzić FotoBeat od prototypu WebM do produktu z MP4, lepszym beat eng
 
 ## Faza 1 — Render core i klatki pod MP4
 
-1. Extract deterministic frame renderer. **Started**
-2. Eksport pojedynczej klatki PNG z aktualnego preview. **Started**
-3. Render frame by timestamp bez `requestAnimationFrame`.
-4. Render sekwencji 10 klatek do pamięci.
-5. Render sekwencji PNG do IndexedDB.
-6. Frame render progress UI.
-7. Frame render cancel button.
-8. Frame render memory guard.
-9. Frame render FPS selector: 24/30.
-10. Frame render duration limiter.
+1. Extract deterministic frame renderer. **Done**
+2. Eksport pojedynczej klatki PNG z aktualnego preview. **Done**
+3. Render frame by timestamp bez `requestAnimationFrame`. **Done**
+4. Render sekwencji 10 klatek do pamięci. **Done**
+5. Render sekwencji PNG do IndexedDB. **Done**
+6. Frame render progress UI. **Done**
+7. Frame render cancel button. **Done**
+8. Frame render memory guard. **Done — limit 5s @ 12fps**
+9. Frame render FPS selector: 24/30. **Planned — obecnie limit 12fps**
+10. Frame render duration limiter. **Done — max 5s**
 
 ## Faza 2 — ffmpeg.wasm i MP4 POC
 
@@ -135,23 +135,25 @@ Cel: doprowadzić FotoBeat od prototypu WebM do produktu z MP4, lepszym beat eng
 
 ## Aktualnie wykonany krok z setki
 
-W tym batchu rozpoczęto Fazę 1:
+Wykonano znaczną część Fazy 1:
 
 - `renderFrameAtTime` w `canvasRenderer.js`,
 - `useCanvasPreview` używa deterministic frame renderer,
 - `useFrameExporter` eksportuje PNG z aktualnej klatki,
-- UI ma przycisk eksportu PNG i link pobrania.
+- `frameSequenceStorage.js` zapisuje sekwencje PNG w IndexedDB,
+- `useFrameSequenceRenderer` generuje sekwencje klatek z progressem i cancel,
+- UI pokazuje frame sequence panel i zapisane sekwencje.
 
 ## Następny kodowy etap
 
 ```txt
-Render frame sequence to IndexedDB
+Frame sequence ZIP export
 ```
 
 Zakres:
 
-1. Dodać `frameSequenceStorage.js`.
-2. Renderować N klatek w pętli z `renderFrameAtTime`.
-3. Zapisywać PNG blobs do IndexedDB.
-4. Pokazać progress i cancel.
-5. Przygotować wejście do ffmpeg.wasm.
+1. Odczytać zapisaną sekwencję PNG z IndexedDB.
+2. Spakować klatki do ZIP lub przygotować manifest bez kompresji, jeśli ZIP dependency nie będzie dodawana.
+3. Dodać pobieranie paczki klatek.
+4. Przygotować strukturę nazw `frame_0001.png` pod ffmpeg.wasm.
+5. Potem wejść w `ffmpeg.wasm proof of concept`.
