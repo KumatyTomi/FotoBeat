@@ -1,5 +1,50 @@
+import { resolveMediaForClip } from './mediaScoring.js';
+
 export function findClipAtTime(clips, time) {
   return [...clips].reverse().find((clip) => time >= clip.start) ?? clips[0];
+}
+
+export function renderFrameAtTime(canvas, {
+  time,
+  timeline,
+  selectedFormat,
+  selectedPreset,
+  selectedMediaAssets,
+  pinnedAssetsByClip,
+  projectName
+}) {
+  const totalDuration = Math.max(timeline.estimatedDuration || 1, 1);
+  const normalizedTime = normalizeFrameTime(time, totalDuration);
+  const clip = findClipAtTime(timeline.clips, normalizedTime);
+  const clipIndex = Math.max(1, timeline.clips.indexOf(clip) + 1);
+  const mediaAsset = resolveMediaForClip(clipIndex, selectedMediaAssets, pinnedAssetsByClip);
+
+  drawRenderPreview(canvas, {
+    time: normalizedTime,
+    clip,
+    clipIndex,
+    totalClips: timeline.clips.length,
+    format: selectedFormat,
+    preset: selectedPreset,
+    imageCount: selectedMediaAssets.length,
+    mediaAsset,
+    projectName
+  });
+
+  return {
+    time: Number(normalizedTime.toFixed(3)),
+    clip,
+    clipIndex,
+    totalClips: timeline.clips.length,
+    mediaAssetId: mediaAsset?.id ?? null,
+    mediaAssetName: mediaAsset?.name ?? null
+  };
+}
+
+export function normalizeFrameTime(time, totalDuration) {
+  if (!Number.isFinite(time) || time < 0) return 0;
+  if (!Number.isFinite(totalDuration) || totalDuration <= 0) return 0;
+  return time % totalDuration;
 }
 
 export function drawRenderPreview(canvas, { time, clip, clipIndex, totalClips, format, preset, imageCount, mediaAsset, projectName }) {
