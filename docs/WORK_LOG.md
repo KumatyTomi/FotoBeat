@@ -85,11 +85,29 @@ Commits wykonane w tym etapie:
 - Scoring zdjęcia uwzględnia status, rozdzielczość, zgodność orientacji z formatem i rozmiar pliku.
 - Eksport JSON zawiera kolejność kadrów, przypięcia oraz score aktywnych zdjęć.
 
+## 2026-06-07 — Project import/export upgrade
+
+Commits wykonane w tym etapie:
+
+- `ea9d796` — import `.fotobeat.json`, eksport jako plik, remap mediów po ID/nazwie i status importu.
+- `b95e334` — style kontrolek importu/eksportu oraz statusów IO.
+- `fe726c0` — roadmapa oznacza import/export jako wykonany etap.
+
+## Zakres funkcjonalny
+
+- Eksport projektu działa jako normalny link `download` do pliku `.fotobeat.json`.
+- Kopiowanie JSON do schowka zostało zachowane jako szybka opcja debugowa.
+- Import projektu działa przez input pliku JSON.
+- Import waliduje schemat `fotobeat.project.v1`.
+- Import odtwarza ustawienia projektu, kolejność kadrów i przypięcia.
+- Media po imporcie są mapowane do aktualnie wrzuconych zdjęć po ID albo nazwie pliku.
+- UI pokazuje status sukcesu lub błąd importu.
+
 ## Następny rekomendowany etap
 
-Project import/export upgrade:
+Waveform + beat upgrade:
 
-1. Import projektu JSON z pliku.
-2. Eksport projektu jako plik `.fotobeat.json`, nie tylko kopiowanie do schowka.
-3. Walidacja zgodności importowanego projektu z aktualnie wrzuconymi mediami.
-4. Waveform preview albo ffmpeg.wasm proof of concept.
+1. Narysować waveform audio.
+2. Pokazać beat grid na osi czasu.
+3. Dodać ręczną korektę długości klipów.
+4. Przygotować pierwsze ffmpeg.wasm proof of concept eksportu MP4.
