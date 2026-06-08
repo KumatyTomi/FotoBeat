@@ -11,7 +11,8 @@
 }
 
 .preview-hud,
-.render-export-actions {
+.render-export-actions,
+.render-history-actions {
   display: flex;
   align-items: center;
   justify-content: flex-end;
@@ -79,6 +80,7 @@
   background: rgba(255, 255, 255, 0.06);
 }
 
+.render-status.preparing,
 .render-status.recording {
   color: #8be9ff;
   border: 1px solid rgba(139, 233, 255, 0.22);
@@ -92,6 +94,40 @@
 .render-status.error {
   color: #ffb9c2;
   border: 1px solid rgba(255, 90, 120, 0.24);
+}
+
+.render-history {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 10px;
+}
+
+.render-history-item {
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) auto;
+  gap: 14px;
+  align-items: center;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.055);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.render-history-item strong,
+.render-history-item span {
+  display: block;
+}
+
+.render-history-item strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.render-history-item span {
+  margin-top: 4px;
+  color: rgba(245, 247, 251, 0.58);
+  font-size: 13px;
 }
 
 .import-project-button {
@@ -299,12 +335,14 @@
 
 @media (max-width: 860px) {
   .preview-hud,
-  .render-export-actions {
+  .render-export-actions,
+  .render-history-actions {
     justify-content: flex-start;
   }
 
   .waveform-panel,
-  .render-export-panel {
+  .render-export-panel,
+  .render-history-item {
     grid-template-columns: 1fr;
   }
 }
