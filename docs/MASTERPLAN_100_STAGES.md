@@ -135,25 +135,28 @@ Cel: doprowadzić FotoBeat od prototypu WebM do produktu z MP4, lepszym beat eng
 
 ## Aktualnie wykonany krok z setki
 
-Wykonano znaczną część Fazy 1:
+Wykonano kolejne elementy Fazy 1:
 
 - `renderFrameAtTime` w `canvasRenderer.js`,
 - `useCanvasPreview` używa deterministic frame renderer,
 - `useFrameExporter` eksportuje PNG z aktualnej klatki,
 - `frameSequenceStorage.js` zapisuje sekwencje PNG w IndexedDB,
 - `useFrameSequenceRenderer` generuje sekwencje klatek z progressem i cancel,
-- UI pokazuje frame sequence panel i zapisane sekwencje.
+- UI pokazuje frame sequence panel i zapisane sekwencje,
+- `zipExport.js` buduje ZIP bez zależności npm,
+- `useFrameSequenceZipExporter` pakuje klatki sekwencji,
+- ZIP zawiera `frames/frame_0001.png` i `manifest.json`.
 
 ## Następny kodowy etap
 
 ```txt
-Frame sequence ZIP export
+Lazy-load ffmpeg.wasm
 ```
 
 Zakres:
 
-1. Odczytać zapisaną sekwencję PNG z IndexedDB.
-2. Spakować klatki do ZIP lub przygotować manifest bez kompresji, jeśli ZIP dependency nie będzie dodawana.
-3. Dodać pobieranie paczki klatek.
-4. Przygotować strukturę nazw `frame_0001.png` pod ffmpeg.wasm.
-5. Potem wejść w `ffmpeg.wasm proof of concept`.
+1. Dodać zależności ffmpeg.wasm.
+2. Ładować core dopiero po kliknięciu MP4.
+3. Pokazać progress ładowania.
+4. Przekazać klatki z sekwencji do wirtualnego FS.
+5. Wygenerować pierwszy krótki MP4 bez audio.
