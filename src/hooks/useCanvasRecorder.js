@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { safeFilename } from '../utils/projectExport.js';
+import { clearRenderExports, deleteRenderExport, loadRenderExports, pruneRenderExports, saveRenderExport } from '../utils/renderStorage.js';
 
 const DEFAULT_FPS = 30;
 const MAX_RECORD_SECONDS = 30;
@@ -20,7 +21,32 @@ export function useCanvasRecorder({ canvasRef, projectName, timelineDuration, au
   });
 
   useEffect(() => {
+    let cancelled = false;
+
+    loadPersistentHistory()
+      .then((items) => {
+        if (!cancelled) {
+          setExportHistory(items);
+          if (items.length > 0) {
+            setRecordingState((current) => ({
+              ...current,
+              message: `Wczytano ${items.length} zapisanych eksportów WebM z IndexedDB.`
+            }));
+          }
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setRecordingState((current) => ({
+            ...current,
+            status: 'error',
+            message: 'Nie udało się wczytać historii eksportów z IndexedDB.'
+          }));
+        }
+      });
+
     return () => {
+      cancelled = true;
       objectUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
       objectUrlsRef.current.clear();
     };
@@ -103,7 +129,7 @@ export function useCanvasRecorder({ canvasRef, projectName, timelineDuration, au
         });
       };
 
-      recorder.onstop = () => {
+      recorder.onstop = async () => {
         cleanupRecording({ recordingStream, canvasStream, audioSource, audioContext });
         const blob = new Blob(chunks, { type: mimeType || 'video/webm' });
         const downloadUrl = URL.createObjectURL(blob);
@@ -117,14 +143,24 @@ export function useCanvasRecorder({ canvasRef, projectName, timelineDuration, au
           duration: recordingDuration,
           hasAudio,
           size: blob.size,
-          status: 'ready'
+          status: 'ready',
+          persisted: false
         };
 
         objectUrlsRef.current.add(downloadUrl);
+
+        try {
+          await saveRenderExport({ ...exportItem, downloadUrl: '', blob, persisted: true });
+          await pruneRenderExports(MAX_HISTORY_ITEMS);
+          exportItem.persisted = true;
+        } catch {
+          exportItem.persisted = false;
+        }
+
         setExportHistory((current) => [exportItem, ...current].slice(0, MAX_HISTORY_ITEMS));
         setRecordingState({
           status: 'ready',
-          message: `Gotowe: ${fileName}. ${hasAudio ? 'Eksport zawiera obraz i ścieżkę audio.' : 'Eksport zawiera tylko obraz, bo nie dodano audio.'}`,
+          message: `Gotowe: ${fileName}. ${hasAudio ? 'Eksport zawiera obraz i ścieżkę audio.' : 'Eksport zawiera tylko obraz, bo nie dodano audio.'} ${exportItem.persisted ? 'Zapisano w IndexedDB.' : 'Nie udało się zapisać w IndexedDB.'}`,
           downloadUrl,
           fileName,
           mimeType: mimeType || 'video/webm',
@@ -168,7 +204,7 @@ export function useCanvasRecorder({ canvasRef, projectName, timelineDuration, au
     }
   }
 
-  function removeExport(exportId) {
+  async function removeExport(exportId) {
     setExportHistory((current) => {
       const item = current.find((entry) => entry.id === exportId);
 
@@ -179,9 +215,19 @@ export function useCanvasRecorder({ canvasRef, projectName, timelineDuration, au
 
       return current.filter((entry) => entry.id !== exportId);
     });
+
+    try {
+      await deleteRenderExport(exportId);
+    } catch {
+      setRecordingState((current) => ({
+        ...current,
+        status: 'error',
+        message: 'Usunięto z UI, ale nie udało się usunąć eksportu z IndexedDB.'
+      }));
+    }
   }
 
-  function clearExportHistory() {
+  async function clearExportHistory() {
     exportHistory.forEach((item) => {
       if (item.downloadUrl) {
         URL.revokeObjectURL(item.downloadUrl);
@@ -190,13 +236,23 @@ export function useCanvasRecorder({ canvasRef, projectName, timelineDuration, au
     });
 
     setExportHistory([]);
-    setRecordingState((current) => ({
-      ...current,
-      downloadUrl: '',
-      fileName: '',
-      activeExportId: '',
-      message: 'Historia eksportów wyczyszczona.'
-    }));
+
+    try {
+      await clearRenderExports();
+      setRecordingState((current) => ({
+        ...current,
+        downloadUrl: '',
+        fileName: '',
+        activeExportId: '',
+        message: 'Historia eksportów wyczyszczona z UI i IndexedDB.'
+      }));
+    } catch {
+      setRecordingState((current) => ({
+        ...current,
+        status: 'error',
+        message: 'Historia wyczyszczona z UI, ale IndexedDB zwróciło błąd.'
+      }));
+    }
   }
 
   return {
@@ -207,6 +263,20 @@ export function useCanvasRecorder({ canvasRef, projectName, timelineDuration, au
     clearExportHistory,
     maxDuration
   };
+}
+
+async function loadPersistentHistory() {
+  const storedItems = await loadRenderExports(MAX_HISTORY_ITEMS);
+
+  return storedItems.map((item) => {
+    const downloadUrl = URL.createObjectURL(item.blob);
+
+    return {
+      ...item,
+      downloadUrl,
+      persisted: true
+    };
+  });
 }
 
 async function prepareAudioTrack(audioFile) {
