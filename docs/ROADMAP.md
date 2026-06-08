@@ -15,9 +15,11 @@
 - [x] model `Project` w stanie aplikacji
 - [x] autosave w localStorage
 - [x] eksport projektu jako JSON do schowka
+- [x] eksport projektu jako plik `.fotobeat.json`
+- [x] import projektu JSON z pliku
 - [x] snapshot wersji timeline
 - [x] eksport decyzji timeline do JSON
-- [ ] import projektu JSON z pliku
+- [x] walidacja i remap mediów po imporcie
 - [ ] panel listy projektów
 
 ## Etap 3: Analiza plików
@@ -66,4 +68,4 @@
 
 ## Najbliższy następny duży krok
 
-Project import/export upgrade: dodać import projektu JSON z pliku, eksport jako plik `.fotobeat.json` oraz walidację zgodności projektu z aktualnie wrzuconymi mediami. Po tym można wejść w ffmpeg.wasm proof of concept.
+Waveform + beat upgrade: narysować waveform audio, zaznaczyć beat grid na osi czasu i dodać prostą ręczną korektę długości klipów. Po tym można zrobić pierwsze ffmpeg.wasm proof of concept eksportu MP4.
