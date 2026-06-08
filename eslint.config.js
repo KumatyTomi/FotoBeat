@@ -21,6 +21,7 @@ export default [
       globals: {
         Blob: 'readonly',
         Image: 'readonly',
+        TextEncoder: 'readonly',
         URL: 'readonly',
         window: 'readonly',
         document: 'readonly',
