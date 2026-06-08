@@ -64,7 +64,9 @@
 - [x] render profiles catalog
 - [x] browser storage health utilities
 - [x] ffmpeg readiness checklist
-- [ ] deterministic frame renderer
+- [x] deterministic frame renderer
+- [x] testowy eksport pojedynczej klatki PNG
+- [ ] frame sequence renderer do IndexedDB
 - [ ] ffmpeg.wasm proof of concept
 - [ ] eksport MP4 9:16
 - [ ] eksport MP4 16:9
@@ -75,6 +77,7 @@
 - [x] QA checklist
 - [x] ffmpeg / MP4 implementation plan
 - [x] next 10 large stages documentation
+- [x] masterplan 100 etapów
 - [ ] logowanie
 - [ ] dashboard użytkownika
 - [ ] historia eksportów w profilu użytkownika
@@ -84,4 +87,4 @@
 
 ## Najbliższy następny duży krok
 
-Extract deterministic frame renderer: wydzielić render pojedynczej klatki z canvas preview, dodać testowy eksport PNG i przygotować sekwencję klatek pod późniejszy ffmpeg.wasm / MP4.
+Render frame sequence to IndexedDB: generować serię klatek PNG z `renderFrameAtTime`, zapisać je do IndexedDB, pokazać progress/cancel i przygotować wejście dla ffmpeg.wasm / MP4.
