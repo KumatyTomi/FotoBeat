@@ -3,10 +3,10 @@ import { EFFECT_PRESETS } from '../data/effects.js';
 const DEFAULT_CLIP_COUNT = 8;
 const MAX_CLIP_COUNT = 18;
 
-export function buildDraftTimeline({ images, audio, format, preset, audioAnalysis }) {
+export function buildDraftTimeline({ images, audio, format, preset, audioAnalysis, clipDurationScale = 1 }) {
   const effect = EFFECT_PRESETS.find((item) => item.id === preset) ?? EFFECT_PRESETS[0];
   const clipCount = Math.max(4, Math.min(images.length || DEFAULT_CLIP_COUNT, MAX_CLIP_COUNT));
-  const beatGrid = buildBeatGrid({ audio, audioAnalysis, clipCount });
+  const beatGrid = buildBeatGrid({ audio, audioAnalysis, clipCount, clipDurationScale });
 
   const clips = Array.from({ length: clipCount }).map((_, index) => {
     const file = images[index % Math.max(images.length, 1)];
@@ -26,50 +26,55 @@ export function buildDraftTimeline({ images, audio, format, preset, audioAnalysi
   });
 
   return {
-    summary: buildSummary({ audio, audioAnalysis, clipCount, effect }),
+    summary: buildSummary({ audio, audioAnalysis, clipCount, effect, clipDurationScale }),
     format,
     preset: effect.id,
+    clipDurationScale,
     estimatedDuration: Number((clips.at(-1)?.start + clips.at(-1)?.duration || 0).toFixed(1)),
     clips
   };
 }
 
-function buildBeatGrid({ audio, audioAnalysis, clipCount }) {
+function buildBeatGrid({ audio, audioAnalysis, clipCount, clipDurationScale }) {
+  const safeScale = Math.min(2, Math.max(0.5, Number(clipDurationScale) || 1));
+
   if (audioAnalysis?.beats?.length) {
     return audioAnalysis.beats.slice(0, clipCount).map((beat, index, beats) => {
       const next = beats[index + 1];
       const duration = next ? next.time - beat.time : audioAnalysis.averageBeatStep;
 
       return {
-        start: Number(beat.time.toFixed(2)),
-        duration: Number(Math.max(0.6, duration).toFixed(2)),
+        start: Number((beat.time * safeScale).toFixed(2)),
+        duration: Number(Math.max(0.35, duration * safeScale).toFixed(2)),
         energy: beat.energy
       };
     });
   }
 
-  const beatStep = audio ? 1.5 : 2.0;
+  const beatStep = (audio ? 1.5 : 2.0) * safeScale;
   return Array.from({ length: clipCount }).map((_, index) => ({
     start: Number((index * beatStep).toFixed(1)),
-    duration: beatStep,
+    duration: Number(beatStep.toFixed(2)),
     energy: audio ? 0.66 : 0.42
   }));
 }
 
-function buildSummary({ audio, audioAnalysis, clipCount, effect }) {
+function buildSummary({ audio, audioAnalysis, clipCount, effect, clipDurationScale }) {
+  const scaleLabel = clipDurationScale !== 1 ? `, korekta klipu ×${clipDurationScale}` : '';
+
   if (audioAnalysis?.status === 'ready') {
-    return `Audio: ${audio.name}. BPM ~${audioAnalysis.bpm}, ${clipCount} klipów, preset ${effect.name}, energia ${Math.round(audioAnalysis.energy * 100)}%.`;
+    return `Audio: ${audio.name}. BPM ~${audioAnalysis.bpm}, ${clipCount} klipów, preset ${effect.name}, energia ${Math.round(audioAnalysis.energy * 100)}%${scaleLabel}.`;
   }
 
   if (audioAnalysis?.status === 'analyzing') {
-    return `Analizuję audio: ${audio.name}. Timeline używa roboczej siatki do czasu zakończenia analizy.`;
+    return `Analizuję audio: ${audio.name}. Timeline używa roboczej siatki do czasu zakończenia analizy${scaleLabel}.`;
   }
 
   if (audio) {
-    return `Wykryto audio: ${audio.name}. Robocza siatka cięć zostanie zastąpiona beat mapą po analizie.`;
+    return `Wykryto audio: ${audio.name}. Robocza siatka cięć zostanie zastąpiona beat mapą po analizie${scaleLabel}.`;
   }
 
-  return 'Brak audio. Timeline pokazuje poglądowe cięcia do dalszej analizy beatu.';
+  return `Brak audio. Timeline pokazuje poglądowe cięcia do dalszej analizy beatu${scaleLabel}.`;
 }
 
 function pickSection(index, clipCount) {
