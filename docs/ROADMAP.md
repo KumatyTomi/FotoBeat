@@ -21,8 +21,8 @@
 
 ## Etap 3: Analiza plików
 
-- [ ] miniatury zdjęć
-- [ ] wykrywanie orientacji zdjęć
+- [x] miniatury zdjęć przez object URL
+- [x] wykrywanie orientacji zdjęć
 - [ ] ocena ostrości
 - [ ] podstawowa detekcja duplikatów
 - [x] odczyt długości audio przez Web Audio API
@@ -44,7 +44,9 @@
 - [x] animacja `requestAnimationFrame`
 - [x] HUD renderu: format, czas, aktualny klip
 - [x] style canvas dla 16:9, 9:16 i 1:1
-- [ ] preview na realnych miniaturach zdjęć
+- [x] preview na realnych zdjęciach z uploadu
+- [x] ręczna selekcja aktywnych kadrów do timeline
+- [ ] ręczna kolejność kadrów na timeline
 - [ ] ffmpeg.wasm proof of concept
 - [ ] eksport MP4 9:16
 - [ ] eksport MP4 16:9
@@ -61,4 +63,4 @@
 
 ## Najbliższy następny duży krok
 
-Media pipeline: wygenerować miniatury z wrzuconych zdjęć, trzymać je jako obiekty URL, rysować aktualny kadr na canvas i dodać ręczny wybór zdjęć do timeline. Dopiero po tym warto robić eksport MP4.
+Timeline control: dodać ręczne sortowanie kadrów, przypinanie zdjęcia do konkretnego klipu i prosty scoring jakości zdjęć. Po tym etap ffmpeg.wasm będzie miał sens, bo pipeline będzie miał realny materiał, kolejność i decyzje użytkownika.
