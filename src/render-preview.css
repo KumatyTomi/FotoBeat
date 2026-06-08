@@ -11,6 +11,7 @@
 }
 
 .preview-hud,
+.frame-export-actions,
 .render-export-actions,
 .render-history-actions {
   display: flex;
@@ -62,6 +63,28 @@
 
 .canvas-square canvas {
   aspect-ratio: 1 / 1;
+}
+
+.frame-export-actions {
+  margin-top: 16px;
+}
+
+.frame-export-status {
+  margin: 12px 0 0;
+  padding: 12px 14px;
+  border-radius: 16px;
+  color: rgba(245, 247, 251, 0.78);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.frame-export-status.ready {
+  color: #b9ffd0;
+  border: 1px solid rgba(128, 255, 170, 0.22);
+}
+
+.frame-export-status.error {
+  color: #ffb9c2;
+  border: 1px solid rgba(255, 90, 120, 0.24);
 }
 
 .render-export-panel {
@@ -335,6 +358,7 @@
 
 @media (max-width: 860px) {
   .preview-hud,
+  .frame-export-actions,
   .render-export-actions,
   .render-history-actions {
     justify-content: flex-start;
