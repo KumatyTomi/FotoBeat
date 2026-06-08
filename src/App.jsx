@@ -10,6 +10,7 @@ import { useCanvasPreview } from './hooks/useCanvasPreview.js';
 import { useCanvasRecorder } from './hooks/useCanvasRecorder.js';
 import { useFrameExporter } from './hooks/useFrameExporter.js';
 import { useFrameSequenceRenderer } from './hooks/useFrameSequenceRenderer.js';
+import { useFrameSequenceZipExporter } from './hooks/useFrameSequenceZipExporter.js';
 import { useMediaAssets } from './hooks/useMediaAssets.js';
 import { useProjectState } from './hooks/useProjectState.js';
 import { describeAudioAnalysis } from './utils/audioAnalysis.js';
@@ -100,6 +101,8 @@ export default function App() {
     selectedMediaAssets: media.selectedMediaAssets,
     pinnedAssetsByClip: media.pinnedAssetsByClip
   });
+
+  const frameZip = useFrameSequenceZipExporter();
 
   function addSnapshot() {
     addProjectSnapshot({
@@ -220,7 +223,7 @@ export default function App() {
         <div>
           <p className="panel-kicker">Frame sequence</p>
           <h2>Sekwencja klatek PNG do MP4</h2>
-          <p>Testowy render do IndexedDB: maksymalnie {frameSequence.limits.maxSeconds}s @ {frameSequence.limits.maxFps} fps. To wejście pod późniejsze ffmpeg.wasm.</p>
+          <p>Testowy render do IndexedDB: maksymalnie {frameSequence.limits.maxSeconds}s @ {frameSequence.limits.maxFps} fps. ZIP używa nazw `frames/frame_0001.png` gotowych pod ffmpeg.wasm.</p>
         </div>
         <div className="render-export-actions">
           <button className="primary-button compact" onClick={() => frameSequence.renderSequence()} disabled={frameSequence.sequenceState.status === 'rendering'}>
@@ -237,6 +240,7 @@ export default function App() {
           <span style={{ width: `${frameSequence.sequenceState.progress}%` }} />
         </div>
         <p className={`render-status ${frameSequence.sequenceState.status}`}>{frameSequence.sequenceState.message}</p>
+        <p className={`render-status ${frameZip.zipState.status}`}>{frameZip.zipState.message}{frameZip.zipState.size ? ` · ${formatBytes(frameZip.zipState.size)}` : ''}</p>
         <div className="render-history">
           {frameSequence.sequenceHistory.length === 0 ? (
             <span className="empty-state">Brak zapisanych sekwencji. Wyrenderuj pierwszą serię PNG, aby przygotować materiał pod ffmpeg.wasm.</span>
@@ -247,6 +251,10 @@ export default function App() {
                 <span>{new Date(sequence.createdAt).toLocaleString('pl-PL')} · {sequence.seconds}s · {sequence.fps} fps · {sequence.width}×{sequence.height} · {formatBytes(sequence.totalSize)}</span>
               </div>
               <div className="render-history-actions">
+                <button className="ghost-button compact" onClick={() => frameZip.exportSequenceZip(sequence)} disabled={frameZip.zipState.status === 'building'}><Download size={16} />Spakuj ZIP</button>
+                {frameZip.zipState.sequenceId === sequence.id && frameZip.zipState.downloadUrl && (
+                  <a className="ghost-button compact" href={frameZip.zipState.downloadUrl} download={frameZip.zipState.fileName}><Download size={16} />Pobierz ZIP</a>
+                )}
                 <button className="ghost-button compact" onClick={() => frameSequence.removeSequence(sequence.id)}><Trash2 size={16} />Usuń</button>
               </div>
             </article>
@@ -334,7 +342,7 @@ export default function App() {
       </section>
 
       <TimelinePreview timeline={timeline} />
-      <section id="roadmap" className="roadmap-panel"><div><h2>Następne moduły</h2><p>Kolejne kroki: przekazanie sekwencji klatek do ffmpeg.wasm i MP4.</p></div><div className="roadmap-list"><span><RefreshCcw size={16} /> Frame sequence</span><span><Film size={16} /> ffmpeg.wasm</span><span><Download size={16} /> MP4 export</span></div></section>
+      <section id="roadmap" className="roadmap-panel"><div><h2>Następne moduły</h2><p>Kolejne kroki: przekazanie sekwencji klatek do ffmpeg.wasm i MP4.</p></div><div className="roadmap-list"><span><RefreshCcw size={16} /> Frame sequence ZIP</span><span><Film size={16} /> ffmpeg.wasm</span><span><Download size={16} /> MP4 export</span></div></section>
     </main>
   );
 }
