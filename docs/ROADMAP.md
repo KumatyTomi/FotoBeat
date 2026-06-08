@@ -22,6 +22,7 @@
 - [x] snapshot wersji timeline
 - [x] eksport decyzji timeline do JSON
 - [x] walidacja i remap mediów po imporcie
+- [x] export manifest model
 - [ ] panel listy projektów
 
 ## Etap 3: Analiza plików
@@ -29,8 +30,9 @@
 - [x] miniatury zdjęć przez object URL
 - [x] wykrywanie orientacji zdjęć
 - [x] prosty scoring jakości i zgodności z formatem
+- [x] media quality report
+- [x] fingerprinty i detekcja potencjalnych duplikatów
 - [ ] ocena ostrości
-- [ ] podstawowa detekcja duplikatów
 - [x] odczyt długości audio przez Web Audio API
 - [x] szacowanie energii audio
 - [x] waveform preview
@@ -43,7 +45,7 @@
 - [x] automatyczne cięcia według beat grid
 - [x] wizualny beat grid na waveform
 - [x] ręczna korekta długości klipów przez `clipDurationScale`
-- [ ] realna detekcja transientów zamiast heurystyki BPM
+- [x] detekcja transientów jako upgrade heurystyki BPM
 
 ## Etap 5: Render
 
@@ -59,12 +61,20 @@
 - [x] WebM z audio track przez Web Audio API
 - [x] render queue / historia eksportów WebM
 - [x] persistent render history po odświeżeniu strony przez IndexedDB
+- [x] render profiles catalog
+- [x] browser storage health utilities
+- [x] ffmpeg readiness checklist
+- [ ] deterministic frame renderer
 - [ ] ffmpeg.wasm proof of concept
 - [ ] eksport MP4 9:16
 - [ ] eksport MP4 16:9
 
 ## Etap 6: Produkt
 
+- [x] project diagnostics foundation
+- [x] QA checklist
+- [x] ffmpeg / MP4 implementation plan
+- [x] next 10 large stages documentation
 - [ ] logowanie
 - [ ] dashboard użytkownika
 - [ ] historia eksportów w profilu użytkownika
@@ -74,4 +84,4 @@
 
 ## Najbliższy następny duży krok
 
-ffmpeg.wasm proof of concept albo poprawa jakości beat engine: realniejsze transienty, scoring ostrości zdjęć i przygotowanie MP4 9:16 / 16:9.
+Extract deterministic frame renderer: wydzielić render pojedynczej klatki z canvas preview, dodać testowy eksport PNG i przygotować sekwencję klatek pod późniejszy ffmpeg.wasm / MP4.
