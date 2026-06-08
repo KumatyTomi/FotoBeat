@@ -67,12 +67,29 @@ Commits wykonane w tym etapie:
 - Canvas rysuje prawdziwe zdjęcie przez `drawImage`, z kadrowaniem cover.
 - Eksport JSON zawiera podsumowanie aktywnych mediów bez binarnych danych.
 
+## 2026-06-07 — Timeline control stage
+
+Commits wykonane w tym etapie:
+
+- `3a3c5c5` — ręczna kolejność aktywnych kadrów, przypinanie zdjęć do klipów, scoring mediów i eksport decyzji do JSON.
+- `a84dfd6` — style kart timeline control, badge score i przyciski góra/dół/przypnij.
+- `ddd3e71` — roadmapa oznacza timeline control jako wykonany etap.
+
+## Zakres funkcjonalny
+
+- Aktywne kadry mają własną kolejność w `selectedAssetIds`.
+- Karty mediów mają przyciski góra/dół do ręcznego sortowania timeline.
+- Można przypiąć wybrane zdjęcie do aktualnego klipu render preview.
+- Można odpiąć zdjęcie od aktualnego klipu.
+- Canvas respektuje przypięcia przed automatyczną kolejnością.
+- Scoring zdjęcia uwzględnia status, rozdzielczość, zgodność orientacji z formatem i rozmiar pliku.
+- Eksport JSON zawiera kolejność kadrów, przypięcia oraz score aktywnych zdjęć.
+
 ## Następny rekomendowany etap
 
-Timeline control:
+Project import/export upgrade:
 
-1. Ręczne sortowanie aktywnych kadrów.
-2. Przypinanie zdjęcia do konkretnego klipu.
-3. Prosty scoring zdjęć: orientacja, wymiary, rozmiar, status.
-4. Import projektu JSON.
-5. Dopiero potem ffmpeg.wasm proof of concept.
+1. Import projektu JSON z pliku.
+2. Eksport projektu jako plik `.fotobeat.json`, nie tylko kopiowanie do schowka.
+3. Walidacja zgodności importowanego projektu z aktualnie wrzuconymi mediami.
+4. Waveform preview albo ffmpeg.wasm proof of concept.
