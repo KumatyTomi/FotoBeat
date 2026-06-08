@@ -58,7 +58,7 @@
 - [x] MediaRecorder/WebM proof of concept bez audio
 - [x] WebM z audio track przez Web Audio API
 - [x] render queue / historia eksportów WebM
-- [ ] persistent render history po odświeżeniu strony
+- [x] persistent render history po odświeżeniu strony przez IndexedDB
 - [ ] ffmpeg.wasm proof of concept
 - [ ] eksport MP4 9:16
 - [ ] eksport MP4 16:9
@@ -74,4 +74,4 @@
 
 ## Najbliższy następny duży krok
 
-Persistent render history albo ffmpeg.wasm proof of concept. Najpierw warto zdecydować, czy historia eksportów ma zostać lokalna w IndexedDB, czy wejść od razu w backend/storage.
+ffmpeg.wasm proof of concept albo poprawa jakości beat engine: realniejsze transienty, scoring ostrości zdjęć i przygotowanie MP4 9:16 / 16:9.
