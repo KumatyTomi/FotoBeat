@@ -24,6 +24,7 @@ export default [
         URL: 'readonly',
         window: 'readonly',
         document: 'readonly',
+        indexedDB: 'readonly',
         localStorage: 'readonly',
         navigator: 'readonly',
         performance: 'readonly',
