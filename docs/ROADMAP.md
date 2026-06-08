@@ -16,6 +16,7 @@
 - [x] autosave w localStorage
 - [x] eksport projektu jako JSON do schowka
 - [x] snapshot wersji timeline
+- [x] eksport decyzji timeline do JSON
 - [ ] import projektu JSON z pliku
 - [ ] panel listy projektów
 
@@ -23,6 +24,7 @@
 
 - [x] miniatury zdjęć przez object URL
 - [x] wykrywanie orientacji zdjęć
+- [x] prosty scoring jakości i zgodności z formatem
 - [ ] ocena ostrości
 - [ ] podstawowa detekcja duplikatów
 - [x] odczyt długości audio przez Web Audio API
@@ -36,7 +38,7 @@
 - [x] energia audio jako parametr efektów
 - [x] automatyczne cięcia według beat grid
 - [ ] realna detekcja transientów zamiast heurystyki BPM
-- [ ] ręczna korekta timeline
+- [ ] ręczna korekta długości klipów
 
 ## Etap 5: Render
 
@@ -46,7 +48,8 @@
 - [x] style canvas dla 16:9, 9:16 i 1:1
 - [x] preview na realnych zdjęciach z uploadu
 - [x] ręczna selekcja aktywnych kadrów do timeline
-- [ ] ręczna kolejność kadrów na timeline
+- [x] ręczna kolejność kadrów na timeline
+- [x] przypinanie zdjęcia do konkretnego klipu
 - [ ] ffmpeg.wasm proof of concept
 - [ ] eksport MP4 9:16
 - [ ] eksport MP4 16:9
@@ -63,4 +66,4 @@
 
 ## Najbliższy następny duży krok
 
-Timeline control: dodać ręczne sortowanie kadrów, przypinanie zdjęcia do konkretnego klipu i prosty scoring jakości zdjęć. Po tym etap ffmpeg.wasm będzie miał sens, bo pipeline będzie miał realny materiał, kolejność i decyzje użytkownika.
+Project import/export upgrade: dodać import projektu JSON z pliku, eksport jako plik `.fotobeat.json` oraz walidację zgodności projektu z aktualnie wrzuconymi mediami. Po tym można wejść w ffmpeg.wasm proof of concept.
