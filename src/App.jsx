@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ImagePlus, Music, Sparkles, Wand2, Film, Download, RefreshCcw, Save, FileJson, Play, CheckCircle2 } from 'lucide-react';
+import { ImagePlus, Music, Sparkles, Wand2, Film, Download, RefreshCcw, Save, FileJson, Play, CheckCircle2, Upload } from 'lucide-react';
 import FileDropzone from './components/FileDropzone.jsx';
 import TimelinePreview from './components/TimelinePreview.jsx';
 import EffectCard from './components/EffectCard.jsx';
@@ -25,6 +25,7 @@ export default function App() {
   const [audioAnalysis, setAudioAnalysis] = useState(null);
   const [lastSavedAt, setLastSavedAt] = useState(project.updatedAt ?? null);
   const [previewPlayback, setPreviewPlayback] = useState({ time: 0, clipIndex: 1 });
+  const [projectIoStatus, setProjectIoStatus] = useState({ type: 'idle', message: '' });
   const previewRef = useRef(null);
 
   const format = project.format;
@@ -161,6 +162,23 @@ export default function App() {
     return buildDraftTimeline({ images: selectedMediaAssets, audio, format, preset, audioAnalysis });
   }, [selectedMediaAssets, audio, format, preset, audioAnalysis]);
 
+  const projectExportPayload = useMemo(() => buildProjectExportPayload({
+    project,
+    timeline,
+    mediaAssets,
+    selectedMediaAssets,
+    selectedAssetIds,
+    pinnedAssetsByClip,
+    selectedFormat,
+    audio
+  }), [audio, mediaAssets, pinnedAssetsByClip, project, selectedAssetIds, selectedFormat, selectedMediaAssets, timeline]);
+
+  const projectExportJson = useMemo(() => JSON.stringify(projectExportPayload, null, 2), [projectExportPayload]);
+  const projectExportHref = useMemo(() => {
+    return `data:application/json;charset=utf-8,${encodeURIComponent(projectExportJson)}`;
+  }, [projectExportJson]);
+  const projectExportFilename = `${safeFilename(project.name)}.fotobeat.json`;
+
   useEffect(() => {
     const canvas = previewRef.current;
     if (!canvas) return undefined;
@@ -271,32 +289,43 @@ export default function App() {
     }));
   }
 
-  function exportProject() {
-    const payload = {
-      schema: 'fotobeat.project.v1',
-      exportedAt: new Date().toISOString(),
-      project,
-      timeline,
-      media: {
-        imageCount: mediaAssets.length,
-        selectedImageCount: selectedMediaAssets.length,
-        selectedOrder: selectedAssetIds,
-        pinnedAssetsByClip,
-        selectedImages: selectedMediaAssets.map((asset) => ({
-          id: asset.id,
-          name: asset.name,
-          width: asset.width,
-          height: asset.height,
-          orientation: asset.orientation,
-          status: asset.status,
-          score: scoreMediaAsset(asset, selectedFormat)
-        })),
-        audioName: audio?.name ?? null
-      }
-    };
+  function copyProjectJson() {
+    navigator.clipboard?.writeText(projectExportJson);
+    setProjectIoStatus({ type: 'success', message: 'Projekt JSON skopiowany do schowka.' });
+  }
 
-    const json = JSON.stringify(payload, null, 2);
-    navigator.clipboard?.writeText(json);
+  async function importProjectFile(event) {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+
+    if (!file) return;
+
+    try {
+      const text = await file.text();
+      const imported = parseProjectFile(text);
+      const remapped = remapImportedMedia(imported.media, mediaAssets);
+
+      setProject({
+        ...DEFAULT_PROJECT,
+        ...imported.project,
+        importedAt: new Date().toISOString()
+      });
+
+      if (remapped.selectedOrder.length) {
+        setSelectedAssetIds(remapped.selectedOrder);
+      }
+
+      setPinnedAssetsByClip(remapped.pinnedAssetsByClip);
+      setProjectIoStatus({
+        type: 'success',
+        message: `Zaimportowano projekt. Dopasowano ${remapped.selectedOrder.length}/${imported.media?.selectedImages?.length ?? 0} mediów.`
+      });
+    } catch (error) {
+      setProjectIoStatus({
+        type: 'error',
+        message: error.message || 'Nie udało się zaimportować projektu.'
+      });
+    }
   }
 
   return (
@@ -340,8 +369,8 @@ export default function App() {
         <div className="section-heading project-heading">
           <div>
             <p className="panel-kicker">Projekt</p>
-            <h2>Autosave, snapshoty i eksport</h2>
-            <p>Stan projektu zapisuje się automatycznie w przeglądarce. Eksport JSON kopiuje projekt do schowka.</p>
+            <h2>Autosave, snapshoty, import i eksport</h2>
+            <p>Stan projektu zapisuje się automatycznie. Możesz pobrać `.fotobeat.json`, skopiować JSON lub zaimportować projekt.</p>
           </div>
           <span className="autosave-pill">
             <Save size={15} />
@@ -373,12 +402,25 @@ export default function App() {
               <FileJson size={16} />
               Zrób snapshot
             </button>
-            <button className="ghost-button compact" onClick={exportProject}>
+            <a className="ghost-button compact" href={projectExportHref} download={projectExportFilename}>
               <Download size={16} />
+              Pobierz JSON
+            </a>
+            <button className="ghost-button compact" onClick={copyProjectJson}>
+              <FileJson size={16} />
               Kopiuj JSON
             </button>
+            <label className="ghost-button compact import-project-button">
+              <Upload size={16} />
+              Import JSON
+              <input type="file" accept="application/json,.json,.fotobeat.json" onChange={importProjectFile} />
+            </label>
           </div>
         </div>
+
+        {projectIoStatus.message && (
+          <p className={projectIoStatus.type === 'error' ? 'io-status error' : 'io-status success'}>{projectIoStatus.message}</p>
+        )}
 
         <div className="snapshot-list">
           {project.snapshots.length === 0 ? (
@@ -556,8 +598,8 @@ export default function App() {
         <div>
           <h2>Następne moduły</h2>
           <p>
-            Ten frontend jest bazą pod Base44/Vite. Kolejne kroki: import projektu JSON,
-            scoring ostrości, waveform i pierwsze proof of concept eksportu MP4.
+            Ten frontend jest bazą pod Base44/Vite. Kolejne kroki: scoring ostrości,
+            waveform i pierwsze proof of concept eksportu MP4.
           </p>
         </div>
 
@@ -578,6 +620,86 @@ function loadProject() {
   } catch {
     return DEFAULT_PROJECT;
   }
+}
+
+function buildProjectExportPayload({ project, timeline, mediaAssets, selectedMediaAssets, selectedAssetIds, pinnedAssetsByClip, selectedFormat, audio }) {
+  return {
+    schema: 'fotobeat.project.v1',
+    exportedAt: new Date().toISOString(),
+    project,
+    timeline,
+    media: {
+      imageCount: mediaAssets.length,
+      selectedImageCount: selectedMediaAssets.length,
+      selectedOrder: selectedAssetIds,
+      pinnedAssetsByClip,
+      selectedImages: selectedMediaAssets.map((asset) => ({
+        id: asset.id,
+        name: asset.name,
+        size: asset.size,
+        width: asset.width,
+        height: asset.height,
+        orientation: asset.orientation,
+        status: asset.status,
+        score: scoreMediaAsset(asset, selectedFormat)
+      })),
+      audioName: audio?.name ?? null
+    }
+  };
+}
+
+function parseProjectFile(text) {
+  const parsed = JSON.parse(text);
+
+  if (parsed.schema !== 'fotobeat.project.v1' || !parsed.project) {
+    throw new Error('To nie jest poprawny plik projektu FotoBeat.');
+  }
+
+  return parsed;
+}
+
+function remapImportedMedia(importedMedia = {}, currentMediaAssets) {
+  const assetsById = new Map(currentMediaAssets.map((asset) => [asset.id, asset]));
+  const assetsByName = new Map(currentMediaAssets.map((asset) => [asset.name, asset]));
+  const importedById = new Map((importedMedia.selectedImages ?? []).map((asset) => [asset.id, asset]));
+
+  const selectedOrder = uniqueIds(importedMedia.selectedOrder ?? [])
+    .map((assetId) => assetsById.get(assetId) ?? assetsByName.get(importedById.get(assetId)?.name))
+    .filter(Boolean)
+    .map((asset) => asset.id);
+
+  const fallbackOrder = (importedMedia.selectedImages ?? [])
+    .map((asset) => assetsById.get(asset.id) ?? assetsByName.get(asset.name))
+    .filter(Boolean)
+    .map((asset) => asset.id);
+
+  const finalOrder = selectedOrder.length ? selectedOrder : uniqueIds(fallbackOrder);
+  const pinnedAssetsByClip = {};
+
+  Object.entries(importedMedia.pinnedAssetsByClip ?? {}).forEach(([clipNumber, importedAssetId]) => {
+    const importedAsset = importedById.get(importedAssetId);
+    const matchedAsset = assetsById.get(importedAssetId) ?? assetsByName.get(importedAsset?.name);
+
+    if (matchedAsset) {
+      pinnedAssetsByClip[clipNumber] = matchedAsset.id;
+    }
+  });
+
+  return {
+    selectedOrder: finalOrder,
+    pinnedAssetsByClip
+  };
+}
+
+function uniqueIds(ids) {
+  return [...new Set(ids.filter(Boolean))];
+}
+
+function safeFilename(value) {
+  return (value || 'fotobeat-project')
+    .toLowerCase()
+    .replace(/[^a-z0-9ąćęłńóśźż_-]+/gi, '-')
+    .replace(/^-+|-+$/g, '');
 }
 
 function buildMediaId(file, index) {
