@@ -61,6 +61,32 @@
   aspect-ratio: 1 / 1;
 }
 
+.import-project-button {
+  flex-wrap: wrap;
+}
+
+.import-project-button input {
+  max-width: 190px;
+  color: rgba(245, 247, 251, 0.78);
+}
+
+.io-status {
+  margin: 16px 0 0;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.io-status.success {
+  color: #b9ffd0;
+  border: 1px solid rgba(128, 255, 170, 0.22);
+}
+
+.io-status.error {
+  color: #ffb9c2;
+  border: 1px solid rgba(255, 90, 120, 0.24);
+}
+
 .media-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
