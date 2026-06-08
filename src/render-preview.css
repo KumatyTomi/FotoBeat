@@ -1,5 +1,6 @@
 .render-preview-panel,
-.media-panel {
+.media-panel,
+.render-export-panel {
   margin-top: 24px;
   padding: 28px;
   border: 1px solid rgba(255, 255, 255, 0.11);
@@ -9,7 +10,8 @@
   border-radius: 28px;
 }
 
-.preview-hud {
+.preview-hud,
+.render-export-actions {
   display: flex;
   align-items: center;
   justify-content: flex-end;
@@ -59,6 +61,37 @@
 
 .canvas-square canvas {
   aspect-ratio: 1 / 1;
+}
+
+.render-export-panel {
+  display: grid;
+  grid-template-columns: minmax(280px, 1fr) auto;
+  gap: 18px;
+  align-items: center;
+}
+
+.render-status {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 16px;
+  color: rgba(245, 247, 251, 0.78);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.render-status.recording {
+  color: #8be9ff;
+  border: 1px solid rgba(139, 233, 255, 0.22);
+}
+
+.render-status.ready {
+  color: #b9ffd0;
+  border: 1px solid rgba(128, 255, 170, 0.22);
+}
+
+.render-status.error {
+  color: #ffb9c2;
+  border: 1px solid rgba(255, 90, 120, 0.24);
 }
 
 .import-project-button {
@@ -265,18 +298,21 @@
 }
 
 @media (max-width: 860px) {
-  .preview-hud {
+  .preview-hud,
+  .render-export-actions {
     justify-content: flex-start;
   }
 
-  .waveform-panel {
+  .waveform-panel,
+  .render-export-panel {
     grid-template-columns: 1fr;
   }
 }
 
 @media (max-width: 520px) {
   .render-preview-panel,
-  .media-panel {
+  .media-panel,
+  .render-export-panel {
     padding: 20px;
     border-radius: 22px;
   }
