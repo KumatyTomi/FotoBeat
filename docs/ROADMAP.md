@@ -68,6 +68,10 @@
 - [x] testowy eksport pojedynczej klatki PNG
 - [x] frame sequence renderer do IndexedDB
 - [x] frame sequence ZIP export
+- [x] render job model i IndexedDB job queue
+- [x] frame sequence validation
+- [x] ffmpeg command builder
+- [x] MP4 export plan adapter bez zależności ffmpeg
 - [ ] ffmpeg.wasm proof of concept
 - [ ] eksport MP4 9:16
 - [ ] eksport MP4 16:9
@@ -88,4 +92,4 @@
 
 ## Najbliższy następny duży krok
 
-ffmpeg.wasm proof of concept: użyć paczki klatek PNG z nazwami `frames/frame_0001.png` jako wejścia do kodera MP4. Zacząć od krótkiego MP4 bez audio, potem dopiero audio mux.
+ffmpeg.wasm proof of concept: lazy-load encodera, zapisać klatki do virtual FS, uruchomić przygotowaną komendę i wygenerować pierwszy krótki MP4 bez audio.
