@@ -48,12 +48,31 @@ Commits wykonane w tym etapie:
 - Presety mają własne palety, rotacje, glow i scanlines.
 - Preview rysuje placeholdery kadrów, dopóki media pipeline nie przygotuje miniatur zdjęć.
 
+## 2026-06-07 — Media pipeline stage
+
+Commits wykonane w tym etapie:
+
+- `b90232c` — dodany media pipeline, object URL-e, ładowanie obrazów, orientacja i `drawImage` na canvas.
+- `35a7a9f` — dodane style galerii mediów i kart miniatur.
+- `e5aff4b` — roadmapa oznacza media pipeline jako wykonany etap.
+
+## Zakres funkcjonalny
+
+- Upload zdjęć tworzy listę `mediaAssets`.
+- Każdy asset ma ID, nazwę, rozmiar, typ, URL, status, wymiary, orientację i obiekt `Image`.
+- Aplikacja czyści `objectURL` w cleanupie efektu React.
+- Galeria pokazuje miniatury zdjęć, status ładowania, orientację i rozdzielczość.
+- Użytkownik może ręcznie wybrać aktywne kadry do timeline.
+- Timeline i canvas używają tylko aktywnych kadrów.
+- Canvas rysuje prawdziwe zdjęcie przez `drawImage`, z kadrowaniem cover.
+- Eksport JSON zawiera podsumowanie aktywnych mediów bez binarnych danych.
+
 ## Następny rekomendowany etap
 
-Media pipeline:
+Timeline control:
 
-1. Utworzyć obiekty URL dla wrzuconych zdjęć.
-2. Wygenerować miniatury i metadane orientacji.
-3. Rysować aktualne zdjęcie na canvas zamiast placeholdera.
-4. Dodać ręczną selekcję zdjęć do timeline.
-5. Dopiero potem zrobić eksport MP4 / ffmpeg.wasm proof of concept.
+1. Ręczne sortowanie aktywnych kadrów.
+2. Przypinanie zdjęcia do konkretnego klipu.
+3. Prosty scoring zdjęć: orientacja, wymiary, rozmiar, status.
+4. Import projektu JSON.
+5. Dopiero potem ffmpeg.wasm proof of concept.
