@@ -67,7 +67,7 @@
 - [x] deterministic frame renderer
 - [x] testowy eksport pojedynczej klatki PNG
 - [x] frame sequence renderer do IndexedDB
-- [ ] frame sequence ZIP export
+- [x] frame sequence ZIP export
 - [ ] ffmpeg.wasm proof of concept
 - [ ] eksport MP4 9:16
 - [ ] eksport MP4 16:9
@@ -88,4 +88,4 @@
 
 ## Najbliższy następny duży krok
 
-Frame sequence ZIP export albo ffmpeg.wasm proof of concept: wykorzystać zapisane sekwencje PNG z IndexedDB jako wejście do paczki ZIP lub do kodera MP4.
+ffmpeg.wasm proof of concept: użyć paczki klatek PNG z nazwami `frames/frame_0001.png` jako wejścia do kodera MP4. Zacząć od krótkiego MP4 bez audio, potem dopiero audio mux.
