@@ -103,11 +103,30 @@ Commits wykonane w tym etapie:
 - Media po imporcie są mapowane do aktualnie wrzuconych zdjęć po ID albo nazwie pliku.
 - UI pokazuje status sukcesu lub błąd importu.
 
+## 2026-06-07 — Waveform + beat upgrade
+
+Commits wykonane w tym etapie:
+
+- `1cd0fbe` — timeline engine dostał `clipDurationScale` i skalowanie beat gridu.
+- `446d2f1` — aplikacja dostała waveform, beat grid i suwak korekty długości klipów.
+- `b36840e` — style waveform, beat markers i range control.
+- `13fad76` — roadmapa oznacza waveform + beat upgrade jako wykonany etap.
+
+## Zakres funkcjonalny
+
+- Analiza audio generuje `waveform` z próbek kanału audio.
+- UI pokazuje waveform jako słupki.
+- Beat grid jest nakładany na waveform jako znaczniki.
+- Projekt ma `clipDurationScale` zapisywany w autosave i eksporcie JSON.
+- Suwak pozwala skracać albo wydłużać długość klipów w zakresie ×0.5–×2.
+- Timeline przelicza start i duration klipów według korekty.
+- Snapshoty zapisują wartość korekty klipów.
+
 ## Następny rekomendowany etap
 
-Waveform + beat upgrade:
+ffmpeg.wasm proof of concept:
 
-1. Narysować waveform audio.
-2. Pokazać beat grid na osi czasu.
-3. Dodać ręczną korektę długości klipów.
-4. Przygotować pierwsze ffmpeg.wasm proof of concept eksportu MP4.
+1. Eksperymentalny eksport MP4 albo WebM z canvas/timeline.
+2. Render klatek z aktualnego canvas preview.
+3. Rozważyć MediaRecorder jako lżejszy etap pośredni przed ffmpeg.wasm.
+4. Dodać panel render status.
