@@ -1,10 +1,13 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { safeFilename } from '../utils/projectExport.js';
 
 const DEFAULT_FPS = 30;
 const MAX_RECORD_SECONDS = 30;
+const MAX_HISTORY_ITEMS = 10;
 
 export function useCanvasRecorder({ canvasRef, projectName, timelineDuration, audioFile }) {
+  const objectUrlsRef = useRef(new Set());
+  const [exportHistory, setExportHistory] = useState([]);
   const [recordingState, setRecordingState] = useState({
     status: 'idle',
     message: 'Gotowe do nagrania preview WebM.',
@@ -12,16 +15,16 @@ export function useCanvasRecorder({ canvasRef, projectName, timelineDuration, au
     fileName: '',
     mimeType: pickMimeType(),
     duration: 0,
-    hasAudio: false
+    hasAudio: false,
+    activeExportId: ''
   });
 
   useEffect(() => {
     return () => {
-      if (recordingState.downloadUrl) {
-        URL.revokeObjectURL(recordingState.downloadUrl);
-      }
+      objectUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
+      objectUrlsRef.current.clear();
     };
-  }, [recordingState.downloadUrl]);
+  }, []);
 
   const maxDuration = useMemo(() => {
     return Number(Math.min(Math.max(timelineDuration || 4, 4), MAX_RECORD_SECONDS).toFixed(1));
@@ -44,10 +47,7 @@ export function useCanvasRecorder({ canvasRef, projectName, timelineDuration, au
       return;
     }
 
-    if (recordingState.downloadUrl) {
-      URL.revokeObjectURL(recordingState.downloadUrl);
-    }
-
+    const exportId = `export-${Date.now()}`;
     const mimeType = pickMimeType();
     const canvasStream = canvas.captureStream(DEFAULT_FPS);
     const chunks = [];
@@ -64,7 +64,8 @@ export function useCanvasRecorder({ canvasRef, projectName, timelineDuration, au
       fileName: '',
       mimeType,
       duration: recordingDuration,
-      hasAudio: false
+      hasAudio: false,
+      activeExportId: exportId
     });
 
     try {
@@ -97,7 +98,8 @@ export function useCanvasRecorder({ canvasRef, projectName, timelineDuration, au
           fileName: '',
           mimeType,
           duration: 0,
-          hasAudio
+          hasAudio,
+          activeExportId: exportId
         });
       };
 
@@ -105,8 +107,21 @@ export function useCanvasRecorder({ canvasRef, projectName, timelineDuration, au
         cleanupRecording({ recordingStream, canvasStream, audioSource, audioContext });
         const blob = new Blob(chunks, { type: mimeType || 'video/webm' });
         const downloadUrl = URL.createObjectURL(blob);
-        const fileName = `${safeFilename(projectName)}-preview.webm`;
+        const fileName = `${safeFilename(projectName)}-preview-${new Date().toISOString().replace(/[:.]/g, '-')}.webm`;
+        const exportItem = {
+          id: exportId,
+          createdAt: new Date().toISOString(),
+          fileName,
+          downloadUrl,
+          mimeType: mimeType || 'video/webm',
+          duration: recordingDuration,
+          hasAudio,
+          size: blob.size,
+          status: 'ready'
+        };
 
+        objectUrlsRef.current.add(downloadUrl);
+        setExportHistory((current) => [exportItem, ...current].slice(0, MAX_HISTORY_ITEMS));
         setRecordingState({
           status: 'ready',
           message: `Gotowe: ${fileName}. ${hasAudio ? 'Eksport zawiera obraz i ścieżkę audio.' : 'Eksport zawiera tylko obraz, bo nie dodano audio.'}`,
@@ -114,7 +129,8 @@ export function useCanvasRecorder({ canvasRef, projectName, timelineDuration, au
           fileName,
           mimeType: mimeType || 'video/webm',
           duration: recordingDuration,
-          hasAudio
+          hasAudio,
+          activeExportId: exportId
         });
       };
 
@@ -125,7 +141,8 @@ export function useCanvasRecorder({ canvasRef, projectName, timelineDuration, au
         fileName: '',
         mimeType,
         duration: recordingDuration,
-        hasAudio
+        hasAudio,
+        activeExportId: exportId
       });
 
       recorder.start(250);
@@ -145,14 +162,49 @@ export function useCanvasRecorder({ canvasRef, projectName, timelineDuration, au
         fileName: '',
         mimeType,
         duration: 0,
-        hasAudio: false
+        hasAudio: false,
+        activeExportId: exportId
       });
     }
   }
 
+  function removeExport(exportId) {
+    setExportHistory((current) => {
+      const item = current.find((entry) => entry.id === exportId);
+
+      if (item?.downloadUrl) {
+        URL.revokeObjectURL(item.downloadUrl);
+        objectUrlsRef.current.delete(item.downloadUrl);
+      }
+
+      return current.filter((entry) => entry.id !== exportId);
+    });
+  }
+
+  function clearExportHistory() {
+    exportHistory.forEach((item) => {
+      if (item.downloadUrl) {
+        URL.revokeObjectURL(item.downloadUrl);
+        objectUrlsRef.current.delete(item.downloadUrl);
+      }
+    });
+
+    setExportHistory([]);
+    setRecordingState((current) => ({
+      ...current,
+      downloadUrl: '',
+      fileName: '',
+      activeExportId: '',
+      message: 'Historia eksportów wyczyszczona.'
+    }));
+  }
+
   return {
     recordingState,
+    exportHistory,
     startRecording,
+    removeExport,
+    clearExportHistory,
     maxDuration
   };
 }
