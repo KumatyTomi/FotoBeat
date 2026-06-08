@@ -19,10 +19,26 @@ Commits wykonane w tym etapie:
 - Hook czyści `objectURL`, żeby ograniczać wycieki pamięci.
 - UI render queue jest przygotowany pod późniejszy backend, IndexedDB albo ffmpeg.wasm.
 
-## Uwaga techniczna
+## 2026-06-08 — Persistent render history in IndexedDB
 
-Historia eksportów jest na razie sesyjna. Po odświeżeniu strony linki do WebM znikną, bo wskazują na tymczasowe `objectURL`. Persistent render history wymaga zapisu plików w IndexedDB albo backend/storage.
+Commits wykonane w tym etapie:
+
+- `cfbc492` — dodany storage layer `src/utils/renderStorage.js` oparty o IndexedDB.
+- `8dfc671` — recorder zapisuje WebM Blob w IndexedDB i odtwarza historię po odświeżeniu.
+- `2f22749` — ESLint dostał global `indexedDB`.
+- `7b52d7c` — render queue pokazuje, czy eksport jest zapisany lokalnie, czy tylko sesyjny.
+- `1408868` — roadmapa oznacza persistent render history jako wykonany etap.
+
+## Zakres funkcjonalny
+
+- Eksporty WebM są zapisywane jako `Blob` w IndexedDB.
+- Po odświeżeniu strony hook odczytuje zapisane eksporty i tworzy nowe `objectURL` do pobrania.
+- Historia renderów jest limitowana do 10 elementów.
+- Starsze eksporty są przycinane przez `pruneRenderExports`.
+- Usunięcie pojedynczego eksportu czyści UI, `objectURL` i rekord w IndexedDB.
+- Czyszczenie historii usuwa wszystkie rekordy z IndexedDB.
+- UI pokazuje status: `zapisane lokalnie` albo `sesyjne`.
 
 ## Następny rekomendowany etap
 
-Persistent render history albo ffmpeg.wasm proof of concept. Przed MP4 najlepiej dodać IndexedDB dla plików WebM lub zdecydować, że eksporty są tylko jednorazowe do pobrania.
+ffmpeg.wasm proof of concept albo poprawa jakości beat engine: realniejsza detekcja transientów, scoring ostrości zdjęć i przygotowanie MP4 9:16 / 16:9.
