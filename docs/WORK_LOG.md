@@ -30,12 +30,30 @@ Commits wykonane w tym etapie:
 - Snapshoty nie przechowują binarnych plików zdjęć/audio, tylko stan montażu.
 - Import JSON jest zaplanowany jako następny mniejszy krok.
 
+## 2026-06-07 — Render preview canvas stage
+
+Commits wykonane w tym etapie:
+
+- `4e772ed` — dodany animowany canvas render preview w `App.jsx`.
+- `ef220ab` — dodane style `src/render-preview.css`.
+- `c1e0971` — import stylów render preview w `main.jsx`.
+- `b0b400a` — roadmapa oznacza canvas preview jako wykonany etap.
+
+## Zakres funkcjonalny
+
+- Canvas działa w formatach 16:9, 9:16 i 1:1.
+- Preview używa aktualnego timeline, presetu, energii klipu i sekcji timeline.
+- `requestAnimationFrame` animuje podgląd bez eksportu MP4.
+- HUD pokazuje rozdzielczość, czas i numer aktualnego klipu.
+- Presety mają własne palety, rotacje, glow i scanlines.
+- Preview rysuje placeholdery kadrów, dopóki media pipeline nie przygotuje miniatur zdjęć.
+
 ## Następny rekomendowany etap
 
-Render preview canvas:
+Media pipeline:
 
-1. Canvas 2D w komponencie podglądu.
-2. Rysowanie aktualnego klipu z timeline.
-3. Animacje zgodne z presetem: zoom, fade, shake, glitch.
-4. Synchronizacja pod `timeline.clips[].start` i `duration`.
-5. Przygotowanie pod późniejszy eksport MP4.
+1. Utworzyć obiekty URL dla wrzuconych zdjęć.
+2. Wygenerować miniatury i metadane orientacji.
+3. Rysować aktualne zdjęcie na canvas zamiast placeholdera.
+4. Dodać ręczną selekcję zdjęć do timeline.
+5. Dopiero potem zrobić eksport MP4 / ffmpeg.wasm proof of concept.
