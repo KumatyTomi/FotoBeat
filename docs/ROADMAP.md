@@ -56,7 +56,7 @@
 - [x] ręczna kolejność kadrów na timeline
 - [x] przypinanie zdjęcia do konkretnego klipu
 - [x] MediaRecorder/WebM proof of concept bez audio
-- [ ] WebM z audio track
+- [x] WebM z audio track przez Web Audio API
 - [ ] ffmpeg.wasm proof of concept
 - [ ] eksport MP4 9:16
 - [ ] eksport MP4 16:9
@@ -73,4 +73,4 @@
 
 ## Najbliższy następny duży krok
 
-Dodać audio track do eksportu WebM albo zrobić pierwszą wersję render queue/status panel. Dopiero potem sensownie wchodzić w ffmpeg.wasm i MP4.
+Render queue/status panel: dodać kolejkę eksportów, historię nagrań WebM, statusy i przygotować interfejs pod późniejszy ffmpeg.wasm / MP4.
