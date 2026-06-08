@@ -1,44 +1,47 @@
 # Work log
 
-## 2026-06-08 — Render queue/status panel
+## 2026-06-08 — Batch: 10 large development stages
 
 Commits wykonane w tym etapie:
 
-- `e1bbc04` — hook `useCanvasRecorder` dostał historię eksportów WebM, metadane plików, usuwanie i czyszczenie historii.
-- `df0fa65` — aplikacja dostała UI render queue: lista eksportów, pobieranie każdego WebM, usuwanie i czyszczenie historii.
-- `8fcf83b` — style dla historii renderów, metadanych i akcji pobierz/usuń.
-- `ec1eaa0` — roadmapa oznacza render queue jako wykonany etap.
+- `8b4a557` — audio analysis dostało transient detection, medianę beat intervali i tryby `transient` / `energy-fallback`.
+- `5a8693b` — dodany `mediaQuality.js` z raportem jakości zdjęć, fingerprintami i duplikatami.
+- `70c6326` — dodany `exportManifest.js` z manifestem eksportu.
+- `5f2a850` — dodany katalog profili renderu `renderProfiles.js`.
+- `681c091` — dodane narzędzia browser storage health.
+- `b9d13e0` — dodany `ffmpegReadiness.js` z checklistą MP4/ffmpeg.
+- `d5df725` — dodany `projectDiagnostics.js`.
+- `c6661aa` — dodana `docs/QA_CHECKLIST.md`.
+- `8d4b447` — dodany `docs/FFMPEG_MP4_PLAN.md`.
+- `e20ec5c` — dodany `docs/NEXT_10_LARGE_STAGES.md`.
+- `37d8731` — roadmapa zaktualizowana po batchu 10 etapów.
+
+## 10 wykonanych etapów
+
+1. Audio transient detection upgrade.
+2. Media quality report.
+3. Export manifest model.
+4. Render profiles catalog.
+5. Browser storage health.
+6. ffmpeg readiness checklist.
+7. Project diagnostics foundation.
+8. QA checklist.
+9. ffmpeg / MP4 implementation plan.
+10. Batch documentation and roadmap alignment.
 
 ## Zakres funkcjonalny
 
-- Każdy eksport WebM trafia do `exportHistory`.
-- Historia trzyma: ID, datę, nazwę pliku, URL pobierania, MIME, czas, rozmiar i informację audio/video.
-- Można pobrać dowolny wcześniejszy eksport z aktualnej sesji.
-- Można usunąć pojedynczy eksport.
-- Można wyczyścić całą historię.
-- Hook czyści `objectURL`, żeby ograniczać wycieki pamięci.
-- UI render queue jest przygotowany pod późniejszy backend, IndexedDB albo ffmpeg.wasm.
-
-## 2026-06-08 — Persistent render history in IndexedDB
-
-Commits wykonane w tym etapie:
-
-- `cfbc492` — dodany storage layer `src/utils/renderStorage.js` oparty o IndexedDB.
-- `8dfc671` — recorder zapisuje WebM Blob w IndexedDB i odtwarza historię po odświeżeniu.
-- `2f22749` — ESLint dostał global `indexedDB`.
-- `7b52d7c` — render queue pokazuje, czy eksport jest zapisany lokalnie, czy tylko sesyjny.
-- `1408868` — roadmapa oznacza persistent render history jako wykonany etap.
-
-## Zakres funkcjonalny
-
-- Eksporty WebM są zapisywane jako `Blob` w IndexedDB.
-- Po odświeżeniu strony hook odczytuje zapisane eksporty i tworzy nowe `objectURL` do pobrania.
-- Historia renderów jest limitowana do 10 elementów.
-- Starsze eksporty są przycinane przez `pruneRenderExports`.
-- Usunięcie pojedynczego eksportu czyści UI, `objectURL` i rekord w IndexedDB.
-- Czyszczenie historii usuwa wszystkie rekordy z IndexedDB.
-- UI pokazuje status: `zapisane lokalnie` albo `sesyjne`.
+- Audio engine ma teraz próbę wykrywania transientów zamiast samej heurystyki energii.
+- BPM jest estymowane z mediany odstępów między transientami, gdy dane są wystarczające.
+- Media quality potrafi raportować rozdzielczość, proporcje, megapiksele, score i potencjalne duplikaty.
+- Export manifest opisuje projekt, render, timeline, audio i jakość mediów.
+- Render profiles rozdzielają szybki WebM preview od przyszłego MP4/ffmpeg.
+- Storage health pozwala diagnozować usage/quota przeglądarki.
+- ffmpeg readiness pokazuje blockery i warnings przed MP4.
+- Project diagnostics agreguje problemy projektu do statusu `ok`, `warning` albo `blocked`.
+- QA checklist opisuje smoke testy i regression checklist.
+- MP4 plan opisuje bezpieczną ścieżkę do ffmpeg.wasm bez niszczenia WebM pipeline.
 
 ## Następny rekomendowany etap
 
-ffmpeg.wasm proof of concept albo poprawa jakości beat engine: realniejsza detekcja transientów, scoring ostrości zdjęć i przygotowanie MP4 9:16 / 16:9.
+Extract deterministic frame renderer: wydzielić render pojedynczej klatki z canvas preview, dodać testowy eksport PNG i przygotować sekwencję klatek pod późniejszy ffmpeg.wasm / MP4.
