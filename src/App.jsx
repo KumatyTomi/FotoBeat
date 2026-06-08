@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { CheckCircle2, Download, FileJson, Film, ImagePlus, Music, Play, RefreshCcw, Save, Sparkles, Upload, Wand2 } from 'lucide-react';
+import { CheckCircle2, Download, FileJson, Film, ImagePlus, Music, Play, RefreshCcw, Save, Sparkles, Trash2, Upload, Wand2 } from 'lucide-react';
 import EffectCard from './components/EffectCard.jsx';
 import FileDropzone from './components/FileDropzone.jsx';
 import TimelinePreview from './components/TimelinePreview.jsx';
@@ -182,8 +182,8 @@ export default function App() {
 
       <section className="render-export-panel">
         <div>
-          <p className="panel-kicker">Video export proof of concept</p>
-          <h2>Eksport canvas preview do WebM {audio ? 'z audio' : 'bez audio'}</h2>
+          <p className="panel-kicker">Render queue</p>
+          <h2>Eksport WebM {audio ? 'z audio' : 'bez audio'}</h2>
           <p>{audio ? 'MediaRecorder połączy obraz z canvas i ścieżkę audio z Web Audio API.' : 'Dodaj MP3/WAV, aby eksport WebM zawierał także ścieżkę audio.'}</p>
         </div>
         <div className="render-export-actions">
@@ -191,13 +191,29 @@ export default function App() {
             <Film size={16} />
             {recorder.recordingState.status === 'recording' ? 'Nagrywanie...' : `Nagraj ${recorder.maxDuration}s WebM`}
           </button>
-          {recorder.recordingState.downloadUrl && (
-            <a className="ghost-button compact" href={recorder.recordingState.downloadUrl} download={recorder.recordingState.fileName}>
-              <Download size={16} />Pobierz WebM
-            </a>
+          {recorder.exportHistory.length > 0 && (
+            <button className="ghost-button compact" onClick={recorder.clearExportHistory}>
+              <Trash2 size={16} />Wyczyść historię
+            </button>
           )}
         </div>
         <p className={`render-status ${recorder.recordingState.status}`}>{recorder.recordingState.message}</p>
+        <div className="render-history">
+          {recorder.exportHistory.length === 0 ? (
+            <span className="empty-state">Brak eksportów. Nagraj pierwszy plik WebM, a pojawi się tutaj jako element kolejki.</span>
+          ) : recorder.exportHistory.map((item) => (
+            <article key={item.id} className="render-history-item">
+              <div>
+                <strong>{item.fileName}</strong>
+                <span>{new Date(item.createdAt).toLocaleString('pl-PL')} · {item.duration}s · {formatBytes(item.size)} · {item.hasAudio ? 'audio + video' : 'video only'}</span>
+              </div>
+              <div className="render-history-actions">
+                <a className="ghost-button compact" href={item.downloadUrl} download={item.fileName}><Download size={16} />Pobierz</a>
+                <button className="ghost-button compact" onClick={() => recorder.removeExport(item.id)}><Trash2 size={16} />Usuń</button>
+              </div>
+            </article>
+          ))}
+        </div>
       </section>
 
       <section id="upload" className="workspace-grid">
@@ -244,7 +260,14 @@ export default function App() {
       </section>
 
       <TimelinePreview timeline={timeline} />
-      <section id="roadmap" className="roadmap-panel"><div><h2>Następne moduły</h2><p>Kolejne kroki: render queue, realniejsza detekcja transientów i MP4 przez ffmpeg.wasm.</p></div><div className="roadmap-list"><span><RefreshCcw size={16} /> Autosave + snapshots</span><span><Film size={16} /> WebM z audio track</span><span><Download size={16} /> Paczki eksportowe ZIP</span></div></section>
+      <section id="roadmap" className="roadmap-panel"><div><h2>Następne moduły</h2><p>Kolejne kroki: persistent render history, realniejsza detekcja transientów i MP4 przez ffmpeg.wasm.</p></div><div className="roadmap-list"><span><RefreshCcw size={16} /> Autosave + snapshots</span><span><Film size={16} /> Render queue</span><span><Download size={16} /> Paczki eksportowe ZIP</span></div></section>
     </main>
   );
+}
+
+function formatBytes(bytes) {
+  if (!Number.isFinite(bytes) || bytes <= 0) return '0 B';
+  const units = ['B', 'KB', 'MB', 'GB'];
+  const index = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
+  return `${(bytes / 1024 ** index).toFixed(index === 0 ? 0 : 1)} ${units[index]}`;
 }
