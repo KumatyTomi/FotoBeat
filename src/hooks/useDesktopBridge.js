@@ -135,6 +135,40 @@ export function useDesktopBridge() {
     return history;
   }
 
+  async function showItemInFolder(targetPath) {
+    const api = getDesktopApi();
+    if (!api || typeof api.showItemInFolder !== 'function') {
+      setStatus({ type: 'error', message: 'Akcja Pokaż w folderze nie jest dostępna w preload bridge.' });
+      return null;
+    }
+
+    if (!targetPath) {
+      setStatus({ type: 'error', message: 'Brak ścieżki do pokazania w folderze.' });
+      return null;
+    }
+
+    const result = await api.showItemInFolder(targetPath);
+    setStatus({ type: 'success', message: `Pokazuję w folderze: ${targetPath}` });
+    return result;
+  }
+
+  async function openPath(targetPath) {
+    const api = getDesktopApi();
+    if (!api || typeof api.openPath !== 'function') {
+      setStatus({ type: 'error', message: 'Akcja otwierania ścieżki nie jest dostępna w preload bridge.' });
+      return null;
+    }
+
+    if (!targetPath) {
+      setStatus({ type: 'error', message: 'Brak ścieżki do otwarcia.' });
+      return null;
+    }
+
+    const result = await api.openPath(targetPath);
+    setStatus({ type: 'success', message: `Otwieram: ${targetPath}` });
+    return result;
+  }
+
   async function pickOutputFolder() {
     const api = getDesktopApi();
     if (!api) {
@@ -212,6 +246,8 @@ export function useDesktopBridge() {
     refreshFfmpegStatus,
     refreshRenderHistory,
     clearRenderHistory,
+    showItemInFolder,
+    openPath,
     pickOutputFolder,
     createLocalRenderJob,
     createLocalRenderJobFromSequence,
