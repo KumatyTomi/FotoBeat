@@ -5,6 +5,11 @@ const INITIAL_STATUS = {
   message: 'Tryb desktop niewykryty. Uruchom aplikację przez Electron.'
 };
 
+const DESKTOP_SEQUENCE_LIMITS = {
+  maxFrames: 90,
+  maxTotalBytes: 120 * 1024 * 1024
+};
+
 function getDesktopApi() {
   if (typeof window === 'undefined') return null;
   return window.fotobeatDesktop ?? null;
@@ -132,6 +137,12 @@ export function useDesktopBridge() {
       return createLocalRenderJob(payload);
     }
 
+    const frameCheck = validateSequencePayload(sequence);
+    if (!frameCheck.ok) {
+      setStatus({ type: 'error', message: frameCheck.message });
+      return null;
+    }
+
     setStatus({ type: 'info', message: `Przygotowuję ${sequence.frames.length} klatek PNG do desktop workspace...` });
     const frames = await Promise.all(sequence.frames.map(async (frame) => ({
       index: frame.index,
@@ -167,4 +178,38 @@ export function useDesktopBridge() {
     createLocalRenderJobFromSequence,
     clearLocalRenderJob
   };
+}
+
+function validateSequencePayload(sequence) {
+  if (sequence.frames.length > DESKTOP_SEQUENCE_LIMITS.maxFrames) {
+    return {
+      ok: false,
+      message: `Sekwencja ma ${sequence.frames.length} klatek. Limit desktop IPC to ${DESKTOP_SEQUENCE_LIMITS.maxFrames}.`
+    };
+  }
+
+  const totalSize = sequence.frames.reduce((sum, frame) => sum + (Number(frame.size) || 0), 0);
+  if (totalSize > DESKTOP_SEQUENCE_LIMITS.maxTotalBytes) {
+    return {
+      ok: false,
+      message: `Sekwencja PNG ma ${formatBytes(totalSize)}. Limit desktop IPC to ${formatBytes(DESKTOP_SEQUENCE_LIMITS.maxTotalBytes)}.`
+    };
+  }
+
+  const missingBlob = sequence.frames.find((frame) => !frame.blob || typeof frame.blob.arrayBuffer !== 'function');
+  if (missingBlob) {
+    return {
+      ok: false,
+      message: `Klatka ${missingBlob.index ?? '?'} nie ma poprawnego PNG Blob.`
+    };
+  }
+
+  return { ok: true, totalSize };
+}
+
+function formatBytes(bytes) {
+  if (!Number.isFinite(bytes) || bytes <= 0) return '0 B';
+  const units = ['B', 'KB', 'MB', 'GB'];
+  const index = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
+  return `${(bytes / 1024 ** index).toFixed(index === 0 ? 0 : 1)} ${units[index]}`;
 }
