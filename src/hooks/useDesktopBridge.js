@@ -20,6 +20,7 @@ export function useDesktopBridge() {
   const [ffmpegStatus, setFfmpegStatus] = useState(null);
   const [outputFolder, setOutputFolder] = useState(null);
   const [localRenderJob, setLocalRenderJob] = useState(null);
+  const [renderHistory, setRenderHistory] = useState([]);
   const [status, setStatus] = useState(INITIAL_STATUS);
 
   const available = useMemo(() => Boolean(getDesktopApi()), []);
@@ -37,12 +38,14 @@ export function useDesktopBridge() {
 
     Promise.all([
       api.getVersion(),
-      typeof api.getFfmpegStatus === 'function' ? api.getFfmpegStatus() : Promise.resolve(null)
+      typeof api.getFfmpegStatus === 'function' ? api.getFfmpegStatus() : Promise.resolve(null),
+      typeof api.listRenderHistory === 'function' ? api.listRenderHistory(12) : Promise.resolve([])
     ])
-      .then(([info, ffmpeg]) => {
+      .then(([info, ffmpeg, history]) => {
         if (!active) return;
         setVersion(info);
         setFfmpegStatus(ffmpeg);
+        setRenderHistory(Array.isArray(history) ? history : []);
         setStatus({
           type: ffmpeg?.available ? 'success' : 'warning',
           message: ffmpeg?.available
@@ -76,6 +79,10 @@ export function useDesktopBridge() {
           type: nextJob.status === 'done' ? 'success' : 'info',
           message: describeDesktopJob(nextJob)
         });
+
+        if (['done', 'failed'].includes(nextJob.status)) {
+          await refreshRenderHistory();
+        }
       } catch (error) {
         setStatus({ type: 'error', message: error.message || 'Błąd pollingu desktop render job.' });
       }
@@ -101,6 +108,31 @@ export function useDesktopBridge() {
         : 'FFmpeg nie jest dostępny lokalnie.'
     });
     return nextStatus;
+  }
+
+  async function refreshRenderHistory(limit = 12) {
+    const api = getDesktopApi();
+    if (!api || typeof api.listRenderHistory !== 'function') {
+      return [];
+    }
+
+    const history = await api.listRenderHistory(limit);
+    const safeHistory = Array.isArray(history) ? history : [];
+    setRenderHistory(safeHistory);
+    return safeHistory;
+  }
+
+  async function clearRenderHistory() {
+    const api = getDesktopApi();
+    if (!api || typeof api.clearRenderHistory !== 'function') {
+      setStatus({ type: 'error', message: 'Historia renderów nie jest dostępna w preload bridge.' });
+      return [];
+    }
+
+    const history = await api.clearRenderHistory();
+    setRenderHistory(Array.isArray(history) ? history : []);
+    setStatus({ type: 'success', message: 'Historia renderów desktop została wyczyszczona.' });
+    return history;
   }
 
   async function pickOutputFolder() {
@@ -132,6 +164,7 @@ export function useDesktopBridge() {
     });
     setLocalRenderJob(job);
     setStatus({ type: 'info', message: describeDesktopJob(job) });
+    await refreshRenderHistory();
     return job;
   }
 
@@ -174,8 +207,11 @@ export function useDesktopBridge() {
     ffmpegReady,
     outputFolder,
     localRenderJob,
+    renderHistory,
     status,
     refreshFfmpegStatus,
+    refreshRenderHistory,
+    clearRenderHistory,
     pickOutputFolder,
     createLocalRenderJob,
     createLocalRenderJobFromSequence,
