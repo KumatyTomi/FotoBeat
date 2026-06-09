@@ -2,6 +2,7 @@ const { randomUUID } = require('node:crypto');
 const fs = require('node:fs/promises');
 const path = require('node:path');
 const os = require('node:os');
+const { buildRenderPlan } = require('./renderPlan.cjs');
 
 const jobs = new Map();
 
@@ -15,9 +16,11 @@ async function createLocalRenderJob(payload = {}) {
     status: 'queued',
     progress: 0,
     manifest: payload.manifest ?? null,
+    renderPlan: null,
     outputFolder,
     jobFolder,
     manifestPath: path.join(jobFolder, 'manifest.fotobeat.json'),
+    renderPlanPath: path.join(jobFolder, 'render-plan.json'),
     statusPath: path.join(jobFolder, 'render-job.json'),
     outputPath: null,
     logs: ['Local desktop render job queued'],
@@ -27,9 +30,13 @@ async function createLocalRenderJob(payload = {}) {
 
   try {
     await fs.mkdir(jobFolder, { recursive: true });
+    job.renderPlan = buildRenderPlan(job);
+    job.outputPath = job.renderPlan.output.path;
     await writeManifest(job);
+    await writeRenderPlan(job);
     await writeJobStatus(job);
     job.logs.push(`Render workspace prepared: ${jobFolder}`);
+    job.logs.push(`Render plan written: ${job.renderPlanPath}`);
   } catch (error) {
     job.status = 'failed';
     job.logs.push(`Failed to prepare render workspace: ${error.message}`);
@@ -41,12 +48,12 @@ async function createLocalRenderJob(payload = {}) {
     scheduleMockProgress(job.id);
   }
 
-  return stripHeavyManifest(job);
+  return stripHeavyPayload(job);
 }
 
 function getLocalRenderJob(jobId) {
   const job = jobs.get(jobId);
-  return job ? stripHeavyManifest(job) : null;
+  return job ? stripHeavyPayload(job) : null;
 }
 
 function scheduleMockProgress(jobId) {
@@ -65,7 +72,6 @@ function scheduleMockProgress(jobId) {
     job.updatedAt = new Date().toISOString();
 
     if (job.status === 'done') {
-      job.outputPath = path.join(job.jobFolder, `fotobeat-${job.id}.mp4`);
       await writeMockOutput(job);
       clearInterval(interval);
     }
@@ -83,29 +89,42 @@ async function writeManifest(job) {
   }, null, 2), 'utf8');
 }
 
+async function writeRenderPlan(job) {
+  await fs.writeFile(job.renderPlanPath, JSON.stringify(job.renderPlan, null, 2), 'utf8');
+}
+
 async function writeJobStatus(job) {
-  await fs.writeFile(job.statusPath, JSON.stringify(stripHeavyManifest(job), null, 2), 'utf8');
+  await fs.writeFile(job.statusPath, JSON.stringify(stripHeavyPayload(job), null, 2), 'utf8');
 }
 
 async function writeMockOutput(job) {
   const content = [
-    'FotoBeat.me desktop mock render output',
+    'FotoBeat Desktop mock render output',
     `job=${job.id}`,
     `createdAt=${job.createdAt}`,
     `completedAt=${job.updatedAt}`,
+    `renderPlan=${job.renderPlanPath}`,
     '',
-    'This placeholder marks where the final MP4 will be written by the local FFmpeg pipeline.'
+    'This placeholder marks where the final MP4 will be written by the local FFmpeg pipeline.',
+    'Next implementation step: execute render-plan.json with native FFmpeg.'
   ].join('\n');
 
   await fs.writeFile(job.outputPath, content, 'utf8');
   job.logs.push(`Mock output written: ${job.outputPath}`);
 }
 
-function stripHeavyManifest(job) {
-  const { manifest, ...rest } = job;
+function stripHeavyPayload(job) {
+  const { manifest, renderPlan, ...rest } = job;
   return {
     ...rest,
-    hasManifest: Boolean(manifest)
+    hasManifest: Boolean(manifest),
+    hasRenderPlan: Boolean(renderPlan),
+    renderPlanSummary: renderPlan ? {
+      schemaVersion: renderPlan.schemaVersion,
+      inputMode: renderPlan.inputMode,
+      outputPath: renderPlan.output?.path,
+      ffmpegPreview: renderPlan.ffmpeg?.preview
+    } : null
   };
 }
 
