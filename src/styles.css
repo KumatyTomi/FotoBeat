@@ -35,7 +35,8 @@ a {
 .timeline-panel,
 .roadmap-panel,
 .project-panel,
-.audio-panel {
+.audio-panel,
+.desktop-panel {
   border: 1px solid rgba(255, 255, 255, 0.11);
   background: rgba(10, 10, 24, 0.72);
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
@@ -262,7 +263,8 @@ p {
 .timeline-panel,
 .roadmap-panel,
 .project-panel,
-.audio-panel {
+.audio-panel,
+.desktop-panel {
   margin-top: 24px;
   padding: 28px;
 }
@@ -337,7 +339,8 @@ p {
 
 .timeline-meta span,
 .audio-stats span,
-.autosave-pill {
+.autosave-pill,
+.desktop-meta {
   min-width: max-content;
   padding: 9px 12px;
   border-radius: 999px;
@@ -468,6 +471,35 @@ p {
   font-style: normal;
 }
 
+.desktop-meta {
+  margin: 10px 0 0;
+  display: inline-flex;
+  width: fit-content;
+  max-width: 100%;
+  white-space: normal;
+  word-break: break-word;
+}
+
+.desktop-progress {
+  margin: 12px 0;
+}
+
+.desktop-log-list {
+  display: grid;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.desktop-log-list code {
+  display: block;
+  padding: 8px 10px;
+  border-radius: 12px;
+  color: #dffbff;
+  background: rgba(139, 233, 255, 0.08);
+  border: 1px solid rgba(139, 233, 255, 0.12);
+  white-space: normal;
+}
+
 .audio-panel {
   display: flex;
   justify-content: space-between;
@@ -537,7 +569,8 @@ p {
   .timeline-panel,
   .roadmap-panel,
   .project-panel,
-  .audio-panel {
+  .audio-panel,
+  .desktop-panel {
     padding: 20px;
     border-radius: 22px;
   }
