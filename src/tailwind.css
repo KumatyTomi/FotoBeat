@@ -1,0 +1,31 @@
+@import "tailwindcss";
+@plugin "tailwindcss-animate";
+
+@theme {
+  --color-fotobeat-bg: #070711;
+  --color-fotobeat-panel: #0a0a18;
+  --color-fotobeat-cyan: #8be9ff;
+  --color-fotobeat-blue: #00d3ff;
+  --color-fotobeat-violet: #7c3cff;
+  --color-fotobeat-gold: #ffcb59;
+  --radius-fotobeat-panel: 1.75rem;
+  --shadow-fotobeat-glow: 0 0 42px rgb(139 233 255 / 0.24);
+}
+
+@utility fb-glass-panel {
+  border: 1px solid rgb(255 255 255 / 0.1);
+  border-radius: var(--radius-fotobeat-panel);
+  background: rgb(10 10 24 / 0.72);
+  box-shadow: 0 24px 80px rgb(0 0 0 / 0.35);
+  backdrop-filter: blur(18px);
+}
+
+@utility fb-neon-border {
+  border: 1px solid color-mix(in srgb, var(--color-fotobeat-cyan) 42%, transparent);
+  box-shadow: var(--shadow-fotobeat-glow);
+}
+
+@utility fb-focus-ring {
+  outline: 2px solid color-mix(in srgb, var(--color-fotobeat-cyan) 78%, transparent);
+  outline-offset: 3px;
+}
