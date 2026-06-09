@@ -69,10 +69,10 @@ function registerIpcHandlers() {
   });
 
   ipcMain.handle('fotobeat:create-local-render-job', async (_event, payload) => {
-    return createLocalRenderJob(payload);
+    return await createLocalRenderJob(payload);
   });
 
-  ipcMain.handle('fotobeat:get-local-render-job', async (_event, jobId) => {
+  ipcMain.handle('fotobeat:get-local-render-job', (_event, jobId) => {
     return getLocalRenderJob(jobId);
   });
 }
