@@ -1,0 +1,39 @@
+{
+  "name": "@fotobeat/desktop",
+  "version": "0.1.0",
+  "private": true,
+  "type": "commonjs",
+  "description": "FotoBeat.me desktop wrapper for local media and render workflows.",
+  "main": "src/main.cjs",
+  "scripts": {
+    "dev": "FOTOBEAT_DESKTOP_DEV_URL=http://localhost:5173 electron .",
+    "start": "electron .",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder"
+  },
+  "devDependencies": {
+    "electron": "latest",
+    "electron-builder": "latest"
+  },
+  "build": {
+    "appId": "me.fotobeat.desktop",
+    "productName": "FotoBeat.me Desktop",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "src/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "../dist",
+        "to": "web",
+        "filter": ["**/*"]
+      }
+    ],
+    "win": {
+      "target": "nsis"
+    }
+  }
+}
