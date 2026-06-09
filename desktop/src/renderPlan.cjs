@@ -8,8 +8,9 @@ function buildRenderPlan(job) {
   const fps = sequence?.fps ?? 30;
   const width = sequence?.width ?? format.width ?? 1080;
   const height = sequence?.height ?? format.height ?? 1920;
-  const outputFileName = `fotobeat-${job.id}.mp4`;
-  const outputPath = path.join(job.jobFolder, outputFileName);
+  const outputFileName = path.basename(job.outputPath ?? `fotobeat-${job.id}.mp4`);
+  const outputPath = job.outputPath ?? path.join(job.jobFolder, outputFileName);
+  const tempOutputPath = job.tempOutputPath ?? `${outputPath}.partial`;
   const inputMode = sequence ? 'frame-sequence' : 'manifest-preview';
 
   return {
@@ -49,6 +50,7 @@ function buildRenderPlan(job) {
     output: {
       fileName: outputFileName,
       path: outputPath,
+      tempPath: tempOutputPath,
       container: 'mp4',
       videoCodec: 'libx264',
       pixelFormat: 'yuv420p',
@@ -59,12 +61,12 @@ function buildRenderPlan(job) {
       fps,
       width,
       height,
-      outputPath,
+      outputPath: tempOutputPath,
       hasAudio: Boolean(audio)
     }),
     notes: [
-      'This is a planning artifact. The current renderer still writes a placeholder output.',
-      'Native FFmpeg execution should consume this plan in the next stage.'
+      'This plan writes FFmpeg output to output.tempPath first.',
+      'The render queue promotes output.tempPath to output.path only after a successful encode.'
     ]
   };
 }
