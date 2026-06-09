@@ -5,9 +5,15 @@ const INITIAL_STATUS = {
   message: 'Tryb desktop niewykryty. Uruchom aplikację przez Electron.'
 };
 
+const TERMINAL_RENDER_STATUSES = ['done', 'failed', 'canceled'];
+
 const DESKTOP_SEQUENCE_LIMITS = {
   maxFrames: 90,
   maxTotalBytes: 120 * 1024 * 1024
+};
+
+const DESKTOP_AUDIO_LIMITS = {
+  maxBytes: 60 * 1024 * 1024
 };
 
 function getDesktopApi() {
@@ -66,7 +72,7 @@ export function useDesktopBridge() {
   useEffect(() => {
     const api = getDesktopApi();
 
-    if (!api || !localRenderJob || ['done', 'failed'].includes(localRenderJob.status)) {
+    if (!api || !localRenderJob || TERMINAL_RENDER_STATUSES.includes(localRenderJob.status)) {
       return undefined;
     }
 
@@ -76,11 +82,11 @@ export function useDesktopBridge() {
         if (!nextJob) return;
         setLocalRenderJob(nextJob);
         setStatus({
-          type: nextJob.status === 'done' ? 'success' : 'info',
+          type: nextJob.status === 'done' ? 'success' : nextJob.status === 'failed' ? 'error' : nextJob.status === 'canceled' ? 'warning' : 'info',
           message: describeDesktopJob(nextJob)
         });
 
-        if (['done', 'failed'].includes(nextJob.status)) {
+        if (TERMINAL_RENDER_STATUSES.includes(nextJob.status)) {
           await refreshRenderHistory();
         }
       } catch (error) {
@@ -169,6 +175,44 @@ export function useDesktopBridge() {
     return result;
   }
 
+  async function cancelLocalRenderJob(jobId = localRenderJob?.id) {
+    const api = getDesktopApi();
+    if (!api || typeof api.cancelLocalRenderJob !== 'function') {
+      setStatus({ type: 'error', message: 'Cancel desktop render nie jest dostępny w preload bridge.' });
+      return null;
+    }
+
+    if (!jobId) {
+      setStatus({ type: 'error', message: 'Brak desktop jobId do przerwania.' });
+      return null;
+    }
+
+    const job = await api.cancelLocalRenderJob(jobId);
+    if (job) setLocalRenderJob(job);
+    setStatus({ type: 'warning', message: `Przerwano desktop render: ${jobId}` });
+    await refreshRenderHistory();
+    return job;
+  }
+
+  async function retryLocalRenderJob(jobId = localRenderJob?.id) {
+    const api = getDesktopApi();
+    if (!api || typeof api.retryLocalRenderJob !== 'function') {
+      setStatus({ type: 'error', message: 'Retry desktop render nie jest dostępny w preload bridge.' });
+      return null;
+    }
+
+    if (!jobId) {
+      setStatus({ type: 'error', message: 'Brak desktop jobId do ponowienia.' });
+      return null;
+    }
+
+    const job = await api.retryLocalRenderJob(jobId);
+    if (job) setLocalRenderJob(job);
+    setStatus({ type: 'info', message: `Ponawiam desktop render: ${jobId}` });
+    await refreshRenderHistory();
+    return job;
+  }
+
   async function pickOutputFolder() {
     const api = getDesktopApi();
     if (!api) {
@@ -202,7 +246,7 @@ export function useDesktopBridge() {
     return job;
   }
 
-  async function createLocalRenderJobFromSequence(payload, sequence) {
+  async function createLocalRenderJobFromSequence(payload, sequence, audioFile = null) {
     if (!sequence?.frames?.length) {
       return createLocalRenderJob(payload);
     }
@@ -213,7 +257,13 @@ export function useDesktopBridge() {
       return null;
     }
 
-    setStatus({ type: 'info', message: `Przygotowuję ${sequence.frames.length} klatek PNG do desktop workspace...` });
+    const audioCheck = validateAudioPayload(audioFile);
+    if (!audioCheck.ok) {
+      setStatus({ type: 'error', message: audioCheck.message });
+      return null;
+    }
+
+    setStatus({ type: 'info', message: `Przygotowuję ${sequence.frames.length} klatek PNG${audioFile ? ' i audio' : ''} do desktop workspace...` });
     const frames = await Promise.all(sequence.frames.map(async (frame) => ({
       index: frame.index,
       fileName: frame.fileName,
@@ -221,9 +271,18 @@ export function useDesktopBridge() {
       arrayBuffer: await frame.blob.arrayBuffer()
     })));
 
+    const audioFilePayload = audioFile ? {
+      name: audioFile.name,
+      fileName: audioFile.name,
+      size: audioFile.size,
+      type: audioFile.type,
+      arrayBuffer: await audioFile.arrayBuffer()
+    } : null;
+
     return createLocalRenderJob({
       ...payload,
-      frames
+      frames,
+      audioFile: audioFilePayload
     });
   }
 
@@ -248,6 +307,8 @@ export function useDesktopBridge() {
     clearRenderHistory,
     showItemInFolder,
     openPath,
+    cancelLocalRenderJob,
+    retryLocalRenderJob,
     pickOutputFolder,
     createLocalRenderJob,
     createLocalRenderJobFromSequence,
@@ -258,6 +319,10 @@ export function useDesktopBridge() {
 function describeDesktopJob(job) {
   const mode = job.mode ?? 'unknown-mode';
   const base = `Desktop render: ${job.status} · ${job.progress}% · ${mode}`;
+
+  if (job.status === 'canceled') {
+    return `${base} · canceled by user`;
+  }
 
   if (job.hasNativeResult || job.nativeResultSummary) {
     const size = job.nativeResultSummary?.output?.sizeBytes
@@ -306,6 +371,23 @@ function validateSequencePayload(sequence) {
   }
 
   return { ok: true, totalSize };
+}
+
+function validateAudioPayload(audioFile) {
+  if (!audioFile) return { ok: true };
+
+  if (typeof audioFile.arrayBuffer !== 'function') {
+    return { ok: false, message: 'Plik audio nie ma poprawnego binary payload.' };
+  }
+
+  if ((Number(audioFile.size) || 0) > DESKTOP_AUDIO_LIMITS.maxBytes) {
+    return {
+      ok: false,
+      message: `Audio ma ${formatBytes(audioFile.size)}. Limit desktop IPC to ${formatBytes(DESKTOP_AUDIO_LIMITS.maxBytes)}.`
+    };
+  }
+
+  return { ok: true };
 }
 
 function formatBytes(bytes) {
