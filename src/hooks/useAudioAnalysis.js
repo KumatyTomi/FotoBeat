@@ -5,6 +5,14 @@ export function useAudioAnalysis(audio) {
   const [audioAnalysis, setAudioAnalysis] = useState(null);
 
   useEffect(() => {
+    if (typeof window !== 'undefined') {
+      if (audio) {
+        window.__fotobeatDesktopAudioFile = audio;
+      } else {
+        delete window.__fotobeatDesktopAudioFile;
+      }
+    }
+
     if (!audio) {
       setAudioAnalysis(null);
       return;
