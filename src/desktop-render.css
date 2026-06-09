@@ -58,13 +58,30 @@
   white-space: normal;
 }
 
+.desktop-path-actions {
+  margin-top: 12px;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+}
+
+.desktop-path-actions .ghost-button {
+  padding: 9px 12px;
+  font-size: 13px;
+}
+
+.desktop-path-actions .ghost-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
 @media (max-width: 760px) {
   .desktop-render-history-heading {
     align-items: stretch;
     flex-direction: column;
   }
 
-  .desktop-render-history-heading .render-export-actions {
+  .desktop-render-history-heading .render-export-actions,
+  .desktop-path-actions {
     justify-content: flex-start;
   }
 }
