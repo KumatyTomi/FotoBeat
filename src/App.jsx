@@ -174,7 +174,7 @@ export default function App() {
   }
 
   async function createDesktopRenderJob(sequence = null) {
-    await desktop.createLocalRenderJob({
+    const payload = {
       manifest: {
         schemaVersion: 'fotobeat.desktop.render.v1',
         project: projectExportPayload.project,
@@ -193,7 +193,14 @@ export default function App() {
           totalSize: sequence.totalSize
         } : null
       }
-    });
+    };
+
+    if (sequence) {
+      await desktop.createLocalRenderJobFromSequence(payload, sequence);
+      return;
+    }
+
+    await desktop.createLocalRenderJob(payload);
   }
 
   async function importProjectFile(event) {
