@@ -85,17 +85,43 @@ async function pathExists(targetPath) {
 async function writeOutputSidecar(job) {
   if (!job.sidecarPath) return null;
 
+  const nativeResultSummary = job.nativeResult ? {
+    schemaVersion: job.nativeResult.schemaVersion,
+    outputPath: job.nativeResult.outputPath,
+    tempOutputPath: job.nativeResult.tempOutputPath,
+    exitCode: job.nativeResult.ffmpeg?.exitCode,
+    ffmpegBinary: job.nativeResult.ffmpeg?.binary,
+    output: job.nativeResult.output,
+    startedAt: job.nativeResult.startedAt,
+    finishedAt: job.nativeResult.finishedAt
+  } : null;
+
   const payload = {
     schemaVersion: 'fotobeat.desktop.output-sidecar.v1',
     jobId: job.id,
     status: job.status,
+    mode: job.mode ?? null,
+    nativeReady: Boolean(job.nativeReady),
     outputPath: job.outputPath,
     tempOutputPath: job.tempOutputPath,
     renderPlanPath: job.renderPlanPath,
     manifestPath: job.manifestPath,
+    statusPath: job.statusPath,
+    jobFolder: job.jobFolder,
+    outputFolder: job.outputFolder,
     createdAt: job.createdAt,
     updatedAt: job.updatedAt,
     progress: job.progress,
+    frameImport: job.frameImport ?? null,
+    nativeResult: nativeResultSummary,
+    hasNativeResult: Boolean(job.nativeResult),
+    renderPlanSummary: job.renderPlan ? {
+      schemaVersion: job.renderPlan.schemaVersion,
+      inputMode: job.renderPlan.inputMode,
+      outputPath: job.renderPlan.output?.path,
+      tempOutputPath: job.renderPlan.output?.tempPath,
+      ffmpegPreview: job.renderPlan.ffmpeg?.preview
+    } : null,
     logs: job.logs,
     integrity: job.integrity ?? null
   };
