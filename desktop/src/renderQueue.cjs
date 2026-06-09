@@ -10,6 +10,7 @@ const {
   promoteTempOutput,
   writeOutputSidecar
 } = require('./exportIntegrity.cjs');
+const { runNativeFfmpegRender, validateRenderPlan } = require('./nativeFfmpegRenderer.cjs');
 
 const jobs = new Map();
 
@@ -22,6 +23,9 @@ async function createLocalRenderJob(payload = {}) {
     id,
     status: 'queued',
     progress: 0,
+    mode: 'preparing',
+    nativeReady: false,
+    nativeResult: null,
     manifest: payload.manifest ?? null,
     renderPlan: null,
     outputFolder,
@@ -54,8 +58,10 @@ async function createLocalRenderJob(payload = {}) {
     job.statusPath = path.join(job.jobFolder, 'render-job.json');
     job.renderPlan = buildRenderPlan(job);
     job.outputPath = job.renderPlan.output.path;
-    job.tempOutputPath = `${job.outputPath}.partial`;
+    job.tempOutputPath = job.renderPlan.output.tempPath;
     job.sidecarPath = `${job.outputPath}.json`;
+    job.nativeReady = await isNativeReady(job);
+    job.mode = job.nativeReady ? 'native-ready' : 'placeholder';
 
     await writeManifest(job);
     await writeRenderPlan(job);
@@ -63,6 +69,9 @@ async function createLocalRenderJob(payload = {}) {
     await writeOutputSidecar(job);
     job.logs.push(`Render workspace prepared: ${job.jobFolder}`);
     job.logs.push(`Render plan written: ${job.renderPlanPath}`);
+    job.logs.push(job.nativeReady
+      ? 'Native FFmpeg input detected: frames/frame_0001.png'
+      : 'Native FFmpeg input missing: add frames/frame_0001.png to job workspace to enable real encode.');
     workspace.warnings.forEach((warning) => job.logs.push(`Warning: ${warning}`));
   } catch (error) {
     job.status = 'failed';
@@ -72,7 +81,7 @@ async function createLocalRenderJob(payload = {}) {
   jobs.set(job.id, job);
 
   if (job.status !== 'failed') {
-    scheduleMockProgress(job.id);
+    scheduleRenderProgress(job.id);
   }
 
   return stripHeavyPayload(job);
@@ -83,7 +92,7 @@ function getLocalRenderJob(jobId) {
   return job ? stripHeavyPayload(job) : null;
 }
 
-function scheduleMockProgress(jobId) {
+function scheduleRenderProgress(jobId) {
   const interval = setInterval(async () => {
     const job = jobs.get(jobId);
 
@@ -93,17 +102,24 @@ function scheduleMockProgress(jobId) {
     }
 
     try {
+      if (job.nativeReady) {
+        clearInterval(interval);
+        await runNativeJob(job);
+        jobs.set(jobId, job);
+        return;
+      }
+
       const nextProgress = Math.min(100, job.progress + 20);
       job.progress = nextProgress;
       job.status = nextProgress >= 100 ? 'done' : 'rendering';
-      job.logs.push(createLog(nextProgress));
+      job.logs.push(createLog(nextProgress, job.mode));
       job.updatedAt = new Date().toISOString();
 
       if (job.status === 'done') {
         await writeMockOutput(job);
         await promoteTempOutput(job);
         job.integrity.outputInspection = await inspectOutput(job);
-        job.logs.push(`Output promoted: ${job.outputPath}`);
+        job.logs.push(`Placeholder output promoted: ${job.outputPath}`);
         await writeOutputSidecar(job);
         clearInterval(interval);
       }
@@ -111,16 +127,72 @@ function scheduleMockProgress(jobId) {
       await writeJobStatus(job);
       jobs.set(jobId, job);
     } catch (error) {
-      job.status = 'failed';
-      job.updatedAt = new Date().toISOString();
-      job.logs.push(`Render failed: ${error.message}`);
-      await cleanupPartialOutput(job);
-      await writeJobStatus(job);
-      await writeOutputSidecar(job);
+      await failJob(job, error);
       jobs.set(jobId, job);
       clearInterval(interval);
     }
   }, 1200);
+}
+
+async function runNativeJob(job) {
+  job.status = 'rendering';
+  job.progress = Math.max(job.progress, 5);
+  job.mode = 'native-ffmpeg';
+  job.updatedAt = new Date().toISOString();
+  job.logs.push('Starting native FFmpeg render from render-plan.json');
+  await writeJobStatus(job);
+
+  const validation = await validateRenderPlan(job.renderPlan);
+  if (!validation.ok) {
+    throw new Error(`Native render validation failed: ${validation.errors.join(' | ')}`);
+  }
+  validation.warnings.forEach((warning) => job.logs.push(`Native warning: ${warning}`));
+
+  const result = await runNativeFfmpegRender({
+    renderPlanPath: job.renderPlanPath,
+    onProgress: ({ progress }) => {
+      job.progress = Math.max(job.progress, progress);
+      job.updatedAt = new Date().toISOString();
+    },
+    onLog: (log) => {
+      if (!log) return;
+      const normalized = log.length > 240 ? `${log.slice(0, 240)}...` : log;
+      job.logs.push(`ffmpeg: ${normalized}`);
+    }
+  });
+
+  await promoteTempOutput(job);
+  job.nativeResult = result;
+  job.status = 'done';
+  job.progress = 100;
+  job.updatedAt = new Date().toISOString();
+  job.integrity.outputInspection = await inspectOutput(job);
+  job.logs.push(`Native FFmpeg output promoted: ${job.outputPath}`);
+  await writeJobStatus(job);
+  await writeOutputSidecar(job);
+}
+
+async function failJob(job, error) {
+  job.status = 'failed';
+  job.updatedAt = new Date().toISOString();
+  job.logs.push(`Render failed: ${error.message}`);
+  await cleanupPartialOutput(job);
+  await writeJobStatus(job);
+  await writeOutputSidecar(job);
+}
+
+async function isNativeReady(job) {
+  if (job.renderPlan?.inputMode !== 'frame-sequence') return false;
+  return pathExists(path.join(job.jobFolder, 'frames', 'frame_0001.png'));
+}
+
+async function pathExists(targetPath) {
+  try {
+    await fs.access(targetPath);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 async function writeManifest(job) {
@@ -141,40 +213,55 @@ async function writeJobStatus(job) {
 
 async function writeMockOutput(job) {
   const content = [
-    'FotoBeat Desktop mock render output',
+    'FotoBeat Desktop placeholder render output',
     `job=${job.id}`,
     `createdAt=${job.createdAt}`,
     `completedAt=${job.updatedAt}`,
     `renderPlan=${job.renderPlanPath}`,
     `sidecar=${job.sidecarPath}`,
     '',
-    'This placeholder marks where the final MP4 will be written by the local FFmpeg pipeline.',
-    'Next implementation step: execute render-plan.json with native FFmpeg.'
+    'Native FFmpeg was not started because frames/frame_0001.png was missing in the job workspace.',
+    'Export/copy a frame sequence into the frames/ directory and rerun the job to enable real MP4 encoding.'
   ].join('\n');
 
   await fs.writeFile(job.tempOutputPath, content, 'utf8');
-  job.logs.push(`Mock temp output written: ${job.tempOutputPath}`);
+  job.logs.push(`Placeholder temp output written: ${job.tempOutputPath}`);
 }
 
 function stripHeavyPayload(job) {
-  const { manifest, renderPlan, ...rest } = job;
+  const { manifest, renderPlan, nativeResult, ...rest } = job;
   return {
     ...rest,
     hasManifest: Boolean(manifest),
     hasRenderPlan: Boolean(renderPlan),
+    hasNativeResult: Boolean(nativeResult),
+    nativeResultSummary: nativeResult ? {
+      schemaVersion: nativeResult.schemaVersion,
+      outputPath: nativeResult.outputPath,
+      exitCode: nativeResult.ffmpeg?.exitCode,
+      output: nativeResult.output
+    } : null,
     renderPlanSummary: renderPlan ? {
       schemaVersion: renderPlan.schemaVersion,
       inputMode: renderPlan.inputMode,
       outputPath: renderPlan.output?.path,
+      tempOutputPath: renderPlan.output?.tempPath,
       ffmpegPreview: renderPlan.ffmpeg?.preview
     } : null
   };
 }
 
-function createLog(progress) {
+function createLog(progress, mode) {
+  if (mode === 'placeholder') {
+    if (progress < 30) return 'Checking local render workspace';
+    if (progress < 60) return 'Waiting for frame sequence files';
+    if (progress < 100) return 'Writing placeholder output because native frames are missing';
+    return 'Placeholder render complete';
+  }
+
   if (progress < 30) return 'Resolving local media paths';
   if (progress < 60) return 'Preparing frames and transitions';
-  if (progress < 100) return 'Encoding local MP4 mock output';
+  if (progress < 100) return 'Encoding local MP4 output';
   return 'Local render complete';
 }
 
