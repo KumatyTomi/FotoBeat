@@ -12,11 +12,13 @@ function getDesktopApi() {
 
 export function useDesktopBridge() {
   const [version, setVersion] = useState(null);
+  const [ffmpegStatus, setFfmpegStatus] = useState(null);
   const [outputFolder, setOutputFolder] = useState(null);
   const [localRenderJob, setLocalRenderJob] = useState(null);
   const [status, setStatus] = useState(INITIAL_STATUS);
 
   const available = useMemo(() => Boolean(getDesktopApi()), []);
+  const ffmpegReady = Boolean(ffmpegStatus?.available);
 
   useEffect(() => {
     const api = getDesktopApi();
@@ -27,11 +29,21 @@ export function useDesktopBridge() {
     }
 
     let active = true;
-    api.getVersion()
-      .then((info) => {
+
+    Promise.all([
+      api.getVersion(),
+      typeof api.getFfmpegStatus === 'function' ? api.getFfmpegStatus() : Promise.resolve(null)
+    ])
+      .then(([info, ffmpeg]) => {
         if (!active) return;
         setVersion(info);
-        setStatus({ type: 'success', message: `Desktop ready · Electron ${info.electronVersion}` });
+        setFfmpegStatus(ffmpeg);
+        setStatus({
+          type: ffmpeg?.available ? 'success' : 'warning',
+          message: ffmpeg?.available
+            ? `Desktop ready · FFmpeg ${ffmpeg.version ?? 'available'}`
+            : 'Desktop bridge gotowy, ale FFmpeg nie jest jeszcze wykryty.'
+        });
       })
       .catch((error) => {
         if (!active) return;
@@ -63,6 +75,25 @@ export function useDesktopBridge() {
 
     return () => window.clearInterval(interval);
   }, [localRenderJob]);
+
+  async function refreshFfmpegStatus() {
+    const api = getDesktopApi();
+    if (!api || typeof api.getFfmpegStatus !== 'function') {
+      setStatus({ type: 'error', message: 'FFmpeg doctor nie jest dostępny w preload bridge.' });
+      return null;
+    }
+
+    setStatus({ type: 'info', message: 'Sprawdzam lokalny FFmpeg...' });
+    const nextStatus = await api.getFfmpegStatus();
+    setFfmpegStatus(nextStatus);
+    setStatus({
+      type: nextStatus.available ? 'success' : 'warning',
+      message: nextStatus.available
+        ? `FFmpeg gotowy: ${nextStatus.version ?? nextStatus.binary}`
+        : 'FFmpeg nie jest dostępny lokalnie.'
+    });
+    return nextStatus;
+  }
 
   async function pickOutputFolder() {
     const api = getDesktopApi();
@@ -99,16 +130,19 @@ export function useDesktopBridge() {
   function clearLocalRenderJob() {
     setLocalRenderJob(null);
     setStatus(available
-      ? { type: 'success', message: 'Desktop bridge gotowy.' }
+      ? { type: ffmpegReady ? 'success' : 'warning', message: ffmpegReady ? 'Desktop bridge i FFmpeg gotowe.' : 'Desktop bridge gotowy, FFmpeg niewykryty.' }
       : INITIAL_STATUS);
   }
 
   return {
     available,
     version,
+    ffmpegStatus,
+    ffmpegReady,
     outputFolder,
     localRenderJob,
     status,
+    refreshFfmpegStatus,
     pickOutputFolder,
     createLocalRenderJob,
     clearLocalRenderJob
