@@ -4,12 +4,15 @@ Desktop wrapper dla FotoBeat.me. Ten moduł pozwala uruchomić istniejący front
 
 ## Status
 
-Aktualnie to scaffold Electron:
+Aktualnie to scaffold Electron z pierwszym zapisem jobów na dysk:
 
 - main process,
 - preload bridge,
 - wybór folderu eksportu,
-- mock lokalnej kolejki renderu,
+- lokalna kolejka renderu,
+- zapis manifestu do folderu joba,
+- zapis statusu joba do JSON,
+- mock output w miejscu przyszłego MP4,
 - tryb dev przez `http://localhost:5173`,
 - tryb build przez `dist/` z web frontendu.
 
@@ -39,24 +42,49 @@ window.fotobeatDesktop.createLocalRenderJob({ manifest, outputFolder })
 window.fotobeatDesktop.getLocalRenderJob(jobId)
 ```
 
-## Następny krok
+## Struktura joba na dysku
 
-Dodać w web UI detekcję desktopu:
+Po kliknięciu `Render lokalny` desktop tworzy folder:
 
-```js
-const isDesktop = Boolean(window.fotobeatDesktop);
+```text
+<outputFolder>/local-render-<uuid>/
+  manifest.fotobeat.json
+  render-job.json
+  fotobeat-local-render-<uuid>.mp4
 ```
 
-Następnie w panelu exportu pokazać:
+Na tym etapie plik `.mp4` jest placeholderem tekstowym. Ma tylko rezerwować docelową ścieżkę i potwierdzić działający zapis na dysk.
+
+## Flow desktop UI
+
+Web UI wykrywa desktop przez:
+
+```js
+Boolean(window.fotobeatDesktop)
+```
+
+Panel `Desktop render` obsługuje:
 
 - wybór folderu eksportu,
-- przycisk `Render lokalny`,
+- utworzenie lokalnego joba,
 - polling `getLocalRenderJob(jobId)`,
-- status i `outputPath`.
+- status, progress, logi i `outputPath`.
+
+## Następny krok
+
+Zastąpić placeholder outputu realnym etapem przygotowania plików pod FFmpeg:
+
+```text
+manifest JSON
+→ resolve local files / frame sequence
+→ build ffmpeg command plan
+→ write render-plan.json
+→ później ffmpeg encode MP4
+```
 
 ## Późniejszy render właściwy
 
-Docelowo mock `renderQueue.cjs` powinien zostać wymieniony na lokalny pipeline:
+Docelowo `renderQueue.cjs` powinien przejść na lokalny pipeline:
 
 ```text
 manifest JSON
