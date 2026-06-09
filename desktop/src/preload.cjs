@@ -5,5 +5,7 @@ contextBridge.exposeInMainWorld('fotobeatDesktop', {
   getFfmpegStatus: () => ipcRenderer.invoke('fotobeat:get-ffmpeg-status'),
   pickOutputFolder: () => ipcRenderer.invoke('fotobeat:pick-output-folder'),
   createLocalRenderJob: (payload) => ipcRenderer.invoke('fotobeat:create-local-render-job', payload),
-  getLocalRenderJob: (jobId) => ipcRenderer.invoke('fotobeat:get-local-render-job', jobId)
+  getLocalRenderJob: (jobId) => ipcRenderer.invoke('fotobeat:get-local-render-job', jobId),
+  listRenderHistory: (limit) => ipcRenderer.invoke('fotobeat:list-render-history', limit),
+  clearRenderHistory: () => ipcRenderer.invoke('fotobeat:clear-render-history')
 });
