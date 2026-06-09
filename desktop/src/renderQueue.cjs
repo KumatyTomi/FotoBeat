@@ -10,6 +10,7 @@ const {
   promoteTempOutput,
   writeOutputSidecar
 } = require('./exportIntegrity.cjs');
+const { upsertRenderHistory } = require('./jobHistory.cjs');
 const { runNativeFfmpegRender, validateRenderPlan } = require('./nativeFfmpegRenderer.cjs');
 
 const jobs = new Map();
@@ -74,6 +75,7 @@ async function createLocalRenderJob(payload = {}) {
     await writeRenderPlan(job);
     await writeJobStatus(job);
     await writeOutputSidecar(job);
+    await persistJobHistory(job);
     job.logs.push(`Render workspace prepared: ${job.jobFolder}`);
     job.logs.push(`Render plan written: ${job.renderPlanPath}`);
     job.logs.push(job.nativeReady
@@ -83,6 +85,7 @@ async function createLocalRenderJob(payload = {}) {
   } catch (error) {
     job.status = 'failed';
     job.logs.push(`Failed to prepare render workspace: ${error.message}`);
+    await persistJobHistory(job);
   }
 
   jobs.set(job.id, job);
@@ -128,10 +131,12 @@ function scheduleRenderProgress(jobId) {
         job.integrity.outputInspection = await inspectOutput(job);
         job.logs.push(`Placeholder output promoted: ${job.outputPath}`);
         await writeOutputSidecar(job);
+        await persistJobHistory(job);
         clearInterval(interval);
       }
 
       await writeJobStatus(job);
+      await persistJobHistory(job);
       jobs.set(jobId, job);
     } catch (error) {
       await failJob(job, error);
@@ -148,6 +153,7 @@ async function runNativeJob(job) {
   job.updatedAt = new Date().toISOString();
   job.logs.push('Starting native FFmpeg render from render-plan.json');
   await writeJobStatus(job);
+  await persistJobHistory(job);
 
   const validation = await validateRenderPlan(job.renderPlan);
   if (!validation.ok) {
@@ -177,6 +183,7 @@ async function runNativeJob(job) {
   job.logs.push(`Native FFmpeg output promoted: ${job.outputPath}`);
   await writeJobStatus(job);
   await writeOutputSidecar(job);
+  await persistJobHistory(job);
 }
 
 async function failJob(job, error) {
@@ -186,6 +193,7 @@ async function failJob(job, error) {
   await cleanupPartialOutput(job);
   await writeJobStatus(job);
   await writeOutputSidecar(job);
+  await persistJobHistory(job);
 }
 
 async function writeFrameSequenceFiles(job, frames) {
@@ -291,6 +299,14 @@ async function writeMockOutput(job) {
 
   await fs.writeFile(job.tempOutputPath, content, 'utf8');
   job.logs.push(`Placeholder temp output written: ${job.tempOutputPath}`);
+}
+
+async function persistJobHistory(job) {
+  try {
+    await upsertRenderHistory(job);
+  } catch (error) {
+    job.logs.push(`History warning: ${error.message}`);
+  }
 }
 
 function stripHeavyPayload(job) {
