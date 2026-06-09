@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { CheckCircle2, Download, FileJson, Film, ImagePlus, Music, Play, RefreshCcw, Save, Sparkles, Trash2, Upload, Wand2 } from 'lucide-react';
+import { CheckCircle2, Download, FileJson, Film, FolderOpen, ImagePlus, Monitor, Music, Play, RefreshCcw, Save, Sparkles, Trash2, Upload, Wand2 } from 'lucide-react';
 import EffectCard from './components/EffectCard.jsx';
 import FileDropzone from './components/FileDropzone.jsx';
 import TimelinePreview from './components/TimelinePreview.jsx';
@@ -8,6 +8,7 @@ import { EFFECT_PRESETS, EXPORT_FORMATS } from './data/effects.js';
 import { useAudioAnalysis } from './hooks/useAudioAnalysis.js';
 import { useCanvasPreview } from './hooks/useCanvasPreview.js';
 import { useCanvasRecorder } from './hooks/useCanvasRecorder.js';
+import { useDesktopBridge } from './hooks/useDesktopBridge.js';
 import { useFrameExporter } from './hooks/useFrameExporter.js';
 import { useFrameSequenceRenderer } from './hooks/useFrameSequenceRenderer.js';
 import { useFrameSequenceZipExporter } from './hooks/useFrameSequenceZipExporter.js';
@@ -46,6 +47,7 @@ export default function App() {
   const audioAnalysis = useAudioAnalysis(audio);
   const renderJobs = useRenderJobs();
   const mp4Exporter = useMp4Exporter();
+  const desktop = useDesktopBridge();
 
   const timeline = useMemo(() => buildDraftTimeline({
     images: media.selectedMediaAssets,
@@ -171,6 +173,29 @@ export default function App() {
     });
   }
 
+  async function createDesktopRenderJob(sequence = null) {
+    await desktop.createLocalRenderJob({
+      manifest: {
+        schemaVersion: 'fotobeat.desktop.render.v1',
+        project: projectExportPayload.project,
+        media: projectExportPayload.media,
+        timeline: projectExportPayload.timeline,
+        format: selectedFormat,
+        preset: selectedPreset,
+        audio: audio ? { name: audio.name, size: audio.size, type: audio.type } : null,
+        sequence: sequence ? {
+          id: sequence.id,
+          frameCount: sequence.frameCount,
+          fps: sequence.fps,
+          seconds: sequence.seconds,
+          width: sequence.width,
+          height: sequence.height,
+          totalSize: sequence.totalSize
+        } : null
+      }
+    });
+  }
+
   async function importProjectFile(event) {
     const file = event.target.files?.[0];
     event.target.value = '';
@@ -269,6 +294,34 @@ export default function App() {
 
       <section className="render-export-panel">
         <div>
+          <p className="panel-kicker">Desktop render</p>
+          <h2>Lokalny render przez Electron</h2>
+          <p>{desktop.available ? 'Desktop bridge aktywny. Możesz wybrać folder eksportu i utworzyć lokalny render job.' : 'Ten panel aktywuje się po uruchomieniu przez aplikację Electron.'}</p>
+        </div>
+        <div className="render-export-actions">
+          <button className="ghost-button compact" onClick={desktop.pickOutputFolder} disabled={!desktop.available}><FolderOpen size={16} />Folder eksportu</button>
+          <button className="primary-button compact" onClick={() => createDesktopRenderJob()} disabled={!desktop.available}><Monitor size={16} />Render lokalny</button>
+          {desktop.localRenderJob && <button className="ghost-button compact" onClick={desktop.clearLocalRenderJob}><Trash2 size={16} />Wyczyść desktop job</button>}
+        </div>
+        <p className={`render-status ${desktop.status.type}`}>{desktop.status.message}</p>
+        {desktop.version && <p className="desktop-meta">{desktop.version.platform} · app {desktop.version.appVersion} · Electron {desktop.version.electronVersion}</p>}
+        {desktop.outputFolder && <p className="desktop-meta">Folder: {desktop.outputFolder}</p>}
+        {desktop.localRenderJob && (
+          <div className="render-history">
+            <article className="render-history-item">
+              <div>
+                <strong>{desktop.localRenderJob.id} · {desktop.localRenderJob.status}</strong>
+                <span>{desktop.localRenderJob.progress}% · {desktop.localRenderJob.outputPath ?? 'oczekuje na outputPath'}</span>
+              </div>
+              <div className="sequence-progress desktop-progress"><span style={{ width: `${desktop.localRenderJob.progress}%` }} /></div>
+              <div className="desktop-log-list">{desktop.localRenderJob.logs?.slice(-4).map((log, index) => <code key={`${log}-${index}`}>{log}</code>)}</div>
+            </article>
+          </div>
+        )}
+      </section>
+
+      <section className="render-export-panel">
+        <div>
           <p className="panel-kicker">Frame sequence</p>
           <h2>Sekwencja klatek PNG do MP4</h2>
           <p>Testowy render do IndexedDB: maksymalnie {frameSequence.limits.maxSeconds}s @ {frameSequence.limits.maxFps} fps. ZIP używa nazw `frames/frame_0001.png` gotowych pod ffmpeg.wasm.</p>
@@ -306,6 +359,7 @@ export default function App() {
                 )}
                 <button className="ghost-button compact" onClick={() => createMp4Plan(sequence)}><Film size={16} />Plan MP4</button>
                 <button className="ghost-button compact" onClick={() => createMp4Poc(sequence)} disabled={mp4Busy}><Film size={16} />Eksport MP4 POC</button>
+                <button className="ghost-button compact" onClick={() => createDesktopRenderJob(sequence)} disabled={!desktop.available}><Monitor size={16} />Desktop job</button>
                 <button className="ghost-button compact" onClick={() => frameSequence.removeSequence(sequence.id)}><Trash2 size={16} />Usuń</button>
               </div>
             </article>
