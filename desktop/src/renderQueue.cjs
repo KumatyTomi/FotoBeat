@@ -190,6 +190,7 @@ async function failJob(job, error) {
 
 async function writeFrameSequenceFiles(job, frames) {
   const framesFolder = path.join(job.jobFolder, 'frames');
+  const manifestPath = path.join(framesFolder, 'frames-manifest.json');
   await fs.mkdir(framesFolder, { recursive: true });
 
   let totalSize = 0;
@@ -204,16 +205,30 @@ async function writeFrameSequenceFiles(job, frames) {
     const buffer = toBuffer(frame);
     await fs.writeFile(targetPath, buffer);
     totalSize += buffer.byteLength;
-    written.push({ index, fileName, size: buffer.byteLength });
+    written.push({
+      sourceIndex: Number(frame.index ?? index),
+      sequenceIndex: index,
+      fileName,
+      path: targetPath,
+      sourceFileName: frame.fileName ?? null,
+      sourceSize: frame.size ?? null,
+      size: buffer.byteLength
+    });
   }
 
-  return {
+  const frameImport = {
     schemaVersion: 'fotobeat.desktop.frame-import.v1',
     framesFolder,
+    manifestPath,
     count: written.length,
     totalSize,
+    firstFrame: written[0] ?? null,
+    lastFrame: written[written.length - 1] ?? null,
     written
   };
+
+  await fs.writeFile(manifestPath, JSON.stringify(frameImport, null, 2), 'utf8');
+  return frameImport;
 }
 
 function toBuffer(frame) {
@@ -288,8 +303,12 @@ function stripHeavyPayload(job) {
     nativeResultSummary: nativeResult ? {
       schemaVersion: nativeResult.schemaVersion,
       outputPath: nativeResult.outputPath,
+      tempOutputPath: nativeResult.tempOutputPath,
       exitCode: nativeResult.ffmpeg?.exitCode,
-      output: nativeResult.output
+      ffmpegBinary: nativeResult.ffmpeg?.binary,
+      output: nativeResult.output,
+      startedAt: nativeResult.startedAt,
+      finishedAt: nativeResult.finishedAt
     } : null,
     renderPlanSummary: renderPlan ? {
       schemaVersion: renderPlan.schemaVersion,
