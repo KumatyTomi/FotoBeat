@@ -37,6 +37,7 @@ async function createLocalRenderJob(payload = {}) {
     tempOutputPath: null,
     sidecarPath: null,
     integrity: null,
+    frameImport: null,
     logs: ['Local desktop render job queued'],
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
@@ -60,6 +61,12 @@ async function createLocalRenderJob(payload = {}) {
     job.outputPath = job.renderPlan.output.path;
     job.tempOutputPath = job.renderPlan.output.tempPath;
     job.sidecarPath = `${job.outputPath}.json`;
+
+    if (Array.isArray(payload.frames) && payload.frames.length > 0) {
+      job.frameImport = await writeFrameSequenceFiles(job, payload.frames);
+      job.logs.push(`Imported ${job.frameImport.count} frame files into ${job.frameImport.framesFolder}`);
+    }
+
     job.nativeReady = await isNativeReady(job);
     job.mode = job.nativeReady ? 'native-ready' : 'placeholder';
 
@@ -179,6 +186,49 @@ async function failJob(job, error) {
   await cleanupPartialOutput(job);
   await writeJobStatus(job);
   await writeOutputSidecar(job);
+}
+
+async function writeFrameSequenceFiles(job, frames) {
+  const framesFolder = path.join(job.jobFolder, 'frames');
+  await fs.mkdir(framesFolder, { recursive: true });
+
+  let totalSize = 0;
+  const written = [];
+
+  const sortedFrames = [...frames].sort((a, b) => Number(a.index ?? 0) - Number(b.index ?? 0));
+
+  for (let index = 0; index < sortedFrames.length; index += 1) {
+    const frame = sortedFrames[index];
+    const fileName = `frame_${String(index + 1).padStart(4, '0')}.png`;
+    const targetPath = path.join(framesFolder, fileName);
+    const buffer = toBuffer(frame);
+    await fs.writeFile(targetPath, buffer);
+    totalSize += buffer.byteLength;
+    written.push({ index, fileName, size: buffer.byteLength });
+  }
+
+  return {
+    schemaVersion: 'fotobeat.desktop.frame-import.v1',
+    framesFolder,
+    count: written.length,
+    totalSize,
+    written
+  };
+}
+
+function toBuffer(frame) {
+  const candidate = frame?.arrayBuffer ?? frame?.buffer ?? frame?.data ?? frame?.bytes;
+
+  if (!candidate) {
+    throw new Error(`Frame ${frame?.index ?? '?'} has no binary payload.`);
+  }
+
+  if (Buffer.isBuffer(candidate)) return candidate;
+  if (candidate instanceof ArrayBuffer) return Buffer.from(candidate);
+  if (ArrayBuffer.isView(candidate)) return Buffer.from(candidate.buffer, candidate.byteOffset, candidate.byteLength);
+  if (Array.isArray(candidate)) return Buffer.from(candidate);
+
+  throw new Error(`Unsupported frame binary payload for frame ${frame?.index ?? '?'}.`);
 }
 
 async function isNativeReady(job) {
