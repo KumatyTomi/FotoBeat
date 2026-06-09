@@ -1,4 +1,4 @@
-const { app, BrowserWindow, dialog, ipcMain } = require('electron');
+const { app, BrowserWindow, dialog, ipcMain, shell } = require('electron');
 const path = require('node:path');
 const { getFfmpegStatus, resolveBundledFfmpegPath } = require('./ffmpegDoctor.cjs');
 const { clearRenderHistory, listRenderHistory } = require('./jobHistory.cjs');
@@ -96,4 +96,29 @@ function registerIpcHandlers() {
   ipcMain.handle('fotobeat:clear-render-history', async () => {
     return await clearRenderHistory();
   });
+
+  ipcMain.handle('fotobeat:show-item-in-folder', (_event, targetPath) => {
+    assertSafeLocalPath(targetPath);
+    shell.showItemInFolder(targetPath);
+    return { ok: true, path: targetPath };
+  });
+
+  ipcMain.handle('fotobeat:open-path', async (_event, targetPath) => {
+    assertSafeLocalPath(targetPath);
+    const error = await shell.openPath(targetPath);
+    if (error) {
+      throw new Error(error);
+    }
+    return { ok: true, path: targetPath };
+  });
+}
+
+function assertSafeLocalPath(targetPath) {
+  if (!targetPath || typeof targetPath !== 'string') {
+    throw new Error('Local path is required.');
+  }
+
+  if (targetPath.includes('\0')) {
+    throw new Error('Invalid local path.');
+  }
 }
