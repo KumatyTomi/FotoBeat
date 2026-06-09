@@ -4,6 +4,7 @@ import App from './App.jsx';
 import { AppBoundary } from './components/AppBoundary.jsx';
 import './styles.css';
 import './render-preview.css';
+import './desktop-render.css';
 
 createRoot(document.getElementById('root')).render(
   <React.StrictMode>
