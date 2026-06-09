@@ -375,7 +375,7 @@ export default function App() {
                 )}
                 <button className="ghost-button compact" onClick={() => createMp4Plan(sequence)}><Film size={16} />Plan MP4</button>
                 <button className="ghost-button compact" onClick={() => createMp4Poc(sequence)} disabled={mp4Busy}><Film size={16} />Eksport MP4 POC</button>
-                <button className="ghost-button compact" onClick={() => createDesktopRenderJob(sequence)} disabled={!desktop.available}><Monitor size={16} />Desktop job</button>
+                <button className="primary-button compact" onClick={() => createDesktopRenderJob(sequence)} disabled={!desktop.available || !desktop.ffmpegReady}><Monitor size={16} />Desktop MP4</button>
                 <button className="ghost-button compact" onClick={() => frameSequence.removeSequence(sequence.id)}><Trash2 size={16} />Usuń</button>
               </div>
             </article>
