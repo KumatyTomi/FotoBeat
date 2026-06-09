@@ -72,7 +72,10 @@ export function useDesktopBridge() {
         const nextJob = await api.getLocalRenderJob(localRenderJob.id);
         if (!nextJob) return;
         setLocalRenderJob(nextJob);
-        setStatus({ type: nextJob.status === 'done' ? 'success' : 'info', message: `Desktop render: ${nextJob.status} · ${nextJob.progress}%` });
+        setStatus({
+          type: nextJob.status === 'done' ? 'success' : 'info',
+          message: describeDesktopJob(nextJob)
+        });
       } catch (error) {
         setStatus({ type: 'error', message: error.message || 'Błąd pollingu desktop render job.' });
       }
@@ -128,7 +131,7 @@ export function useDesktopBridge() {
       outputFolder
     });
     setLocalRenderJob(job);
-    setStatus({ type: 'info', message: `Desktop render: ${job.status} · ${job.progress}%` });
+    setStatus({ type: 'info', message: describeDesktopJob(job) });
     return job;
   }
 
@@ -178,6 +181,32 @@ export function useDesktopBridge() {
     createLocalRenderJobFromSequence,
     clearLocalRenderJob
   };
+}
+
+function describeDesktopJob(job) {
+  const mode = job.mode ?? 'unknown-mode';
+  const base = `Desktop render: ${job.status} · ${job.progress}% · ${mode}`;
+
+  if (job.hasNativeResult || job.nativeResultSummary) {
+    const size = job.nativeResultSummary?.output?.sizeBytes
+      ? ` · ${formatBytes(job.nativeResultSummary.output.sizeBytes)}`
+      : '';
+    return `${base} · native FFmpeg complete${size}`;
+  }
+
+  if (mode === 'native-ffmpeg') {
+    return `${base} · native FFmpeg encoding`;
+  }
+
+  if (job.nativeReady) {
+    return `${base} · frames detected`;
+  }
+
+  if (mode === 'placeholder') {
+    return `${base} · missing frames for native FFmpeg`;
+  }
+
+  return base;
 }
 
 function validateSequencePayload(sequence) {
