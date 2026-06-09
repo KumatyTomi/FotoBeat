@@ -14,74 +14,17 @@ const { upsertRenderHistory } = require('./jobHistory.cjs');
 const { runNativeFfmpegRender, validateRenderPlan } = require('./nativeFfmpegRenderer.cjs');
 
 const jobs = new Map();
+const runningProcesses = new Map();
 
 async function createLocalRenderJob(payload = {}) {
   const id = `local-render-${randomUUID()}`;
   const outputFolder = payload.outputFolder || path.join(os.homedir(), 'FotoBeat-renders');
   const preferredFileName = `fotobeat-${id}.mp4`;
 
-  const job = {
-    id,
-    status: 'queued',
-    progress: 0,
-    mode: 'preparing',
-    nativeReady: false,
-    nativeResult: null,
-    manifest: payload.manifest ?? null,
-    renderPlan: null,
-    outputFolder,
-    jobFolder: null,
-    manifestPath: null,
-    renderPlanPath: null,
-    statusPath: null,
-    outputPath: null,
-    tempOutputPath: null,
-    sidecarPath: null,
-    integrity: null,
-    frameImport: null,
-    logs: ['Local desktop render job queued'],
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  };
+  const job = createBaseJob({ id, outputFolder, manifest: payload.manifest });
 
   try {
-    const workspace = await prepareRenderWorkspace({ outputFolder, jobId: id, preferredFileName });
-    job.jobFolder = workspace.jobFolder;
-    job.outputPath = workspace.outputPath;
-    job.tempOutputPath = workspace.tempOutputPath;
-    job.sidecarPath = workspace.sidecarPath;
-    job.integrity = {
-      freeSpace: workspace.freeSpace,
-      warnings: workspace.warnings,
-      outputInspection: null
-    };
-    job.manifestPath = path.join(job.jobFolder, 'manifest.fotobeat.json');
-    job.renderPlanPath = path.join(job.jobFolder, 'render-plan.json');
-    job.statusPath = path.join(job.jobFolder, 'render-job.json');
-    job.renderPlan = buildRenderPlan(job);
-    job.outputPath = job.renderPlan.output.path;
-    job.tempOutputPath = job.renderPlan.output.tempPath;
-    job.sidecarPath = `${job.outputPath}.json`;
-
-    if (Array.isArray(payload.frames) && payload.frames.length > 0) {
-      job.frameImport = await writeFrameSequenceFiles(job, payload.frames);
-      job.logs.push(`Imported ${job.frameImport.count} frame files into ${job.frameImport.framesFolder}`);
-    }
-
-    job.nativeReady = await isNativeReady(job);
-    job.mode = job.nativeReady ? 'native-ready' : 'placeholder';
-
-    await writeManifest(job);
-    await writeRenderPlan(job);
-    await writeJobStatus(job);
-    await writeOutputSidecar(job);
-    await persistJobHistory(job);
-    job.logs.push(`Render workspace prepared: ${job.jobFolder}`);
-    job.logs.push(`Render plan written: ${job.renderPlanPath}`);
-    job.logs.push(job.nativeReady
-      ? 'Native FFmpeg input detected: frames/frame_0001.png'
-      : 'Native FFmpeg input missing: add frames/frame_0001.png to job workspace to enable real encode.');
-    workspace.warnings.forEach((warning) => job.logs.push(`Warning: ${warning}`));
+    await prepareJobWorkspace(job, payload, preferredFileName);
   } catch (error) {
     job.status = 'failed';
     job.logs.push(`Failed to prepare render workspace: ${error.message}`);
@@ -102,16 +45,145 @@ function getLocalRenderJob(jobId) {
   return job ? stripHeavyPayload(job) : null;
 }
 
+async function cancelLocalRenderJob(jobId) {
+  const job = jobs.get(jobId);
+  if (!job) return null;
+
+  job.cancelRequested = true;
+  job.updatedAt = new Date().toISOString();
+  job.logs.push('Cancel requested by user.');
+
+  const child = runningProcesses.get(jobId);
+  if (child && !child.killed) {
+    child.kill('SIGTERM');
+  } else if (!['done', 'failed', 'canceled'].includes(job.status)) {
+    await cancelJob(job);
+  }
+
+  jobs.set(jobId, job);
+  return stripHeavyPayload(job);
+}
+
+async function retryLocalRenderJob(jobId) {
+  const job = jobs.get(jobId);
+  if (!job) {
+    throw new Error('Retry is available only for jobs still loaded in the current desktop session.');
+  }
+
+  if (!['failed', 'canceled', 'done'].includes(job.status)) {
+    throw new Error(`Cannot retry job with status ${job.status}.`);
+  }
+
+  await cleanupPartialOutput(job);
+  job.status = 'queued';
+  job.progress = 0;
+  job.mode = job.nativeReady ? 'native-ready' : 'placeholder';
+  job.nativeResult = null;
+  job.cancelRequested = false;
+  job.updatedAt = new Date().toISOString();
+  job.logs.push('Retry requested by user.');
+  job.renderPlan = buildRenderPlan(job);
+  await writeRenderPlan(job);
+  await writeJobStatus(job);
+  await writeOutputSidecar(job);
+  await persistJobHistory(job);
+  scheduleRenderProgress(job.id);
+  jobs.set(job.id, job);
+  return stripHeavyPayload(job);
+}
+
+function createBaseJob({ id, outputFolder, manifest }) {
+  return {
+    id,
+    status: 'queued',
+    progress: 0,
+    mode: 'preparing',
+    nativeReady: false,
+    nativeResult: null,
+    cancelRequested: false,
+    manifest: manifest ?? null,
+    renderPlan: null,
+    outputFolder,
+    jobFolder: null,
+    manifestPath: null,
+    renderPlanPath: null,
+    statusPath: null,
+    outputPath: null,
+    tempOutputPath: null,
+    sidecarPath: null,
+    integrity: null,
+    frameImport: null,
+    audioImport: null,
+    logs: ['Local desktop render job queued'],
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+}
+
+async function prepareJobWorkspace(job, payload, preferredFileName) {
+  const workspace = await prepareRenderWorkspace({ outputFolder: job.outputFolder, jobId: job.id, preferredFileName });
+  job.jobFolder = workspace.jobFolder;
+  job.outputPath = workspace.outputPath;
+  job.tempOutputPath = workspace.tempOutputPath;
+  job.sidecarPath = workspace.sidecarPath;
+  job.integrity = {
+    freeSpace: workspace.freeSpace,
+    warnings: workspace.warnings,
+    outputInspection: null
+  };
+  job.manifestPath = path.join(job.jobFolder, 'manifest.fotobeat.json');
+  job.renderPlanPath = path.join(job.jobFolder, 'render-plan.json');
+  job.statusPath = path.join(job.jobFolder, 'render-job.json');
+
+  if (payload.audioFile) {
+    job.audioImport = await writeAudioInputFile(job, payload.audioFile);
+    job.logs.push(`Imported audio input: ${job.audioImport.path}`);
+  }
+
+  job.renderPlan = buildRenderPlan(job);
+  job.outputPath = job.renderPlan.output.path;
+  job.tempOutputPath = job.renderPlan.output.tempPath;
+  job.sidecarPath = `${job.outputPath}.json`;
+
+  if (Array.isArray(payload.frames) && payload.frames.length > 0) {
+    job.frameImport = await writeFrameSequenceFiles(job, payload.frames);
+    job.logs.push(`Imported ${job.frameImport.count} frame files into ${job.frameImport.framesFolder}`);
+  }
+
+  job.renderPlan = buildRenderPlan(job);
+  job.nativeReady = await isNativeReady(job);
+  job.mode = job.nativeReady ? 'native-ready' : 'placeholder';
+
+  await writeManifest(job);
+  await writeRenderPlan(job);
+  await writeJobStatus(job);
+  await writeOutputSidecar(job);
+  await persistJobHistory(job);
+  job.logs.push(`Render workspace prepared: ${job.jobFolder}`);
+  job.logs.push(`Render plan written: ${job.renderPlanPath}`);
+  job.logs.push(job.nativeReady
+    ? 'Native FFmpeg input detected: frames/frame_0001.png'
+    : 'Native FFmpeg input missing: add frames/frame_0001.png to job workspace to enable real encode.');
+  workspace.warnings.forEach((warning) => job.logs.push(`Warning: ${warning}`));
+}
+
 function scheduleRenderProgress(jobId) {
   const interval = setInterval(async () => {
     const job = jobs.get(jobId);
 
-    if (!job || job.status === 'done' || job.status === 'failed') {
+    if (!job || ['done', 'failed', 'canceled'].includes(job.status)) {
       clearInterval(interval);
       return;
     }
 
     try {
+      if (job.cancelRequested) {
+        await cancelJob(job);
+        jobs.set(jobId, job);
+        clearInterval(interval);
+        return;
+      }
+
       if (job.nativeReady) {
         clearInterval(interval);
         await runNativeJob(job);
@@ -139,7 +211,11 @@ function scheduleRenderProgress(jobId) {
       await persistJobHistory(job);
       jobs.set(jobId, job);
     } catch (error) {
-      await failJob(job, error);
+      if (job.cancelRequested) {
+        await cancelJob(job);
+      } else {
+        await failJob(job, error);
+      }
       jobs.set(jobId, job);
       clearInterval(interval);
     }
@@ -161,29 +237,34 @@ async function runNativeJob(job) {
   }
   validation.warnings.forEach((warning) => job.logs.push(`Native warning: ${warning}`));
 
-  const result = await runNativeFfmpegRender({
-    renderPlanPath: job.renderPlanPath,
-    onProgress: ({ progress }) => {
-      job.progress = Math.max(job.progress, progress);
-      job.updatedAt = new Date().toISOString();
-    },
-    onLog: (log) => {
-      if (!log) return;
-      const normalized = log.length > 240 ? `${log.slice(0, 240)}...` : log;
-      job.logs.push(`ffmpeg: ${normalized}`);
-    }
-  });
+  try {
+    const result = await runNativeFfmpegRender({
+      renderPlanPath: job.renderPlanPath,
+      onSpawn: (child) => runningProcesses.set(job.id, child),
+      onProgress: ({ progress }) => {
+        job.progress = Math.max(job.progress, progress);
+        job.updatedAt = new Date().toISOString();
+      },
+      onLog: (log) => {
+        if (!log) return;
+        const normalized = log.length > 240 ? `${log.slice(0, 240)}...` : log;
+        job.logs.push(`ffmpeg: ${normalized}`);
+      }
+    });
 
-  await promoteTempOutput(job);
-  job.nativeResult = result;
-  job.status = 'done';
-  job.progress = 100;
-  job.updatedAt = new Date().toISOString();
-  job.integrity.outputInspection = await inspectOutput(job);
-  job.logs.push(`Native FFmpeg output promoted: ${job.outputPath}`);
-  await writeJobStatus(job);
-  await writeOutputSidecar(job);
-  await persistJobHistory(job);
+    await promoteTempOutput(job);
+    job.nativeResult = result;
+    job.status = 'done';
+    job.progress = 100;
+    job.updatedAt = new Date().toISOString();
+    job.integrity.outputInspection = await inspectOutput(job);
+    job.logs.push(`Native FFmpeg output promoted: ${job.outputPath}`);
+    await writeJobStatus(job);
+    await writeOutputSidecar(job);
+    await persistJobHistory(job);
+  } finally {
+    runningProcesses.delete(job.id);
+  }
 }
 
 async function failJob(job, error) {
@@ -194,6 +275,36 @@ async function failJob(job, error) {
   await writeJobStatus(job);
   await writeOutputSidecar(job);
   await persistJobHistory(job);
+}
+
+async function cancelJob(job) {
+  job.status = 'canceled';
+  job.updatedAt = new Date().toISOString();
+  job.logs.push('Render canceled by user.');
+  await cleanupPartialOutput(job);
+  await writeJobStatus(job);
+  await writeOutputSidecar(job);
+  await persistJobHistory(job);
+}
+
+async function writeAudioInputFile(job, audioFile) {
+  const audioFolder = path.join(job.jobFolder, 'audio');
+  const targetPath = path.join(audioFolder, 'input-audio');
+  const manifestPath = path.join(audioFolder, 'audio-manifest.json');
+  await fs.mkdir(audioFolder, { recursive: true });
+  const buffer = toBuffer(audioFile);
+  await fs.writeFile(targetPath, buffer);
+  const audioImport = {
+    schemaVersion: 'fotobeat.desktop.audio-import.v1',
+    path: targetPath,
+    relativePath: 'audio/input-audio',
+    manifestPath,
+    sourceFileName: audioFile.fileName ?? audioFile.name ?? null,
+    type: audioFile.type ?? null,
+    size: buffer.byteLength
+  };
+  await fs.writeFile(manifestPath, JSON.stringify(audioImport, null, 2), 'utf8');
+  return audioImport;
 }
 
 async function writeFrameSequenceFiles(job, frames) {
@@ -239,11 +350,11 @@ async function writeFrameSequenceFiles(job, frames) {
   return frameImport;
 }
 
-function toBuffer(frame) {
-  const candidate = frame?.arrayBuffer ?? frame?.buffer ?? frame?.data ?? frame?.bytes;
+function toBuffer(item) {
+  const candidate = item?.arrayBuffer ?? item?.buffer ?? item?.data ?? item?.bytes;
 
   if (!candidate) {
-    throw new Error(`Frame ${frame?.index ?? '?'} has no binary payload.`);
+    throw new Error(`Binary payload is missing for ${item?.fileName ?? item?.name ?? item?.index ?? '?'}.`);
   }
 
   if (Buffer.isBuffer(candidate)) return candidate;
@@ -251,7 +362,7 @@ function toBuffer(frame) {
   if (ArrayBuffer.isView(candidate)) return Buffer.from(candidate.buffer, candidate.byteOffset, candidate.byteLength);
   if (Array.isArray(candidate)) return Buffer.from(candidate);
 
-  throw new Error(`Unsupported frame binary payload for frame ${frame?.index ?? '?'}.`);
+  throw new Error(`Unsupported binary payload for ${item?.fileName ?? item?.name ?? item?.index ?? '?'}.`);
 }
 
 async function isNativeReady(job) {
@@ -331,7 +442,8 @@ function stripHeavyPayload(job) {
       inputMode: renderPlan.inputMode,
       outputPath: renderPlan.output?.path,
       tempOutputPath: renderPlan.output?.tempPath,
-      ffmpegPreview: renderPlan.ffmpeg?.preview
+      ffmpegPreview: renderPlan.ffmpeg?.preview,
+      audioImported: Boolean(renderPlan.inputs?.audio?.imported)
     } : null
   };
 }
@@ -351,6 +463,8 @@ function createLog(progress, mode) {
 }
 
 module.exports = {
+  cancelLocalRenderJob,
   createLocalRenderJob,
-  getLocalRenderJob
+  getLocalRenderJob,
+  retryLocalRenderJob
 };

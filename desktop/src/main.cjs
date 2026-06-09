@@ -2,7 +2,7 @@ const { app, BrowserWindow, dialog, ipcMain, shell } = require('electron');
 const path = require('node:path');
 const { getFfmpegStatus, resolveBundledFfmpegPath } = require('./ffmpegDoctor.cjs');
 const { clearRenderHistory, listRenderHistory } = require('./jobHistory.cjs');
-const { createLocalRenderJob, getLocalRenderJob } = require('./renderQueue.cjs');
+const { cancelLocalRenderJob, createLocalRenderJob, getLocalRenderJob, retryLocalRenderJob } = require('./renderQueue.cjs');
 
 const DEV_URL = process.env.FOTOBEAT_DESKTOP_DEV_URL;
 
@@ -87,6 +87,14 @@ function registerIpcHandlers() {
 
   ipcMain.handle('fotobeat:get-local-render-job', (_event, jobId) => {
     return getLocalRenderJob(jobId);
+  });
+
+  ipcMain.handle('fotobeat:cancel-local-render-job', async (_event, jobId) => {
+    return await cancelLocalRenderJob(jobId);
+  });
+
+  ipcMain.handle('fotobeat:retry-local-render-job', async (_event, jobId) => {
+    return await retryLocalRenderJob(jobId);
   });
 
   ipcMain.handle('fotobeat:list-render-history', async (_event, limit) => {

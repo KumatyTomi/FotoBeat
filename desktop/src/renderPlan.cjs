@@ -12,6 +12,22 @@ function buildRenderPlan(job) {
   const outputPath = job.outputPath ?? path.join(job.jobFolder, outputFileName);
   const tempOutputPath = job.tempOutputPath ?? `${outputPath}.partial`;
   const inputMode = sequence ? 'frame-sequence' : 'manifest-preview';
+  const audioInput = job.audioImport ? {
+    name: audio?.name ?? job.audioImport.sourceFileName ?? 'input-audio',
+    size: audio?.size ?? job.audioImport.size ?? null,
+    type: audio?.type ?? job.audioImport.type ?? null,
+    required: true,
+    imported: true,
+    path: 'audio/input-audio',
+    manifestPath: job.audioImport.manifestPath ?? null
+  } : audio ? {
+    name: audio.name,
+    size: audio.size,
+    type: audio.type,
+    required: false,
+    imported: false,
+    path: null
+  } : null;
 
   return {
     schemaVersion: 'fotobeat.desktop.render-plan.v1',
@@ -33,12 +49,7 @@ function buildRenderPlan(job) {
       frameCount: sequence?.frameCount ?? null
     },
     inputs: {
-      audio: audio ? {
-        name: audio.name,
-        size: audio.size,
-        type: audio.type,
-        required: false
-      } : null,
+      audio: audioInput,
       sequence: sequence ? {
         id: sequence.id,
         frameCount: sequence.frameCount,
@@ -54,7 +65,7 @@ function buildRenderPlan(job) {
       container: 'mp4',
       videoCodec: 'libx264',
       pixelFormat: 'yuv420p',
-      audioCodec: audio ? 'aac' : null
+      audioCodec: audioInput?.imported ? 'aac' : null
     },
     ffmpeg: buildFfmpegCommand({
       inputMode,
@@ -62,11 +73,12 @@ function buildRenderPlan(job) {
       width,
       height,
       outputPath: tempOutputPath,
-      hasAudio: Boolean(audio)
+      hasAudio: Boolean(audioInput?.imported)
     }),
     notes: [
       'This plan writes FFmpeg output to output.tempPath first.',
-      'The render queue promotes output.tempPath to output.path only after a successful encode.'
+      'The render queue promotes output.tempPath to output.path only after a successful encode.',
+      audioInput?.imported ? 'Audio input is imported and muxed with AAC output.' : 'Audio muxing is skipped because no binary audio input was imported.'
     ]
   };
 }
@@ -81,14 +93,18 @@ function buildFfmpegCommand({ inputMode, fps, width, height, outputPath, hasAudi
 
     if (hasAudio) {
       args.push('-i', 'audio/input-audio');
-      args.push('-shortest');
-      args.push('-c:a', 'aac');
-      args.push('-b:a', '192k');
     }
 
     args.push('-vf', `scale=${width}:${height}:force_original_aspect_ratio=decrease,pad=${width}:${height}:(ow-iw)/2:(oh-ih)/2`);
     args.push('-c:v', 'libx264');
     args.push('-pix_fmt', 'yuv420p');
+
+    if (hasAudio) {
+      args.push('-c:a', 'aac');
+      args.push('-b:a', '192k');
+      args.push('-shortest');
+    }
+
     args.push('-movflags', '+faststart');
     args.push(outputPath);
 

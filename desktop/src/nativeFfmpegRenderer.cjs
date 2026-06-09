@@ -46,8 +46,20 @@ async function validateRenderPlan(plan) {
     warnings.push('No frame sequence expectedPattern found in render plan.');
   }
 
-  if (plan?.inputs?.audio?.required) {
-    warnings.push('Audio input validation is not implemented yet.');
+  const audioInput = plan?.inputs?.audio;
+  if (audioInput?.required) {
+    if (!audioInput.path) {
+      errors.push('Audio input is required but no path was provided.');
+    } else if (workspaceDir) {
+      const audioPath = path.join(workspaceDir, audioInput.path);
+      if (!(await pathExists(audioPath))) {
+        errors.push(`Audio input not found: ${audioPath}`);
+      }
+    } else {
+      errors.push('Could not resolve workspace directory for audio validation.');
+    }
+  } else if (audioInput && !audioInput.imported) {
+    warnings.push('Audio metadata is present but no binary audio input was imported; rendering video-only MP4.');
   }
 
   return {
@@ -57,7 +69,7 @@ async function validateRenderPlan(plan) {
   };
 }
 
-async function runNativeFfmpegRender({ renderPlanPath, ffmpegBinary, onProgress, onLog } = {}) {
+async function runNativeFfmpegRender({ renderPlanPath, ffmpegBinary, onProgress, onLog, onSpawn } = {}) {
   if (!renderPlanPath) {
     throw new Error('renderPlanPath is required.');
   }
@@ -83,7 +95,8 @@ async function runNativeFfmpegRender({ renderPlanPath, ffmpegBinary, onProgress,
     args: absolutizeFfmpegArgs(plan.ffmpeg.args, plan.__workspaceDir),
     durationSeconds: plan.timing?.durationSeconds,
     onProgress,
-    onLog
+    onLog,
+    onSpawn
   });
 
   const finishedAt = new Date().toISOString();
@@ -115,13 +128,15 @@ async function resolveFfmpegBinary() {
   return status.binary;
 }
 
-function spawnFfmpeg({ binary, args, durationSeconds, onProgress, onLog }) {
+function spawnFfmpeg({ binary, args, durationSeconds, onProgress, onLog, onSpawn }) {
   return new Promise((resolve, reject) => {
     const logs = [];
     const child = spawn(binary, args, {
       cwd: process.cwd(),
       windowsHide: true
     });
+
+    onSpawn?.(child);
 
     child.stdout.on('data', (chunk) => {
       const text = chunk.toString();
@@ -140,15 +155,16 @@ function spawnFfmpeg({ binary, args, durationSeconds, onProgress, onLog }) {
       reject(error);
     });
 
-    child.on('close', (exitCode) => {
+    child.on('close', (exitCode, signal) => {
       if (exitCode === 0) {
         onProgress?.({ progress: 100, timeSeconds: durationSeconds ?? null });
-        resolve({ exitCode, logs });
+        resolve({ exitCode, signal, logs });
         return;
       }
 
-      const error = new Error(`FFmpeg exited with code ${exitCode}`);
+      const error = new Error(signal ? `FFmpeg was stopped by signal ${signal}` : `FFmpeg exited with code ${exitCode}`);
       error.exitCode = exitCode;
+      error.signal = signal;
       error.logs = logs;
       reject(error);
     });
