@@ -1,4 +1,4 @@
-import { FolderOpen, Monitor, RefreshCcw, Trash2 } from 'lucide-react';
+import { ExternalLink, FolderOpen, Monitor, RefreshCcw, Trash2 } from 'lucide-react';
 import DesktopRenderHistory from './DesktopRenderHistory.jsx';
 
 export default function DesktopRenderPanel({ desktop, onCreateDesktopRenderJob }) {
@@ -39,6 +39,10 @@ export default function DesktopRenderPanel({ desktop, onCreateDesktopRenderJob }
               <span>{desktop.localRenderJob.progress}% · {desktop.localRenderJob.outputPath ?? 'oczekuje na outputPath'}</span>
               {desktop.localRenderJob.nativeResultSummary?.output?.sizeBytes && <span>MP4: {formatBytes(desktop.localRenderJob.nativeResultSummary.output.sizeBytes)}</span>}
             </div>
+            <div className="render-history-actions desktop-path-actions">
+              {desktop.localRenderJob.outputPath && <button className="ghost-button compact" onClick={() => desktop.showItemInFolder(desktop.localRenderJob.outputPath)}><ExternalLink size={16} />Pokaż plik</button>}
+              {desktop.localRenderJob.jobFolder && <button className="ghost-button compact" onClick={() => desktop.openPath(desktop.localRenderJob.jobFolder)}><FolderOpen size={16} />Folder joba</button>}
+            </div>
             <div className="sequence-progress desktop-progress"><span style={{ width: `${desktop.localRenderJob.progress}%` }} /></div>
             <div className="desktop-log-list">{desktop.localRenderJob.logs?.slice(-4).map((log, index) => <code key={`${log}-${index}`}>{log}</code>)}</div>
           </article>
@@ -50,6 +54,8 @@ export default function DesktopRenderPanel({ desktop, onCreateDesktopRenderJob }
         disabled={!desktop.available}
         onRefresh={() => desktop.refreshRenderHistory()}
         onClear={desktop.clearRenderHistory}
+        onShowItem={desktop.showItemInFolder}
+        onOpenPath={desktop.openPath}
       />
     </section>
   );
