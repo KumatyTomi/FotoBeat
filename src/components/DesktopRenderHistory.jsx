@@ -1,6 +1,6 @@
-import { RefreshCcw, Trash2 } from 'lucide-react';
+import { ExternalLink, FolderOpen, RefreshCcw, Trash2 } from 'lucide-react';
 
-export default function DesktopRenderHistory({ history = [], disabled = false, onRefresh, onClear }) {
+export default function DesktopRenderHistory({ history = [], disabled = false, onRefresh, onClear, onShowItem, onOpenPath }) {
   return (
     <div className="desktop-render-history-panel">
       <div className="desktop-render-history-heading">
@@ -26,6 +26,10 @@ export default function DesktopRenderHistory({ history = [], disabled = false, o
               {entry.frameImport && <span>{entry.frameImport.count} klatek · {formatBytes(entry.frameImport.totalSize)}</span>}
               {entry.nativeResult?.output?.sizeBytes && <span>MP4: {formatBytes(entry.nativeResult.output.sizeBytes)}</span>}
               {entry.lastLog && <code>{entry.lastLog}</code>}
+            </div>
+            <div className="render-history-actions desktop-path-actions">
+              {entry.outputPath && <button className="ghost-button compact" onClick={() => onShowItem?.(entry.outputPath)} disabled={disabled}><ExternalLink size={16} />Pokaż plik</button>}
+              {entry.jobFolder && <button className="ghost-button compact" onClick={() => onOpenPath?.(entry.jobFolder)} disabled={disabled}><FolderOpen size={16} />Folder joba</button>}
             </div>
           </article>
         ))}
