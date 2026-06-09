@@ -1,0 +1,70 @@
+.desktop-render-history-panel {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.desktop-render-history-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.desktop-render-history-heading h3 {
+  margin: 0 0 6px;
+  font-size: 18px;
+  letter-spacing: -0.02em;
+}
+
+.desktop-render-history-heading p:last-child {
+  margin-bottom: 0;
+  color: rgba(245, 247, 251, 0.58);
+  font-size: 13px;
+}
+
+.desktop-history-item {
+  border-color: rgba(139, 233, 255, 0.14);
+  background:
+    linear-gradient(135deg, rgba(139, 233, 255, 0.055), rgba(124, 60, 255, 0.045)),
+    rgba(255, 255, 255, 0.045);
+}
+
+.desktop-history-item strong,
+.desktop-history-item span,
+.desktop-history-item code {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.desktop-history-item span {
+  display: block;
+  color: rgba(245, 247, 251, 0.62);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.desktop-history-item code {
+  display: block;
+  width: fit-content;
+  max-width: 100%;
+  margin-top: 8px;
+  padding: 7px 9px;
+  border-radius: 10px;
+  color: rgba(245, 247, 251, 0.72);
+  background: rgba(0, 0, 0, 0.22);
+  font-size: 12px;
+  white-space: normal;
+}
+
+@media (max-width: 760px) {
+  .desktop-render-history-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .desktop-render-history-heading .render-export-actions {
+    justify-content: flex-start;
+  }
+}
