@@ -1,5 +1,6 @@
 const { app, BrowserWindow, dialog, ipcMain } = require('electron');
 const path = require('node:path');
+const { getFfmpegStatus, resolveBundledFfmpegPath } = require('./ffmpegDoctor.cjs');
 const { createLocalRenderJob, getLocalRenderJob } = require('./renderQueue.cjs');
 
 const DEV_URL = process.env.FOTOBEAT_DESKTOP_DEV_URL;
@@ -54,6 +55,17 @@ function registerIpcHandlers() {
     electronVersion: process.versions.electron,
     platform: process.platform
   }));
+
+  ipcMain.handle('fotobeat:get-ffmpeg-status', async () => {
+    return await getFfmpegStatus({
+      candidates: [
+        process.env.FOTOBEAT_FFMPEG_PATH,
+        resolveBundledFfmpegPath(process.resourcesPath),
+        'ffmpeg',
+        process.platform === 'win32' ? 'ffmpeg.exe' : null
+      ].filter(Boolean)
+    });
+  });
 
   ipcMain.handle('fotobeat:pick-output-folder', async () => {
     const result = await dialog.showOpenDialog({
