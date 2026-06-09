@@ -471,6 +471,51 @@ p {
   font-style: normal;
 }
 
+.desktop-health-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(180px, 1fr));
+  gap: 10px;
+  margin: 14px 0 4px;
+}
+
+.desktop-health {
+  margin: 0;
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.055);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+}
+
+.desktop-health strong,
+.desktop-health span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.desktop-health strong {
+  color: rgba(245, 247, 251, 0.92);
+  font-size: 13px;
+}
+
+.desktop-health span {
+  color: rgba(245, 247, 251, 0.66);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.desktop-health.ready {
+  border-color: rgba(89, 255, 177, 0.36);
+  background: rgba(89, 255, 177, 0.08);
+}
+
+.desktop-health.warning {
+  border-color: rgba(255, 203, 89, 0.36);
+  background: rgba(255, 203, 89, 0.08);
+}
+
 .desktop-meta {
   margin: 10px 0 0;
   display: inline-flex;
@@ -544,6 +589,7 @@ p {
     display: grid;
   }
 
+  .desktop-health-grid,
   .preset-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -579,6 +625,7 @@ p {
     padding: 14px;
   }
 
+  .desktop-health-grid,
   .preset-grid {
     grid-template-columns: 1fr;
   }
