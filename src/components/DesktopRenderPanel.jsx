@@ -1,7 +1,13 @@
-import { ExternalLink, FolderOpen, Monitor, RefreshCcw, Trash2 } from 'lucide-react';
+import { ExternalLink, FolderOpen, Monitor, RefreshCcw, RotateCcw, Square, Trash2 } from 'lucide-react';
 import DesktopRenderHistory from './DesktopRenderHistory.jsx';
 
+const TERMINAL_RENDER_STATUSES = ['done', 'failed', 'canceled'];
+
 export default function DesktopRenderPanel({ desktop, onCreateDesktopRenderJob }) {
+  const activeJob = desktop.localRenderJob;
+  const canCancel = activeJob && !TERMINAL_RENDER_STATUSES.includes(activeJob.status);
+  const canRetry = activeJob && TERMINAL_RENDER_STATUSES.includes(activeJob.status);
+
   return (
     <section className="render-export-panel">
       <div>
@@ -14,7 +20,9 @@ export default function DesktopRenderPanel({ desktop, onCreateDesktopRenderJob }
         <button className="ghost-button compact" onClick={desktop.refreshFfmpegStatus} disabled={!desktop.available}><RefreshCcw size={16} />Sprawdź FFmpeg</button>
         <button className="ghost-button compact" onClick={desktop.pickOutputFolder} disabled={!desktop.available}><FolderOpen size={16} />Folder eksportu</button>
         <button className="primary-button compact" onClick={() => onCreateDesktopRenderJob()} disabled={!desktop.available}><Monitor size={16} />Render lokalny</button>
-        {desktop.localRenderJob && <button className="ghost-button compact" onClick={desktop.clearLocalRenderJob}><Trash2 size={16} />Wyczyść desktop job</button>}
+        {canCancel && <button className="ghost-button compact" onClick={() => desktop.cancelLocalRenderJob(activeJob.id)}><Square size={16} />Przerwij</button>}
+        {canRetry && <button className="ghost-button compact" onClick={() => desktop.retryLocalRenderJob(activeJob.id)}><RotateCcw size={16} />Ponów</button>}
+        {activeJob && <button className="ghost-button compact" onClick={desktop.clearLocalRenderJob}><Trash2 size={16} />Wyczyść desktop job</button>}
       </div>
 
       <p className={`render-status ${desktop.status.type}`}>{desktop.status.message}</p>
@@ -31,20 +39,23 @@ export default function DesktopRenderPanel({ desktop, onCreateDesktopRenderJob }
       {desktop.version && <p className="desktop-meta">{desktop.version.platform} · app {desktop.version.appVersion} · Electron {desktop.version.electronVersion}</p>}
       {desktop.outputFolder && <p className="desktop-meta">Folder: {desktop.outputFolder}</p>}
 
-      {desktop.localRenderJob && (
+      {activeJob && (
         <div className="render-history">
           <article className="render-history-item">
             <div>
-              <strong>{desktop.localRenderJob.id} · {desktop.localRenderJob.status} · {desktop.localRenderJob.mode ?? 'unknown-mode'}</strong>
-              <span>{desktop.localRenderJob.progress}% · {desktop.localRenderJob.outputPath ?? 'oczekuje na outputPath'}</span>
-              {desktop.localRenderJob.nativeResultSummary?.output?.sizeBytes && <span>MP4: {formatBytes(desktop.localRenderJob.nativeResultSummary.output.sizeBytes)}</span>}
+              <strong>{activeJob.id} · {activeJob.status} · {activeJob.mode ?? 'unknown-mode'}</strong>
+              <span>{activeJob.progress}% · {activeJob.outputPath ?? 'oczekuje na outputPath'}</span>
+              {activeJob.renderPlanSummary?.audioImported && <span>Audio: zaimportowane do desktop workspace</span>}
+              {activeJob.nativeResultSummary?.output?.sizeBytes && <span>MP4: {formatBytes(activeJob.nativeResultSummary.output.sizeBytes)}</span>}
             </div>
             <div className="render-history-actions desktop-path-actions">
-              {desktop.localRenderJob.outputPath && <button className="ghost-button compact" onClick={() => desktop.showItemInFolder(desktop.localRenderJob.outputPath)}><ExternalLink size={16} />Pokaż plik</button>}
-              {desktop.localRenderJob.jobFolder && <button className="ghost-button compact" onClick={() => desktop.openPath(desktop.localRenderJob.jobFolder)}><FolderOpen size={16} />Folder joba</button>}
+              {activeJob.outputPath && <button className="ghost-button compact" onClick={() => desktop.showItemInFolder(activeJob.outputPath)}><ExternalLink size={16} />Pokaż plik</button>}
+              {activeJob.jobFolder && <button className="ghost-button compact" onClick={() => desktop.openPath(activeJob.jobFolder)}><FolderOpen size={16} />Folder joba</button>}
+              {canCancel && <button className="ghost-button compact" onClick={() => desktop.cancelLocalRenderJob(activeJob.id)}><Square size={16} />Przerwij</button>}
+              {canRetry && <button className="ghost-button compact" onClick={() => desktop.retryLocalRenderJob(activeJob.id)}><RotateCcw size={16} />Ponów</button>}
             </div>
-            <div className="sequence-progress desktop-progress"><span style={{ width: `${desktop.localRenderJob.progress}%` }} /></div>
-            <div className="desktop-log-list">{desktop.localRenderJob.logs?.slice(-4).map((log, index) => <code key={`${log}-${index}`}>{log}</code>)}</div>
+            <div className="sequence-progress desktop-progress"><span style={{ width: `${activeJob.progress}%` }} /></div>
+            <div className="desktop-log-list">{activeJob.logs?.slice(-4).map((log, index) => <code key={`${log}-${index}`}>{log}</code>)}</div>
           </article>
         </div>
       )}
