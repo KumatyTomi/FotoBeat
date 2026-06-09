@@ -21,6 +21,12 @@ function getDesktopApi() {
   return window.fotobeatDesktop ?? null;
 }
 
+function getSelectedDesktopAudioFile() {
+  if (typeof window === 'undefined') return null;
+  const candidate = window.__fotobeatDesktopAudioFile;
+  return candidate && typeof candidate.arrayBuffer === 'function' ? candidate : null;
+}
+
 export function useDesktopBridge() {
   const [version, setVersion] = useState(null);
   const [ffmpegStatus, setFfmpegStatus] = useState(null);
@@ -251,19 +257,21 @@ export function useDesktopBridge() {
       return createLocalRenderJob(payload);
     }
 
+    const selectedAudioFile = audioFile ?? getSelectedDesktopAudioFile();
+
     const frameCheck = validateSequencePayload(sequence);
     if (!frameCheck.ok) {
       setStatus({ type: 'error', message: frameCheck.message });
       return null;
     }
 
-    const audioCheck = validateAudioPayload(audioFile);
+    const audioCheck = validateAudioPayload(selectedAudioFile);
     if (!audioCheck.ok) {
       setStatus({ type: 'error', message: audioCheck.message });
       return null;
     }
 
-    setStatus({ type: 'info', message: `Przygotowuję ${sequence.frames.length} klatek PNG${audioFile ? ' i audio' : ''} do desktop workspace...` });
+    setStatus({ type: 'info', message: `Przygotowuję ${sequence.frames.length} klatek PNG${selectedAudioFile ? ' i audio' : ''} do desktop workspace...` });
     const frames = await Promise.all(sequence.frames.map(async (frame) => ({
       index: frame.index,
       fileName: frame.fileName,
@@ -271,12 +279,12 @@ export function useDesktopBridge() {
       arrayBuffer: await frame.blob.arrayBuffer()
     })));
 
-    const audioFilePayload = audioFile ? {
-      name: audioFile.name,
-      fileName: audioFile.name,
-      size: audioFile.size,
-      type: audioFile.type,
-      arrayBuffer: await audioFile.arrayBuffer()
+    const audioFilePayload = selectedAudioFile ? {
+      name: selectedAudioFile.name,
+      fileName: selectedAudioFile.name,
+      size: selectedAudioFile.size,
+      type: selectedAudioFile.type,
+      arrayBuffer: await selectedAudioFile.arrayBuffer()
     } : null;
 
     return createLocalRenderJob({
