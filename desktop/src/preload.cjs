@@ -7,5 +7,7 @@ contextBridge.exposeInMainWorld('fotobeatDesktop', {
   createLocalRenderJob: (payload) => ipcRenderer.invoke('fotobeat:create-local-render-job', payload),
   getLocalRenderJob: (jobId) => ipcRenderer.invoke('fotobeat:get-local-render-job', jobId),
   listRenderHistory: (limit) => ipcRenderer.invoke('fotobeat:list-render-history', limit),
-  clearRenderHistory: () => ipcRenderer.invoke('fotobeat:clear-render-history')
+  clearRenderHistory: () => ipcRenderer.invoke('fotobeat:clear-render-history'),
+  showItemInFolder: (targetPath) => ipcRenderer.invoke('fotobeat:show-item-in-folder', targetPath),
+  openPath: (targetPath) => ipcRenderer.invoke('fotobeat:open-path', targetPath)
 });
