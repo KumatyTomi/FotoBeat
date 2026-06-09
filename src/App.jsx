@@ -299,11 +299,20 @@ export default function App() {
           <p>{desktop.available ? 'Desktop bridge aktywny. Wybierz folder eksportu i utwórz lokalny render job z manifestem.' : 'Ten panel aktywuje się po uruchomieniu przez aplikację FotoBeat Desktop.'}</p>
         </div>
         <div className="render-export-actions">
+          <button className="ghost-button compact" onClick={desktop.refreshFfmpegStatus} disabled={!desktop.available}><RefreshCcw size={16} />Sprawdź FFmpeg</button>
           <button className="ghost-button compact" onClick={desktop.pickOutputFolder} disabled={!desktop.available}><FolderOpen size={16} />Folder eksportu</button>
           <button className="primary-button compact" onClick={() => createDesktopRenderJob()} disabled={!desktop.available}><Monitor size={16} />Render lokalny</button>
           {desktop.localRenderJob && <button className="ghost-button compact" onClick={desktop.clearLocalRenderJob}><Trash2 size={16} />Wyczyść desktop job</button>}
         </div>
         <p className={`render-status ${desktop.status.type}`}>{desktop.status.message}</p>
+        <div className="desktop-health-grid">
+          <p className={desktop.ffmpegReady ? 'desktop-health ready' : 'desktop-health warning'}>
+            <strong>FFmpeg</strong>
+            <span>{desktop.ffmpegReady ? `Gotowy · ${desktop.ffmpegStatus?.version ?? desktop.ffmpegStatus?.binary}` : 'Niewykryty'}</span>
+          </p>
+          {desktop.ffmpegStatus?.binary && <p className="desktop-health"><strong>Binary</strong><span>{desktop.ffmpegStatus.binary}</span></p>}
+          {desktop.ffmpegStatus?.installHint && <p className="desktop-health warning"><strong>Install hint</strong><span>{desktop.ffmpegStatus.installHint}</span></p>}
+        </div>
         {desktop.version && <p className="desktop-meta">{desktop.version.platform} · app {desktop.version.appVersion} · Electron {desktop.version.electronVersion}</p>}
         {desktop.outputFolder && <p className="desktop-meta">Folder: {desktop.outputFolder}</p>}
         {desktop.localRenderJob && (
