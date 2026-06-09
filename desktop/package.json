@@ -7,13 +7,15 @@
   "main": "src/main.cjs",
   "scripts": {
     "dev": "FOTOBEAT_DESKTOP_DEV_URL=http://localhost:5173 electron .",
+    "dev:win": "set FOTOBEAT_DESKTOP_DEV_URL=http://localhost:5173&& electron .",
     "start": "electron .",
-    "pack": "electron-builder --dir",
-    "dist": "electron-builder"
+    "build:web": "cd .. && npm run build",
+    "pack": "npm run build:web && electron-builder --dir",
+    "dist": "npm run build:web && electron-builder"
   },
   "devDependencies": {
-    "electron": "latest",
-    "electron-builder": "latest"
+    "electron": "41.2.1",
+    "electron-builder": "24.13.3"
   },
   "build": {
     "appId": "me.fotobeat.desktop",
