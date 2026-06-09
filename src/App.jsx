@@ -229,26 +229,26 @@ export default function App() {
     <main className="app-shell">
       <section className="hero-panel">
         <div className="hero-copy">
-          <div className="eyebrow"><Sparkles size={18} />FotoBeat.me · AI video editor</div>
-          <h1>Zdjęcia + muzyka = klip zsynchronizowany z beatem.</h1>
-          <p>Wrzuć zdjęcia i MP3. Prototyp buduje timeline, analizuje audio, pokazuje waveform i pozwala korygować tempo klipów.</p>
+          <div className="eyebrow"><Sparkles size={18} />FotoBeat Desktop · local-first renderer</div>
+          <h1>Lokalny montaż zdjęć i muzyki pod beat.</h1>
+          <p>Wrzuć zdjęcia i MP3 bez chmury. Desktop buduje timeline, analizuje audio, pokazuje waveform i przygotowuje lokalny render na dysku.</p>
           <div className="hero-actions">
-            <a className="primary-button" href="#upload"><Wand2 size={18} />Zbuduj projekt</a>
-            <a className="ghost-button" href="#preview"><Play size={18} />Render preview</a>
+            <a className="primary-button" href="#upload"><Wand2 size={18} />Zbuduj lokalny projekt</a>
+            <a className="ghost-button" href="#preview"><Play size={18} />Podgląd renderu</a>
           </div>
         </div>
         <div className="preview-card">
           <div className="orb orb-a" /><div className="orb orb-b" />
-          <div className="mock-video-frame"><span>FotoBeat</span><strong>{selectedFormat?.label}</strong><em>{selectedPreset?.name}</em></div>
+          <div className="mock-video-frame"><span>FotoBeat Desktop</span><strong>{selectedFormat?.label}</strong><em>{selectedPreset?.name}</em></div>
         </div>
       </section>
 
       <section id="project" className="project-panel">
         <div className="section-heading project-heading">
           <div>
-            <p className="panel-kicker">Projekt</p>
-            <h2>Autosave, snapshoty, import i eksport</h2>
-            <p>Stan projektu zapisuje się automatycznie. Możesz pobrać `.fotobeat.json`, skopiować JSON lub zaimportować projekt.</p>
+            <p className="panel-kicker">Lokalny projekt</p>
+            <h2>Autosave, snapshoty, import i eksport bez backendu</h2>
+            <p>Stan projektu zapisuje się lokalnie. Możesz pobrać `.fotobeat.json`, skopiować JSON lub przenieść projekt między komputerami przez import.</p>
           </div>
           <span className="autosave-pill"><Save size={15} />{lastSavedAt ? `Zapisano: ${new Date(lastSavedAt).toLocaleString('pl-PL')}` : 'Jeszcze nie zapisano'}</span>
         </div>
@@ -272,7 +272,7 @@ export default function App() {
 
       <section id="preview" className="render-preview-panel">
         <div className="section-heading project-heading">
-          <div><p className="panel-kicker">Render preview</p><h2>Canvas pod realne kadry, timeline i beat</h2><p>Canvas używa wybranych zdjęć, formatu eksportu, presetu, energii klipu i czasu odtwarzania.</p></div>
+          <div><p className="panel-kicker">Canvas preview</p><h2>Lokalny podgląd kadrów, timeline i beatów</h2><p>Canvas używa wybranych zdjęć, formatu eksportu, presetu, energii klipu i czasu odtwarzania — wszystko bez wysyłania plików na serwer.</p></div>
           <div className="preview-hud"><span>{selectedFormat.width}×{selectedFormat.height}</span><span>{previewPlayback.time}s</span><span>Klip {previewPlayback.clipIndex}/{timeline.clips.length}</span><span>{media.selectedMediaAssets.length} kadrów</span><span>Tempo ×{clipDurationScale}</span></div>
         </div>
         <div className={`canvas-shell canvas-${selectedFormat.id}`}><canvas ref={previewRef} width={selectedFormat.width} height={selectedFormat.height} aria-label="Animowany podgląd renderu FotoBeat" /></div>
@@ -295,8 +295,8 @@ export default function App() {
       <section className="render-export-panel">
         <div>
           <p className="panel-kicker">Desktop render</p>
-          <h2>Lokalny render przez Electron</h2>
-          <p>{desktop.available ? 'Desktop bridge aktywny. Możesz wybrać folder eksportu i utworzyć lokalny render job.' : 'Ten panel aktywuje się po uruchomieniu przez aplikację Electron.'}</p>
+          <h2>Lokalny render na dysku</h2>
+          <p>{desktop.available ? 'Desktop bridge aktywny. Wybierz folder eksportu i utwórz lokalny render job z manifestem.' : 'Ten panel aktywuje się po uruchomieniu przez aplikację FotoBeat Desktop.'}</p>
         </div>
         <div className="render-export-actions">
           <button className="ghost-button compact" onClick={desktop.pickOutputFolder} disabled={!desktop.available}><FolderOpen size={16} />Folder eksportu</button>
@@ -323,8 +323,8 @@ export default function App() {
       <section className="render-export-panel">
         <div>
           <p className="panel-kicker">Frame sequence</p>
-          <h2>Sekwencja klatek PNG do MP4</h2>
-          <p>Testowy render do IndexedDB: maksymalnie {frameSequence.limits.maxSeconds}s @ {frameSequence.limits.maxFps} fps. ZIP używa nazw `frames/frame_0001.png` gotowych pod ffmpeg.wasm.</p>
+          <h2>Lokalna sekwencja PNG pod MP4</h2>
+          <p>Render do IndexedDB: maksymalnie {frameSequence.limits.maxSeconds}s @ {frameSequence.limits.maxFps} fps. ZIP używa nazw `frames/frame_0001.png` gotowych pod lokalny FFmpeg.</p>
         </div>
         <div className="render-export-actions">
           <button className="primary-button compact" onClick={() => frameSequence.renderSequence()} disabled={frameSequence.sequenceState.status === 'rendering'}>
@@ -345,7 +345,7 @@ export default function App() {
         {mp4Plan && <p className={`render-status ${mp4Plan.status === 'blocked' ? 'error' : 'ready'}`}>{explainMp4ExportPlan(mp4Plan)}</p>}
         <div className="render-history">
           {frameSequence.sequenceHistory.length === 0 ? (
-            <span className="empty-state">Brak zapisanych sekwencji. Wyrenderuj pierwszą serię PNG, aby przygotować materiał pod ffmpeg.wasm.</span>
+            <span className="empty-state">Brak zapisanych sekwencji. Wyrenderuj pierwszą serię PNG, aby przygotować materiał pod lokalny FFmpeg.</span>
           ) : frameSequence.sequenceHistory.map((sequence) => (
             <article key={sequence.id} className="render-history-item">
               <div>
@@ -371,7 +371,7 @@ export default function App() {
         <div>
           <p className="panel-kicker">MP4 proof of concept</p>
           <h2>ffmpeg.wasm MP4 bez audio</h2>
-          <p>Lazy-load encoder uruchamiany dopiero po kliknięciu. Pierwszy POC koduje zapisane klatki PNG do MP4 bez ścieżki audio.</p>
+          <p>Lokalny POC koduje zapisane klatki PNG do MP4 bez ścieżki audio. Docelowo zastąpi go natywny FFmpeg w desktop rendererze.</p>
         </div>
         <div className="render-export-actions">
           {mp4Exporter.mp4Exports.length > 0 && <button className="ghost-button compact" onClick={mp4Exporter.clearMp4History}><Trash2 size={16} />Wyczyść MP4</button>}
@@ -395,16 +395,16 @@ export default function App() {
 
       <section className="render-export-panel">
         <div>
-          <p className="panel-kicker">Render jobs</p>
-          <h2>Kolejka zadań renderu</h2>
-          <p>Lista lokalnych zadań przygotowująca workflow pod ZIP, MP4 i późniejszy backend renderujący.</p>
+          <p className="panel-kicker">Local render jobs</p>
+          <h2>Kolejka lokalnych zadań renderu</h2>
+          <p>Lista zadań przygotowująca lokalny workflow pod ZIP, MP4, manifesty i późniejszy natywny renderer.</p>
         </div>
         <div className="render-export-actions">
           {renderJobs.jobs.length > 0 && <button className="ghost-button compact" onClick={renderJobs.clearJobs}><Trash2 size={16} />Wyczyść jobs</button>}
         </div>
         <p className={`render-status ${renderJobs.jobsState.status}`}>{renderJobs.jobsState.message}</p>
         <div className="render-history">
-          {renderJobs.jobs.length === 0 ? <span className="empty-state">Brak render jobs. Spakuj ZIP lub przygotuj plan MP4, aby dodać zadanie.</span> : renderJobs.jobs.map((job) => (
+          {renderJobs.jobs.length === 0 ? <span className="empty-state">Brak render jobs. Spakuj ZIP, przygotuj plan MP4 albo utwórz desktop job.</span> : renderJobs.jobs.map((job) => (
             <article key={job.id} className="render-history-item">
               <div><strong>{job.target} · {job.status}</strong><span>{new Date(job.createdAt).toLocaleString('pl-PL')} · {job.progress}% · {job.message}</span></div>
               <div className="render-history-actions"><button className="ghost-button compact" onClick={() => renderJobs.removeJob(job.id)}><Trash2 size={16} />Usuń</button></div>
@@ -415,9 +415,9 @@ export default function App() {
 
       <section className="render-export-panel">
         <div>
-          <p className="panel-kicker">Render queue</p>
+          <p className="panel-kicker">Local WebM recorder</p>
           <h2>Eksport WebM {audio ? 'z audio' : 'bez audio'}</h2>
-          <p>{audio ? 'MediaRecorder połączy obraz z canvas i ścieżkę audio z Web Audio API.' : 'Dodaj MP3/WAV, aby eksport WebM zawierał także ścieżkę audio.'}</p>
+          <p>{audio ? 'MediaRecorder połączy obraz z canvas i lokalną ścieżkę audio z Web Audio API.' : 'Dodaj MP3/WAV, aby eksport WebM zawierał także ścieżkę audio.'}</p>
         </div>
         <div className="render-export-actions">
           <button className="primary-button compact" onClick={recorder.startRecording} disabled={recorder.recordingState.status === 'recording' || recorder.recordingState.status === 'preparing'}>
@@ -433,7 +433,7 @@ export default function App() {
         <p className={`render-status ${recorder.recordingState.status}`}>{recorder.recordingState.message}</p>
         <div className="render-history">
           {recorder.exportHistory.length === 0 ? (
-            <span className="empty-state">Brak eksportów. Nagraj pierwszy plik WebM, a pojawi się tutaj jako element kolejki.</span>
+            <span className="empty-state">Brak eksportów. Nagraj pierwszy plik WebM, a pojawi się tutaj jako lokalny plik sesyjny.</span>
           ) : recorder.exportHistory.map((item) => (
             <article key={item.id} className="render-history-item">
               <div>
@@ -450,15 +450,15 @@ export default function App() {
       </section>
 
       <section id="upload" className="workspace-grid">
-        <FileDropzone icon={<ImagePlus />} title="Zdjęcia" description="JPG, PNG, WEBP. Możesz wrzucić całą paczkę kadrów." accept="image/*" multiple files={images} onFiles={setImages} />
-        <FileDropzone icon={<Music />} title="Muzyka" description="MP3/WAV. Jeden plik audio do synchronizacji montażu." accept="audio/*" multiple={false} files={audio ? [audio] : []} onFiles={(next) => setAudio(next[0] ?? null)} />
+        <FileDropzone icon={<ImagePlus />} title="Zdjęcia" description="JPG, PNG, WEBP. Pliki zostają na komputerze i służą do lokalnego timeline/renderu." accept="image/*" multiple files={images} onFiles={setImages} />
+        <FileDropzone icon={<Music />} title="Muzyka" description="MP3/WAV. Jeden lokalny plik audio do synchronizacji montażu." accept="audio/*" multiple={false} files={audio ? [audio] : []} onFiles={(next) => setAudio(next[0] ?? null)} />
       </section>
 
       <section className="audio-panel waveform-panel">
         <div>
           <p className="panel-kicker">Waveform + beat grid</p>
-          <h2>Analiza utworu i korekta tempa klipów</h2>
-          <p>{audioAnalysis ? describeAudioAnalysis(audioAnalysis) : 'Wrzuć audio, aby wygenerować waveform, beat mapę i szacunkowe BPM.'}</p>
+          <h2>Lokalna analiza utworu i korekta tempa klipów</h2>
+          <p>{audioAnalysis ? describeAudioAnalysis(audioAnalysis) : 'Wrzuć audio, aby lokalnie wygenerować waveform, beat mapę i szacunkowe BPM.'}</p>
           <label className="range-control">Korekta długości klipów: ×{clipDurationScale}
             <input type="range" min="0.5" max="2" step="0.05" value={clipDurationScale} onChange={(event) => patchProject({ clipDurationScale: Number(event.target.value) })} />
           </label>
@@ -493,7 +493,7 @@ export default function App() {
       </section>
 
       <TimelinePreview timeline={timeline} />
-      <section id="roadmap" className="roadmap-panel"><div><h2>Następne moduły</h2><p>Kolejne kroki: audio mux do MP4 i dłuższe renderowanie.</p></div><div className="roadmap-list"><span><RefreshCcw size={16} /> ffmpeg.wasm POC</span><span><Film size={16} /> MP4 bez audio</span><span><Download size={16} /> MP4 download</span></div></section>
+      <section id="roadmap" className="roadmap-panel"><div><h2>Desktop roadmap</h2><p>Kolejne kroki: render-plan.json, natywny FFmpeg, audio mux i instalator Windows.</p></div><div className="roadmap-list"><span><RefreshCcw size={16} /> render-plan.json</span><span><Film size={16} /> natywny FFmpeg MP4</span><span><Download size={16} /> instalator Windows</span></div></section>
     </main>
   );
 }
