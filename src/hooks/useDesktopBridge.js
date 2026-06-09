@@ -127,6 +127,25 @@ export function useDesktopBridge() {
     return job;
   }
 
+  async function createLocalRenderJobFromSequence(payload, sequence) {
+    if (!sequence?.frames?.length) {
+      return createLocalRenderJob(payload);
+    }
+
+    setStatus({ type: 'info', message: `Przygotowuję ${sequence.frames.length} klatek PNG do desktop workspace...` });
+    const frames = await Promise.all(sequence.frames.map(async (frame) => ({
+      index: frame.index,
+      fileName: frame.fileName,
+      size: frame.size,
+      arrayBuffer: await frame.blob.arrayBuffer()
+    })));
+
+    return createLocalRenderJob({
+      ...payload,
+      frames
+    });
+  }
+
   function clearLocalRenderJob() {
     setLocalRenderJob(null);
     setStatus(available
@@ -145,6 +164,7 @@ export function useDesktopBridge() {
     refreshFfmpegStatus,
     pickOutputFolder,
     createLocalRenderJob,
+    createLocalRenderJobFromSequence,
     clearLocalRenderJob
   };
 }
