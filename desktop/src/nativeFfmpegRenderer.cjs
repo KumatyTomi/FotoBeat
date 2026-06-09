@@ -12,6 +12,7 @@ async function loadRenderPlan(renderPlanPath) {
 async function validateRenderPlan(plan) {
   const errors = [];
   const warnings = [];
+  const workspaceDir = resolveWorkspaceDir(plan);
 
   if (!plan || plan.schemaVersion !== 'fotobeat.desktop.render-plan.v1') {
     errors.push('Unsupported or missing render plan schemaVersion.');
@@ -19,6 +20,10 @@ async function validateRenderPlan(plan) {
 
   if (!plan?.output?.path) {
     errors.push('Render plan output.path is required.');
+  }
+
+  if (!plan?.output?.tempPath) {
+    warnings.push('Render plan output.tempPath is missing; FFmpeg may write directly to final output.');
   }
 
   if (!plan?.ffmpeg?.args?.length) {
@@ -30,11 +35,13 @@ async function validateRenderPlan(plan) {
   }
 
   const sequencePattern = plan?.inputs?.sequence?.expectedPattern;
-  if (sequencePattern) {
-    const firstFramePath = resolveFramePatternProbe(plan.__workspaceDir, sequencePattern);
+  if (sequencePattern && workspaceDir) {
+    const firstFramePath = resolveFramePatternProbe(workspaceDir, sequencePattern);
     if (!(await pathExists(firstFramePath))) {
       errors.push(`First frame not found: ${firstFramePath}`);
     }
+  } else if (sequencePattern) {
+    errors.push('Could not resolve workspace directory for frame sequence validation.');
   } else {
     warnings.push('No frame sequence expectedPattern found in render plan.');
   }
@@ -65,7 +72,8 @@ async function runNativeFfmpegRender({ renderPlanPath, ffmpegBinary, onProgress,
     throw error;
   }
 
-  await fs.mkdir(path.dirname(plan.output.path), { recursive: true });
+  const renderTargetPath = plan.output.tempPath ?? plan.output.path;
+  await fs.mkdir(path.dirname(renderTargetPath), { recursive: true });
   onLog?.(`Starting FFmpeg: ${ffmpeg}`);
   onLog?.(plan.ffmpeg.preview);
 
@@ -79,12 +87,13 @@ async function runNativeFfmpegRender({ renderPlanPath, ffmpegBinary, onProgress,
   });
 
   const finishedAt = new Date().toISOString();
-  const outputStats = await inspectOutput(plan.output.path);
+  const outputStats = await inspectOutput(renderTargetPath);
 
   return {
     schemaVersion: 'fotobeat.desktop.native-render-result.v1',
     renderPlanPath,
     outputPath: plan.output.path,
+    tempOutputPath: renderTargetPath,
     startedAt,
     finishedAt,
     ffmpeg: {
@@ -164,7 +173,8 @@ function normalizePlanPaths(plan, workspaceDir) {
     __workspaceDir: workspaceDir,
     output: {
       ...plan.output,
-      path: absolutizePath(plan.output?.path, workspaceDir)
+      path: absolutizePath(plan.output?.path, workspaceDir),
+      tempPath: absolutizePath(plan.output?.tempPath, workspaceDir)
     }
   };
 }
@@ -190,6 +200,13 @@ function absolutizePath(value, workspaceDir) {
   return path.join(workspaceDir, value);
 }
 
+function resolveWorkspaceDir(plan) {
+  if (plan?.__workspaceDir) return plan.__workspaceDir;
+  if (plan?.output?.path) return path.dirname(plan.output.path);
+  if (plan?.output?.tempPath) return path.dirname(plan.output.tempPath);
+  return null;
+}
+
 function resolveFramePatternProbe(workspaceDir, pattern) {
   const probe = pattern.replace('%04d', '0001').replace('%05d', '00001').replace('%06d', '000001');
   return path.join(workspaceDir, probe);
@@ -201,13 +218,15 @@ async function inspectOutput(outputPath) {
     return {
       exists: true,
       sizeBytes: stats.size,
-      modifiedAt: stats.mtime.toISOString()
+      modifiedAt: stats.mtime.toISOString(),
+      path: outputPath
     };
   } catch (error) {
     return {
       exists: false,
       sizeBytes: 0,
-      error: error.message
+      error: error.message,
+      path: outputPath
     };
   }
 }
