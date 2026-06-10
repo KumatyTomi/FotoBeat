@@ -52,7 +52,7 @@ export const useGuiStore = create(
     }),
     {
       name: GUI_STORE_KEY,
-      storage: createJSONStorage(() => window.localStorage),
+      storage: createJSONStorage(() => getBrowserStorage()),
       partialize: (state) => ({
         activeProfile: state.activeProfile,
         collapsed: state.collapsed
@@ -61,6 +61,24 @@ export const useGuiStore = create(
     }
   )
 );
+
+function getBrowserStorage() {
+  if (typeof window === 'undefined' || !window.localStorage) {
+    return createMemoryStorage();
+  }
+
+  return window.localStorage;
+}
+
+function createMemoryStorage() {
+  const memory = new Map();
+
+  return {
+    getItem: (key) => memory.get(key) ?? null,
+    setItem: (key, value) => memory.set(key, value),
+    removeItem: (key) => memory.delete(key)
+  };
+}
 
 function sanitizeProfileId(profileId) {
   return KNOWN_PROFILES.includes(profileId) ? profileId : null;
