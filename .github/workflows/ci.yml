@@ -7,7 +7,8 @@ on:
     branches: [main]
 
 jobs:
-  build:
+  web-check:
+    name: Web lint and build
     runs-on: ubuntu-latest
 
     steps:
@@ -18,21 +19,53 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
 
-      - name: Install dependencies
+      - name: Install web dependencies
         run: npm install
 
-      - name: Lint
-        run: npm run lint
+      - name: Lint strict
+        run: npm run lint:strict
 
-      - name: Build
+      - name: Build web renderer
         run: npm run build
 
-      - name: CI summary
+      - name: Web CI summary
         if: always()
         run: |
-          echo "## FotoBeat CI" >> "$GITHUB_STEP_SUMMARY"
+          echo "## FotoBeat Web CI" >> "$GITHUB_STEP_SUMMARY"
           echo "- Node: $(node --version)" >> "$GITHUB_STEP_SUMMARY"
           echo "- npm: $(npm --version)" >> "$GITHUB_STEP_SUMMARY"
           echo "- Commit: $GITHUB_SHA" >> "$GITHUB_STEP_SUMMARY"
+
+  desktop-package-smoke:
+    name: Desktop package smoke
+    runs-on: ubuntu-latest
+    needs: web-check
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install web dependencies
+        run: npm install
+
+      - name: Install desktop dependencies
+        working-directory: desktop
+        run: npm install
+
+      - name: Package desktop directory
+        working-directory: desktop
+        run: npm run pack
+
+      - name: Desktop CI summary
+        if: always()
+        run: |
+          echo "## FotoBeat Desktop CI" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Node: $(node --version)" >> "$GITHUB_STEP_SUMMARY"
+          echo "- npm: $(npm --version)" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Desktop package smoke: npm run pack" >> "$GITHUB_STEP_SUMMARY"
