@@ -1,4 +1,5 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useGuiStore } from '../stores/guiStore.js';
 
 export const PROFILE_DEFINITIONS = [
   { id: 'simple', label: 'Simple', accent: '#8be9ff', background: 'spiral_wide.png' },
@@ -7,41 +8,54 @@ export const PROFILE_DEFINITIONS = [
   { id: 'debug', label: 'Debug', accent: '#ffcb59', background: 'mirror_corridor_wide.png' }
 ];
 
-const CONFIG_KEY = 'fotobeat.gui.v3.config';
-const DEFAULT_PROFILE = 'creator';
 const PROFILE_SWITCH_MS = 420;
 const WORKSPACE_SWAP_MS = 200;
 
 export function useProfile() {
-  const [activeProfile, setActiveProfile] = useState(() => readConfig().activeProfile ?? DEFAULT_PROFILE);
+  const activeProfile = useGuiStore((state) => state.activeProfile);
+  const setActiveProfile = useGuiStore((state) => state.setActiveProfile);
   const [pendingProfile, setPendingProfile] = useState(null);
   const [phase, setPhase] = useState('idle');
+  const timersRef = useRef([]);
 
   const activeProfileDefinition = useMemo(
     () => PROFILE_DEFINITIONS.find((profile) => profile.id === activeProfile) ?? PROFILE_DEFINITIONS[1],
     [activeProfile]
   );
 
+  const clearTimers = useCallback(() => {
+    timersRef.current.forEach((timerId) => window.clearTimeout(timerId));
+    timersRef.current = [];
+  }, []);
+
+  const schedulePhase = useCallback((callback, delay) => {
+    const timerId = window.setTimeout(callback, delay);
+    timersRef.current.push(timerId);
+  }, []);
+
   const switchProfile = useCallback((nextProfile) => {
     if (!nextProfile || nextProfile === activeProfile || !PROFILE_DEFINITIONS.some((profile) => profile.id === nextProfile)) {
       return;
     }
 
+    clearTimers();
     setPendingProfile(nextProfile);
     setPhase('overlay');
 
-    window.setTimeout(() => setPhase('collapse'), 80);
-    window.setTimeout(() => {
+    schedulePhase(() => setPhase('collapse'), 80);
+    schedulePhase(() => {
       setActiveProfile(nextProfile);
-      writeConfig({ activeProfile: nextProfile });
       setPhase('swap');
     }, WORKSPACE_SWAP_MS);
-    window.setTimeout(() => setPhase('expand'), 280);
-    window.setTimeout(() => {
+    schedulePhase(() => setPhase('expand'), 280);
+    schedulePhase(() => {
       setPendingProfile(null);
       setPhase('idle');
+      timersRef.current = [];
     }, PROFILE_SWITCH_MS);
-  }, [activeProfile]);
+  }, [activeProfile, clearTimers, schedulePhase, setActiveProfile]);
+
+  useEffect(() => clearTimers, [clearTimers]);
 
   return {
     activeProfile,
@@ -52,19 +66,4 @@ export function useProfile() {
     switching: phase !== 'idle',
     switchProfile
   };
-}
-
-function readConfig() {
-  if (typeof window === 'undefined') return {};
-  try {
-    return JSON.parse(window.localStorage.getItem(CONFIG_KEY) || '{}');
-  } catch {
-    return {};
-  }
-}
-
-function writeConfig(partial) {
-  if (typeof window === 'undefined') return;
-  const current = readConfig();
-  window.localStorage.setItem(CONFIG_KEY, JSON.stringify({ ...current, ...partial }, null, 2));
 }
