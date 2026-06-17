@@ -1,0 +1,91 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fotobeat.me/contracts/fotobeat.project.v1.schema.json",
+  "title": "FotoBeat Project v1",
+  "type": "object",
+  "required": ["schemaVersion", "project", "settings", "media", "timeline"],
+  "properties": {
+    "schemaVersion": { "const": "fotobeat.project.v1" },
+    "project": {
+      "type": "object",
+      "required": ["id", "title", "createdAt", "updatedAt"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "title": { "type": "string", "minLength": 1, "maxLength": 160 },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "settings": {
+      "type": "object",
+      "required": ["presetId", "formatId", "clipDurationScale"],
+      "properties": {
+        "presetId": { "type": "string", "minLength": 1 },
+        "formatId": { "type": "string", "enum": ["vertical", "wide", "square"] },
+        "clipDurationScale": { "type": "number", "minimum": 0.25, "maximum": 4 }
+      },
+      "additionalProperties": true
+    },
+    "media": {
+      "type": "object",
+      "required": ["assets"],
+      "properties": {
+        "assets": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/asset" }
+        }
+      },
+      "additionalProperties": true
+    },
+    "timeline": {
+      "type": "object",
+      "required": ["durationSeconds", "fps", "clips"],
+      "properties": {
+        "durationSeconds": { "type": "number", "minimum": 0 },
+        "fps": { "type": "integer", "enum": [24, 30, 60] },
+        "clips": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/clip" }
+        }
+      },
+      "additionalProperties": true
+    },
+    "snapshots": {
+      "type": "array",
+      "items": { "type": "object" }
+    }
+  },
+  "$defs": {
+    "asset": {
+      "type": "object",
+      "required": ["id", "type", "name", "size", "mimeType", "fingerprint"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "type": { "type": "string", "enum": ["image", "audio"] },
+        "name": { "type": "string", "minLength": 1 },
+        "size": { "type": "integer", "minimum": 0 },
+        "mimeType": { "type": "string", "minLength": 1 },
+        "fingerprint": { "type": "string", "minLength": 1 },
+        "localRef": { "type": ["string", "null"] },
+        "remoteRef": { "type": ["string", "null"] }
+      },
+      "additionalProperties": true
+    },
+    "clip": {
+      "type": "object",
+      "required": ["id", "start", "duration", "assetId"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "start": { "type": "number", "minimum": 0 },
+        "duration": { "type": "number", "exclusiveMinimum": 0 },
+        "assetId": { "type": "string", "minLength": 1 },
+        "section": { "type": "string" },
+        "effectId": { "type": "string" },
+        "crop": { "type": "object" }
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}
