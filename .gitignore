@@ -1,0 +1,12 @@
+# Node modules and build
+node_modules/
+dist/
+release/
+
+# Environment variables
+.env
+.env.local
+
+# IDE and OS
+.vscode/
+.DS_Store
