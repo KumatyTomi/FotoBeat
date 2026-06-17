@@ -1,5 +1,6 @@
 export default function EffectCard({ effect, active, onClick }) {
-  const className = ['effect-card', `effect-card-${effect.id}`, active ? 'active' : ''].filter(Boolean).join(' ');
+  const effectClassName = `effect-card-${effect.id.toLowerCase()}`;
+  const className = ['effect-card', effectClassName, active ? 'active' : ''].filter(Boolean).join(' ');
 
   return (
     <button className={className} onClick={onClick}>
