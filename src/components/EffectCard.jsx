@@ -1,5 +1,5 @@
 export default function EffectCard({ effect, active, onClick }) {
-  const effectClassName = `effect-card-${effect.id.toLowerCase()}`;
+  const effectClassName = `effect-card-${effect.id}`;
   const className = ['effect-card', effectClassName, active ? 'active' : ''].filter(Boolean).join(' ');
 
   return (
