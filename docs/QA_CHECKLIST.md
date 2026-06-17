@@ -10,7 +10,9 @@ Ta checklista służy do szybkiego sprawdzenia, czy obecny frontend nie złamał
 4. timeline,
 5. canvas preview,
 6. WebM export,
-7. IndexedDB render history.
+7. IndexedDB render history,
+8. frame sequence do MP4,
+9. MP4 POC bez audio i z audio.
 
 ## Smoke test po każdym większym commicie
 
@@ -83,7 +85,17 @@ Ta checklista służy do szybkiego sprawdzenia, czy obecny frontend nie złamał
 - [ ] Usunięcie eksportu usuwa go z UI i IndexedDB.
 - [ ] Czyszczenie historii usuwa wszystkie eksporty.
 
-## Regression checklist przed MP4 / ffmpeg.wasm
+### 9. MP4 POC i audio mux
+
+- [ ] Render sekwencji PNG zapisuje klatki w IndexedDB.
+- [ ] `Plan MP4` tworzy plan bez audio.
+- [ ] `Plan + audio` pojawia się po dodaniu audio i tworzy plan z `hasAudio`.
+- [ ] `MP4 bez audio` eksportuje plik MP4 video only.
+- [ ] `MP4 + audio` eksportuje plik MP4 z nazwą audio w historii.
+- [ ] Historia MP4 pokazuje czas, fps, format, rozmiar i status audio/video.
+- [ ] Usunięcie eksportu MP4 odwołuje lokalny URL i usuwa wpis z historii.
+
+## Regression checklist przed produkcyjnym MP4
 
 - [ ] `useCanvasRecorder` nadal działa po refactorach.
 - [ ] `renderStorage.js` nie przechowuje pustych Blobów.
@@ -91,11 +103,13 @@ Ta checklista służy do szybkiego sprawdzenia, czy obecny frontend nie złamał
 - [ ] `canvasRenderer.js` jest niezależny od React.
 - [ ] `timeline.js` nie miesza modelu danych z UI.
 - [ ] `projectExport.js` nie eksportuje binarnych danych zdjęć/audio.
+- [ ] `buildMp4ExportPlan` generuje różne komendy dla MP4 bez audio i MP4 + audio.
 
 ## Znane ograniczenia
 
 - WebM export jest ograniczony do 30 sekund.
-- MP4 nie jest jeszcze wdrożone.
-- ffmpeg.wasm nie jest jeszcze zależnością projektu.
-- Historia WebM jest lokalna dla danej przeglądarki.
+- MP4 POC działa na zapisanej sekwencji PNG i ma krótkie limity czasu/fps.
+- MP4 audio mux jest lokalny i eksperymentalny; wymaga ręcznego QA synchronizacji audio/video.
+- Produkcyjne profile MP4 9:16 i 16:9 nie są jeszcze zamknięte.
+- Historia WebM i MP4 jest lokalna dla danej przeglądarki.
 - Dane z IndexedDB mogą zostać skasowane przez przeglądarkę albo użytkownika.
