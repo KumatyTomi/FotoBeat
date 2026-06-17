@@ -1,0 +1,162 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fotobeat.me/contracts/fotobeat.desktop.render-plan.v1.schema.json",
+  "title": "FotoBeat Desktop Render Plan v1",
+  "type": "object",
+  "required": ["schemaVersion", "jobId", "createdAt", "inputMode", "format", "timing", "inputs", "output", "ffmpeg", "notes"],
+  "properties": {
+    "schemaVersion": { "const": "fotobeat.desktop.render-plan.v1" },
+    "jobId": { "type": "string", "minLength": 1 },
+    "createdAt": { "type": "string", "minLength": 1 },
+    "inputMode": { "type": "string", "enum": ["frame-sequence", "manifest-preview"] },
+    "project": {
+      "oneOf": [
+        { "type": "null" },
+        { "type": "object", "additionalProperties": true }
+      ]
+    },
+    "preset": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "required": ["id", "name"],
+          "properties": {
+            "id": { "type": ["string", "null"] },
+            "name": { "type": ["string", "null"] },
+            "description": { "type": ["string", "null"] }
+          },
+          "additionalProperties": true
+        }
+      ]
+    },
+    "renderProfile": {
+      "oneOf": [
+        { "type": "null" },
+        { "$ref": "#/$defs/renderProfile" }
+      ]
+    },
+    "format": {
+      "type": "object",
+      "required": ["id", "width", "height"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "label": { "type": ["string", "null"] },
+        "width": { "type": "integer", "minimum": 240 },
+        "height": { "type": "integer", "minimum": 240 },
+        "ratio": { "type": ["string", "null"] }
+      },
+      "additionalProperties": true
+    },
+    "timing": {
+      "type": "object",
+      "required": ["fps", "durationSeconds", "frameCount"],
+      "properties": {
+        "fps": { "type": "integer", "minimum": 1 },
+        "durationSeconds": { "type": ["number", "null"] },
+        "frameCount": { "type": ["integer", "null"], "minimum": 0 }
+      },
+      "additionalProperties": true
+    },
+    "inputs": {
+      "type": "object",
+      "required": ["audio", "sequence", "mediaCount"],
+      "properties": {
+        "audio": {
+          "oneOf": [
+            { "type": "null" },
+            { "$ref": "#/$defs/audioInput" }
+          ]
+        },
+        "sequence": {
+          "oneOf": [
+            { "type": "null" },
+            { "$ref": "#/$defs/sequenceInput" }
+          ]
+        },
+        "mediaCount": { "type": "integer", "minimum": 0 }
+      },
+      "additionalProperties": true
+    },
+    "output": {
+      "type": "object",
+      "required": ["fileName", "path", "tempPath", "container", "videoCodec", "pixelFormat", "audioCodec", "crf", "preset", "audioBitrate", "renderProfileId"],
+      "properties": {
+        "fileName": { "type": "string", "minLength": 1 },
+        "path": { "type": "string", "minLength": 1 },
+        "tempPath": { "type": "string", "minLength": 1 },
+        "container": { "type": "string", "enum": ["mp4"] },
+        "videoCodec": { "type": "string", "enum": ["libx264"] },
+        "pixelFormat": { "type": "string", "enum": ["yuv420p"] },
+        "audioCodec": { "type": ["string", "null"] },
+        "crf": { "type": "integer", "minimum": 0, "maximum": 51 },
+        "preset": { "type": "string", "minLength": 1 },
+        "audioBitrate": { "type": ["string", "null"] },
+        "renderProfileId": { "type": ["string", "null"] }
+      },
+      "additionalProperties": true
+    },
+    "ffmpeg": {
+      "type": "object",
+      "required": ["binary", "args", "preview"],
+      "properties": {
+        "binary": { "type": "string", "minLength": 1 },
+        "args": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "preview": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "notes": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "$defs": {
+    "renderProfile": {
+      "type": "object",
+      "required": ["id", "label", "quality", "target", "width", "height", "fps", "crf", "preset", "audioBitrate"],
+      "properties": {
+        "id": { "type": ["string", "null"] },
+        "label": { "type": ["string", "null"] },
+        "quality": { "type": ["string", "null"] },
+        "target": { "type": ["string", "null"] },
+        "width": { "type": ["integer", "null"], "minimum": 240 },
+        "height": { "type": ["integer", "null"], "minimum": 240 },
+        "fps": { "type": ["integer", "null"], "minimum": 1 },
+        "crf": { "type": ["integer", "null"], "minimum": 0, "maximum": 51 },
+        "preset": { "type": ["string", "null"] },
+        "audioBitrate": { "type": ["string", "null"] }
+      },
+      "additionalProperties": true
+    },
+    "audioInput": {
+      "type": "object",
+      "required": ["name", "required", "imported", "path"],
+      "properties": {
+        "name": { "type": ["string", "null"] },
+        "size": { "type": ["integer", "null"], "minimum": 0 },
+        "type": { "type": ["string", "null"] },
+        "required": { "type": "boolean" },
+        "imported": { "type": "boolean" },
+        "path": { "type": ["string", "null"] },
+        "manifestPath": { "type": ["string", "null"] }
+      },
+      "additionalProperties": true
+    },
+    "sequenceInput": {
+      "type": "object",
+      "required": ["id", "frameCount", "totalSize", "expectedPattern"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "frameCount": { "type": "integer", "minimum": 1 },
+        "totalSize": { "type": "integer", "minimum": 0 },
+        "expectedPattern": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}

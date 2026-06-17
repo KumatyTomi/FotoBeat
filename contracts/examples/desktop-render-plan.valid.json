@@ -1,0 +1,107 @@
+{
+  "schemaVersion": "fotobeat.desktop.render-plan.v1",
+  "jobId": "local-render-demo-001",
+  "createdAt": "2026-06-17T23:50:00.000Z",
+  "inputMode": "frame-sequence",
+  "project": {
+    "id": "project-demo-001",
+    "title": "Demo Club Recap"
+  },
+  "preset": {
+    "id": "neon-pulse",
+    "name": "Neon Pulse",
+    "description": "Beat-reactive neon recap preset."
+  },
+  "renderProfile": {
+    "id": "mp4-mobile-vertical",
+    "label": "MP4 Production 9:16",
+    "quality": "production",
+    "target": "ffmpeg-wasm",
+    "width": 1080,
+    "height": 1920,
+    "fps": 30,
+    "crf": 20,
+    "preset": "medium",
+    "audioBitrate": "192k"
+  },
+  "format": {
+    "id": "vertical",
+    "label": "Vertical",
+    "width": 1080,
+    "height": 1920,
+    "ratio": "9:16"
+  },
+  "timing": {
+    "fps": 30,
+    "durationSeconds": 2,
+    "frameCount": 60
+  },
+  "inputs": {
+    "audio": {
+      "name": "beat.mp3",
+      "size": 5120000,
+      "type": "audio/mpeg",
+      "required": true,
+      "imported": true,
+      "path": "audio/input-audio",
+      "manifestPath": "audio/audio-manifest.json"
+    },
+    "sequence": {
+      "id": "sequence-demo-001",
+      "frameCount": 60,
+      "totalSize": 2048000,
+      "expectedPattern": "frames/frame_%04d.png"
+    },
+    "mediaCount": 2
+  },
+  "output": {
+    "fileName": "fotobeat-demo.mp4",
+    "path": "renders/fotobeat-demo.mp4",
+    "tempPath": "renders/fotobeat-demo.mp4.partial",
+    "container": "mp4",
+    "videoCodec": "libx264",
+    "pixelFormat": "yuv420p",
+    "audioCodec": "aac",
+    "crf": 20,
+    "preset": "medium",
+    "audioBitrate": "192k",
+    "renderProfileId": "mp4-mobile-vertical"
+  },
+  "ffmpeg": {
+    "binary": "ffmpeg",
+    "args": [
+      "-y",
+      "-framerate",
+      "30",
+      "-i",
+      "frames/frame_%04d.png",
+      "-i",
+      "audio/input-audio",
+      "-vf",
+      "scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2",
+      "-c:v",
+      "libx264",
+      "-preset",
+      "medium",
+      "-crf",
+      "20",
+      "-pix_fmt",
+      "yuv420p",
+      "-c:a",
+      "aac",
+      "-b:a",
+      "192k",
+      "-shortest",
+      "-movflags",
+      "+faststart",
+      "renders/fotobeat-demo.mp4.partial"
+    ],
+    "preview": "ffmpeg -y -framerate 30 -i frames/frame_%04d.png -i audio/input-audio -vf scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2 -c:v libx264 -preset medium -crf 20 -pix_fmt yuv420p -c:a aac -b:a 192k -shortest -movflags +faststart renders/fotobeat-demo.mp4.partial"
+  },
+  "notes": [
+    "This plan writes FFmpeg output to output.tempPath first.",
+    "The render queue promotes output.tempPath to output.path only after a successful encode.",
+    "Render profile: MP4 Production 9:16.",
+    "Audio input is imported and muxed with AAC output."
+  ]
+}

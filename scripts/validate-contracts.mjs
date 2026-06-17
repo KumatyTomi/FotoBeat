@@ -19,6 +19,12 @@ const contractPairs = [
     customValidate: validateRenderContract
   },
   {
+    name: 'desktop-render-plan',
+    schemaPath: 'contracts/fotobeat.desktop.render-plan.v1.schema.json',
+    examplePath: 'contracts/examples/desktop-render-plan.valid.json',
+    customValidate: validateDesktopRenderPlanContract
+  },
+  {
     name: 'preset',
     schemaPath: 'contracts/fotobeat.preset.v1.schema.json',
     examplePath: 'contracts/examples/preset.valid.json',
@@ -185,6 +191,53 @@ function validateRenderContract(render) {
   if (render.output.ratio === '9:16' && render.output.height <= render.output.width) errors.push('9:16 output must be portrait');
   if (render.output.ratio === '16:9' && render.output.width <= render.output.height) errors.push('16:9 output must be landscape');
   if (render.output.ratio === '1:1' && render.output.width !== render.output.height) errors.push('1:1 output must be square');
+
+  return errors;
+}
+
+function validateDesktopRenderPlanContract(plan) {
+  const errors = [];
+  const args = plan.ffmpeg?.args ?? [];
+
+  if (plan.inputMode === 'frame-sequence' && !plan.inputs?.sequence) {
+    errors.push('frame-sequence plans must include inputs.sequence');
+  }
+
+  if (plan.inputMode === 'frame-sequence' && plan.inputs?.sequence?.expectedPattern && !args.includes(plan.inputs.sequence.expectedPattern)) {
+    errors.push('ffmpeg args must reference inputs.sequence.expectedPattern');
+  }
+
+  if (plan.inputMode === 'frame-sequence' && args.at(-1) !== plan.output?.tempPath) {
+    errors.push('ffmpeg args must write to output.tempPath as the final argument');
+  }
+
+  if (plan.output?.path === plan.output?.tempPath) {
+    errors.push('output.path and output.tempPath must be different');
+  }
+
+  if (plan.output?.tempPath && !plan.output.tempPath.endsWith('.partial')) {
+    errors.push('output.tempPath should use the .partial suffix');
+  }
+
+  if (plan.inputs?.audio?.imported && plan.output?.audioCodec !== 'aac') {
+    errors.push('imported audio must produce AAC output');
+  }
+
+  if (!plan.inputs?.audio?.imported && plan.output?.audioCodec) {
+    errors.push('audioCodec must be null when audio is not imported');
+  }
+
+  if (plan.renderProfile?.id && plan.output?.renderProfileId !== plan.renderProfile.id) {
+    errors.push('output.renderProfileId must match renderProfile.id');
+  }
+
+  if (plan.renderProfile?.width && plan.format?.width !== plan.renderProfile.width) {
+    errors.push('format.width must match renderProfile.width');
+  }
+
+  if (plan.renderProfile?.height && plan.format?.height !== plan.renderProfile.height) {
+    errors.push('format.height must match renderProfile.height');
+  }
 
   return errors;
 }
