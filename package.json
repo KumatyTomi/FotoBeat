@@ -17,7 +17,7 @@
   "dependencies": {
     "@ffmpeg/ffmpeg": "0.12.15",
     "@ffmpeg/util": "0.12.2",
-    "@radix-ui/react-accordion": "1.2.13",
+    "@radix-ui/react-accordion": "1.2.14",
     "@radix-ui/react-collapsible": "1.1.13",
     "@vitejs/plugin-react": "5.0.0",
     "lucide-react": "0.468.0",
