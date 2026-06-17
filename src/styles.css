@@ -45,11 +45,11 @@ p { color: rgba(245, 247, 251, 0.72); line-height: 1.65; }
 .effect-card strong { margin-bottom: 8px; }
 .effect-card span { color: rgba(245, 247, 251, 0.64); line-height: 1.4; }
 .effect-card em { margin-top: 10px; color: rgba(245, 247, 251, 0.42); font-size: 12px; font-style: normal; line-height: 1.35; }
-.effect-card-vairaChrono { position: relative; overflow: hidden; border-color: rgba(247, 198, 106, 0.34); background: radial-gradient(circle at 20% 12%, rgba(247, 198, 106, 0.20), transparent 30%), radial-gradient(circle at 80% 70%, rgba(96, 245, 255, 0.11), transparent 35%), linear-gradient(145deg, rgba(21, 17, 9, 0.96), rgba(5, 7, 12, 0.92)); }
-.effect-card-vairaChrono::before { content: ''; position: absolute; inset: 11px; border-radius: 16px; border: 1px solid rgba(247, 198, 106, 0.18); background: repeating-conic-gradient(from 0deg, rgba(247,198,106,0.12) 0deg 2deg, transparent 2deg 12deg); opacity: 0.5; pointer-events: none; }
-.effect-card-vairaChrono > * { position: relative; z-index: 1; }
-.effect-card-vairaChrono strong { color: #f7c66a; letter-spacing: 0.04em; text-transform: uppercase; }
-.effect-card-vairaChrono.active { border-color: rgba(247, 198, 106, 0.9); box-shadow: 0 0 0 3px rgba(247, 198, 106, 0.12), 0 20px 60px rgba(247, 198, 106, 0.10); }
+.effect-card-vaira-chrono { position: relative; overflow: hidden; border-color: rgba(247, 198, 106, 0.34); background: radial-gradient(circle at 20% 12%, rgba(247, 198, 106, 0.20), transparent 30%), radial-gradient(circle at 80% 70%, rgba(96, 245, 255, 0.11), transparent 35%), linear-gradient(145deg, rgba(21, 17, 9, 0.96), rgba(5, 7, 12, 0.92)); }
+.effect-card-vaira-chrono::before { content: ''; position: absolute; inset: 11px; border-radius: 16px; border: 1px solid rgba(247, 198, 106, 0.18); background: repeating-conic-gradient(from 0deg, rgba(247,198,106,0.12) 0deg 2deg, transparent 2deg 12deg); opacity: 0.5; pointer-events: none; }
+.effect-card-vaira-chrono > * { position: relative; z-index: 1; }
+.effect-card-vaira-chrono strong { color: #f7c66a; letter-spacing: 0.04em; text-transform: uppercase; }
+.effect-card-vaira-chrono.active { border-color: rgba(247, 198, 106, 0.9); box-shadow: 0 0 0 3px rgba(247, 198, 106, 0.12), 0 20px 60px rgba(247, 198, 106, 0.10); }
 .section-heading { display: flex; justify-content: space-between; gap: 24px; align-items: end; }
 .section-heading p { max-width: 560px; }
 .timeline-meta { flex-wrap: wrap; justify-content: flex-end; }
