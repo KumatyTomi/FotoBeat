@@ -1,5 +1,6 @@
 function toEffectClassName(effectId) {
-  return `effect-card-${effectId.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase()}`;
+  const slug = effectId.replace(/([a-z0-9])([A-Z])/g, (_match, left, right) => `${left}-${right}`).toLowerCase();
+  return `effect-card-${slug}`;
 }
 
 export default function EffectCard({ effect, active, onClick }) {
