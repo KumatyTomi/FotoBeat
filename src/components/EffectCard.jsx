@@ -1,5 +1,5 @@
 function toEffectClassName(effectId) {
-  return `effect-card-${effectId.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)}`;
+  return `effect-card-${effectId.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase()}`;
 }
 
 export default function EffectCard({ effect, active, onClick }) {
