@@ -14,9 +14,11 @@ export function useFrameSequenceZipExporter() {
   });
 
   useEffect(() => {
+    const objectUrls = objectUrlsRef.current;
+
     return () => {
-      objectUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
-      objectUrlsRef.current.clear();
+      objectUrls.forEach((url) => URL.revokeObjectURL(url));
+      objectUrls.clear();
     };
   }, []);
 

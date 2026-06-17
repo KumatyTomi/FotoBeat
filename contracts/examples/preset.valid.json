@@ -1,0 +1,23 @@
+{
+  "schemaVersion": "fotobeat.preset.v1",
+  "id": "neon-pulse",
+  "name": "Neon Pulse",
+  "description": "Energetic club preset with glow, beat zooms and fast transitions.",
+  "styleFamily": "neon",
+  "supportedFormats": ["vertical", "wide", "square"],
+  "effects": {
+    "defaultEffectId": "beat-zoom",
+    "intensity": 0.78,
+    "beatResponse": 0.9
+  },
+  "transitions": {
+    "defaultTransitionId": "flash-cut",
+    "durationSeconds": 0.16
+  },
+  "visuals": {
+    "background": "dark",
+    "accentColor": "#37f5ff",
+    "grain": 0.2,
+    "glow": 0.75
+  }
+}
