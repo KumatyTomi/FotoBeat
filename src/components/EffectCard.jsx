@@ -1,6 +1,9 @@
+function toEffectClassName(effectId) {
+  return `effect-card-${effectId.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)}`;
+}
+
 export default function EffectCard({ effect, active, onClick }) {
-  const effectClassName = `effect-card-${effect.id}`;
-  const className = ['effect-card', effectClassName, active ? 'active' : ''].filter(Boolean).join(' ');
+  const className = ['effect-card', toEffectClassName(effect.id), active ? 'active' : ''].filter(Boolean).join(' ');
 
   return (
     <button className={className} onClick={onClick}>
