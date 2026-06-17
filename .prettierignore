@@ -1,0 +1,6 @@
+# Ignore compiled and distribution directories
+node_modules/
+dist/
+release/
+desktop/release/
+coverage/
