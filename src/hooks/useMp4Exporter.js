@@ -18,6 +18,7 @@ export function useMp4Exporter() {
 
   useEffect(() => {
     let cancelled = false;
+    const objectUrls = objectUrlsRef.current;
 
     loadMp4Exports(MAX_MP4_HISTORY)
       .then((storedItems) => {
@@ -25,7 +26,7 @@ export function useMp4Exporter() {
 
         const items = storedItems.map((item) => {
           const downloadUrl = URL.createObjectURL(item.blob);
-          objectUrlsRef.current.add(downloadUrl);
+          objectUrls.add(downloadUrl);
           return { ...item, downloadUrl };
         });
 
@@ -42,8 +43,8 @@ export function useMp4Exporter() {
 
     return () => {
       cancelled = true;
-      objectUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
-      objectUrlsRef.current.clear();
+      objectUrls.forEach((url) => URL.revokeObjectURL(url));
+      objectUrls.clear();
     };
   }, []);
 

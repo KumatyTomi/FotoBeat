@@ -22,17 +22,31 @@ export function useCanvasRecorder({ canvasRef, projectName, timelineDuration, au
 
   useEffect(() => {
     let cancelled = false;
+    const objectUrls = objectUrlsRef.current;
 
     loadPersistentHistory()
       .then((items) => {
-        if (!cancelled) {
-          setExportHistory(items);
-          if (items.length > 0) {
-            setRecordingState((current) => ({
-              ...current,
-              message: `Wczytano ${items.length} zapisanych eksportów WebM z IndexedDB.`
-            }));
+        if (cancelled) {
+          items.forEach((item) => {
+            if (item.downloadUrl) {
+              URL.revokeObjectURL(item.downloadUrl);
+            }
+          });
+          return;
+        }
+
+        items.forEach((item) => {
+          if (item.downloadUrl) {
+            objectUrls.add(item.downloadUrl);
           }
+        });
+
+        setExportHistory(items);
+        if (items.length > 0) {
+          setRecordingState((current) => ({
+            ...current,
+            message: `Wczytano ${items.length} zapisanych eksportów WebM z IndexedDB.`
+          }));
         }
       })
       .catch(() => {
@@ -47,8 +61,8 @@ export function useCanvasRecorder({ canvasRef, projectName, timelineDuration, au
 
     return () => {
       cancelled = true;
-      objectUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
-      objectUrlsRef.current.clear();
+      objectUrls.forEach((url) => URL.revokeObjectURL(url));
+      objectUrls.clear();
     };
   }, []);
 

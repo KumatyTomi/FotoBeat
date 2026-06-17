@@ -22,7 +22,7 @@ Wspólne zostają:
 
 - nazwa FotoBeat / FotoBeat.me,
 - styl: beat, montage, neon, smoke, club, cinematic,
-- format manifestu na poziomie koncepcyjnym,
+- kontrakty danych: `fotobeat.project.v1`, `fotobeat.render.v1`, `fotobeat.preset.v1`,
 - nazwy presetów,
 - język komunikacji produktowej,
 - import/eksport projektu `.fotobeat.json`.
@@ -87,15 +87,25 @@ Priorytety:
 
 ## Kontrakty między produktami
 
-Docelowo warto utrzymać osobny kontrakt/specyfikację:
+Źródłem prawdy dla wspólnych formatów są:
 
 ```text
-fotobeat.project.v1
-fotobeat.render.v1
-fotobeat.preset.v1
+docs/CONTRACTS.md
+contracts/fotobeat.project.v1.schema.json
+contracts/fotobeat.render.v1.schema.json
+contracts/fotobeat.preset.v1.schema.json
+contracts/examples/*.valid.json
 ```
 
-Może żyć jako dokumentacja w obu repo albo później jako osobne repo `fotobeat-contracts`.
+Kontrakty definiują minimalny, wersjonowany format importu/eksportu projektu, zlecenia renderu i presetów. Desktop oraz SaaS mogą mieć własne runtime'y i własne pola wewnętrzne, ale wymiana danych między produktami ma przechodzić przez te publiczne formaty.
+
+Każda zmiana kontraktu musi przejść walidację:
+
+```text
+npm run contracts:check
+```
+
+Później kontrakty mogą zostać wydzielone do osobnego repo `fotobeat-contracts`, ale obecnie żyją w repo Desktop jako baza do spięcia produktów.
 
 ## Zasada rozwoju
 

@@ -1,1 +1,3 @@
-bW9kdWxlLmV4cG9ydHMgPSB7CiAgZXh0ZW5kczogWydAY29tbWl0bGludC9jb25maWctY29udmVudGlvbmFsJ10sCn07Cg==
+export default {
+  extends: ['@commitlint/config-conventional'],
+};

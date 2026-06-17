@@ -12,6 +12,7 @@
     "format": "prettier --write .",
     "test": "jest --coverage",
     "typecheck": "tsc --noEmit",
+    "contracts:check": "node scripts/validate-contracts.mjs",
     "prepare": "husky install",
     "release": "semantic-release"
   },
@@ -31,12 +32,12 @@
     "react-i18next": "14.0.0"
   },
   "devDependencies": {
-    "@tailwindcss/vite": "4.0.0",
-    "eslint": "9.0.0",
+    "@tailwindcss/vite": "4.1.17",
+    "eslint": "9.7.0",
     "eslint-plugin-react": "7.35.0",
     "eslint-plugin-react-hooks": "5.0.0",
     "eslint-plugin-react-refresh": "0.4.0",
-    "tailwindcss": "4.0.0",
+    "tailwindcss": "4.1.17",
     "tailwindcss-animate": "1.0.7",
     "prettier": "^3.0.0",
     "jest": "^30.0.0",
