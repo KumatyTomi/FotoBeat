@@ -1,22 +1,25 @@
 # FotoBeat.me Desktop
 
-Desktop wrapper dla FotoBeat.me. Ten moduł pozwala uruchomić istniejący frontend Vite jako aplikację desktopową i przygotowuje most pod lokalny render.
+Desktop wrapper dla FotoBeat.me. Ten moduł uruchamia frontend Vite jako aplikację desktopową i obsługuje lokalny eksport MP4 przez FFmpeg, gdy job zawiera zaimportowaną sekwencję PNG.
 
 ## Status
 
-Aktualnie to scaffold Electron z pierwszym pipeline pod natywny render:
+Aktualnie moduł desktop ma pierwszy działający pipeline pod natywny render:
 
 - main process,
 - preload bridge,
 - FFmpeg doctor,
 - wybór folderu eksportu,
 - lokalna kolejka renderu,
+- import klatek PNG do folderu joba,
+- opcjonalny import audio do folderu joba,
 - zapis manifestu do folderu joba,
 - zapis `render-plan.json`,
 - zapis statusu joba do JSON,
 - output sidecar JSON,
-- mock output w miejscu przyszłego MP4,
-- izolowany moduł native FFmpeg renderer,
+- realny natywny FFmpeg dla jobów z sekwencją `frames/frame_0001.png`,
+- placeholder output tylko jako fallback, gdy job nie ma gotowych klatek,
+- historia renderów i akcje otwierania outputu,
 - tryb dev przez `http://localhost:5173`,
 - tryb build przez `dist/` z web frontendu.
 
@@ -43,24 +46,34 @@ npm run dev
 window.fotobeatDesktop.getVersion()
 window.fotobeatDesktop.getFfmpegStatus()
 window.fotobeatDesktop.pickOutputFolder()
-window.fotobeatDesktop.createLocalRenderJob({ manifest, outputFolder })
+window.fotobeatDesktop.createLocalRenderJob({ manifest, outputFolder, frames, audioFile })
 window.fotobeatDesktop.getLocalRenderJob(jobId)
+window.fotobeatDesktop.cancelLocalRenderJob(jobId)
+window.fotobeatDesktop.retryLocalRenderJob(jobId)
+window.fotobeatDesktop.listRenderHistory(limit)
 ```
 
 ## Struktura joba na dysku
 
-Po kliknięciu `Render lokalny` desktop tworzy folder:
+Po kliknięciu `Desktop MP4` desktop tworzy folder:
 
 ```text
 <outputFolder>/local-render-<uuid>/
   manifest.fotobeat.json
   render-plan.json
   render-job.json
+  frames/
+    frame_0001.png
+    frame_0002.png
+  audio/
+    input-audio
+    audio-manifest.json
+  fotobeat-local-render-<uuid>.mp4.partial
   fotobeat-local-render-<uuid>.mp4
   fotobeat-local-render-<uuid>.mp4.json
 ```
 
-Na tym etapie plik `.mp4` jest placeholderem tekstowym. Ma rezerwować docelową ścieżkę, potwierdzić działający zapis na dysk i przygotować miejsce dla natywnego FFmpeg.
+Plik `.partial` jest promowany do finalnego `.mp4` dopiero po udanym zakończeniu FFmpeg. Jeśli job nie ma zaimportowanej sekwencji PNG, desktop zapisuje placeholder tekstowy, żeby zachować diagnostykę ścieżek i sidecar.
 
 ## FFmpeg doctor
 
@@ -89,15 +102,15 @@ desktop/src/nativeFfmpegRenderer.cjs
 Aktualny zakres:
 
 - ładuje `render-plan.json`,
-- waliduje schemaVersion,
+- waliduje `schemaVersion`,
 - waliduje `inputMode: frame-sequence`,
 - sprawdza pierwszy plik `frames/frame_0001.png`,
+- sprawdza wymagane audio, jeśli zostało zaimportowane,
 - rozwiązuje ścieżki względne względem folderu joba,
 - uruchamia `ffmpeg` przez `spawn`,
 - parsuje postęp z `time=HH:MM:SS.xx`,
-- zwraca `fotobeat.desktop.native-render-result.v1`.
-
-Na razie moduł jest izolowany. `renderQueue.cjs` nadal używa placeholder outputu, dopóki nie dodamy realnego przepięcia kolejki na native renderer.
+- zapisuje wynik `fotobeat.desktop.native-render-result.v1`,
+- pozwala kolejce promować `.partial` do finalnego `.mp4` po sukcesie.
 
 ## Flow desktop UI
 
@@ -111,31 +124,18 @@ Panel `Desktop render` obsługuje:
 
 - diagnostykę FFmpeg,
 - wybór folderu eksportu,
+- wybór profilu MP4,
 - utworzenie lokalnego joba,
 - polling `getLocalRenderJob(jobId)`,
-- status, progress, logi i `outputPath`.
+- cancel/retry,
+- status, progress, logi i `outputPath`,
+- historię renderów oraz akcje pokaż/otwórz.
 
-## Następny krok
+## Następne kroki
 
-Przepiąć `renderQueue.cjs`, żeby dla jobów z gotową sekwencją PNG wykonywał:
+Najbliższe prace produkcyjne:
 
-```text
-render-plan.json
-→ validateRenderPlan()
-→ runNativeFfmpegRender()
-→ inspect output
-→ write sidecar
-```
-
-## Późniejszy render właściwy
-
-Docelowo `renderQueue.cjs` powinien przejść na lokalny pipeline:
-
-```text
-manifest JSON
-→ resolve local files
-→ normalize images
-→ generate frames/transitions
-→ ffmpeg encode MP4
-→ save outputPath
-```
+- streaming lub chunking klatek przez desktop bridge, żeby zdjąć obecny limit IPC dla dłuższych sekwencji,
+- próbki QA 9:16, 16:9 i 1:1 renderowane przez natywny FFmpeg,
+- instalator Windows z dołączonym albo wykrywalnym FFmpeg,
+- spójne kontrakty dla przyszłego SaaS render workera.
