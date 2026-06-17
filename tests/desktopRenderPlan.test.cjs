@@ -4,6 +4,19 @@ const path = require('node:path');
 const { buildRenderPlan } = require('../desktop/src/renderPlan.cjs');
 const { loadRenderPlan, validateRenderPlan } = require('../desktop/src/nativeFfmpegRenderer.cjs');
 
+const WIDE_PROFILE = {
+  id: 'mp4-wide-hd',
+  label: 'MP4 Production 16:9',
+  quality: 'production',
+  target: 'ffmpeg-wasm',
+  width: 1920,
+  height: 1080,
+  fps: 30,
+  crf: 18,
+  preset: 'slow',
+  audioBitrate: '256k'
+};
+
 describe('desktop native render plans', () => {
   let workspace;
 
@@ -15,17 +28,26 @@ describe('desktop native render plans', () => {
     await fs.rm(workspace, { recursive: true, force: true });
   });
 
-  test('builds frame-sequence FFmpeg args with audio and temp output', () => {
-    const job = createJob(workspace, { withAudio: true });
+  test('builds frame-sequence FFmpeg args with audio, profile settings, and temp output', () => {
+    const job = createJob(workspace, { withAudio: true, renderProfile: WIDE_PROFILE });
     const plan = buildRenderPlan(job);
 
     expect(plan).toMatchObject({
       schemaVersion: 'fotobeat.desktop.render-plan.v1',
       inputMode: 'frame-sequence',
+      renderProfile: WIDE_PROFILE,
+      format: {
+        width: 1920,
+        height: 1080
+      },
       output: {
         path: job.outputPath,
         tempPath: job.tempOutputPath,
-        audioCodec: 'aac'
+        audioCodec: 'aac',
+        crf: 18,
+        preset: 'slow',
+        audioBitrate: '256k',
+        renderProfileId: 'mp4-wide-hd'
       },
       inputs: {
         audio: {
@@ -48,10 +70,14 @@ describe('desktop native render plans', () => {
       'audio/input-audio',
       '-c:v',
       'libx264',
+      '-preset',
+      'slow',
+      '-crf',
+      '18',
       '-c:a',
       'aac',
       '-b:a',
-      '192k',
+      '256k',
       '-shortest',
       '-movflags',
       '+faststart',
@@ -82,7 +108,7 @@ describe('desktop native render plans', () => {
   });
 });
 
-function createJob(jobFolder, { withAudio = false } = {}) {
+function createJob(jobFolder, { withAudio = false, renderProfile = null } = {}) {
   const outputPath = path.join(jobFolder, 'fotobeat-output.mp4');
   return {
     id: 'local-render-test',
@@ -92,6 +118,7 @@ function createJob(jobFolder, { withAudio = false } = {}) {
     manifest: {
       project: { id: 'project-1', title: 'Desktop render test' },
       preset: { id: 'neon-pulse', name: 'Neon Pulse' },
+      renderProfile,
       format: { id: 'vertical', label: 'Vertical', width: 1080, height: 1920, ratio: '9:16' },
       sequence: {
         id: 'seq-1',
