@@ -24,18 +24,32 @@ const nodeGlobals = {
   URL: 'readonly',
   __dirname: 'readonly',
   __filename: 'readonly',
+  clearInterval: 'readonly',
   clearTimeout: 'readonly',
   console: 'readonly',
   exports: 'readonly',
   module: 'readonly',
   process: 'readonly',
   require: 'readonly',
+  setInterval: 'readonly',
   setTimeout: 'readonly'
+};
+
+const testGlobals = {
+  afterAll: 'readonly',
+  afterEach: 'readonly',
+  beforeAll: 'readonly',
+  beforeEach: 'readonly',
+  describe: 'readonly',
+  expect: 'readonly',
+  it: 'readonly',
+  jest: 'readonly',
+  test: 'readonly'
 };
 
 export default [
   {
-    ignores: ['dist/**', 'node_modules/**']
+    ignores: ['coverage/**', 'dist/**', 'node_modules/**']
   },
   js.configs.recommended,
   {
@@ -82,6 +96,12 @@ export default [
       ecmaVersion: 2024,
       sourceType: 'module',
       globals: nodeGlobals
+    }
+  },
+  {
+    files: ['tests/**/*.{js,jsx,cjs,mjs}'],
+    languageOptions: {
+      globals: testGlobals
     }
   }
 ];
