@@ -1,36 +1,53 @@
 # FotoBeat Desktop
 
-FotoBeat Desktop to lokalna aplikacja pod marką FotoBeat.me do tworzenia filmów ze zdjęć i audio bez zależności od backendu SaaS. Ten produkt ma być narzędziem local-first: import mediów, analiza audio, timeline, eksport sekwencji/MP4 i później pełny lokalny render przez FFmpeg.
+[![CI](https://github.com/KumatyTomi/FotoBeat/actions/workflows/ci.yml/badge.svg)](https://github.com/KumatyTomi/FotoBeat/actions/workflows/ci.yml)
+
+FotoBeat Desktop to lokalna aplikacja pod marka FotoBeat.me do tworzenia filmow ze zdjec i audio bez zaleznosci od backendu SaaS. Produkt jest rozwijany jako narzedzie local-first: import mediow, analiza audio, timeline sterowany rytmem, eksport sekwencji klatek oraz lokalny render MP4 przez FFmpeg.
+
+## Produkt w skrocie
+
+**Wrzuć zdjęcia i muzykę. FotoBeat układa klip w rytm bitu, a desktopowy renderer trzyma projekt i render lokalnie.**
+
+Repozytorium pokazuje kierunek techniczny produktu desktopowego: React/Vite jako renderer UI, Electron jako shell, lokalna kolejka renderowania, kontrakty manifestow oraz plan przejscia z POC do natywnego FFmpeg.
+
+## Co jest zaimplementowane
+
+- desktopowy renderer UI w React,
+- Electron shell z bezpiecznym preload bridge,
+- lokalna kolejka render jobow zapisywana na dysku,
+- manifest/render plan dla eksportu,
+- historia renderow i kontrolki retry/cancel,
+- POC eksportu sekwencji/MP4,
+- CI dla lint/build oraz smoke check pakowania desktopu,
+- dokumentacja decyzji produktowych, roadmapy i etapow render pipeline.
 
 ## Relacja do FotoBeat Web/SaaS
 
-FotoBeat Desktop i FotoBeat Web/SaaS to dwa osobne produkty pod jedną marką:
+FotoBeat Desktop i FotoBeat Web/SaaS to dwa osobne produkty pod jedna marka:
 
-- `KumatyTomi/FotoBeat` — aplikacja desktopowa i lokalny renderer,
-- `KumatyTomi/FotoBeat---saas` — aplikacja webowa, backend, kolejki, storage, projekty użytkownika i późniejsze płatności.
+- `KumatyTomi/FotoBeat` - aplikacja desktopowa i lokalny renderer,
+- `KumatyTomi/FotoBeat---saas` - aplikacja webowa, backend, kolejki, storage, projekty uzytkownika i pozniejsze platnosci.
 
-Wspólne powinny być tylko kontrakty, format manifestu, nazewnictwo presetów i język marki. Kod runtime, release, storage i rendering mają być rozdzielone.
+Wspolne powinny byc tylko kontrakty, format manifestu, nazewnictwo presetow i jezyk marki. Kod runtime, release, storage i rendering sa rozdzielone.
 
-## Założenia Desktop
+## Stack
 
-- lokalny import zdjęć i audio,
-- lokalny project-engine: autosave, snapshoty, import/eksport `.fotobeat.json`,
-- analiza audio i timeline sterowany beatem,
-- frame sequence do PNG,
-- ZIP z sekwencją klatek,
-- MP4 POC przez `ffmpeg.wasm`,
-- Electron shell,
-- lokalna kolejka renderu zapisująca manifest/job status na dysku,
-- później natywny FFmpeg i instalator Windows.
+- React 19
+- Vite 7
+- Electron
+- Zustand
+- Radix UI
+- FFmpeg / ffmpeg.wasm
+- GitHub Actions
 
-## Szybki start — renderer desktopowy
+## Szybki start - renderer desktopowy
 
 ```bash
 npm install
 npm run dev
 ```
 
-## Szybki start — Electron shell
+## Szybki start - Electron shell
 
 Terminal 1, root repo:
 
@@ -47,41 +64,49 @@ npm install
 npm run dev
 ```
 
-## Build renderera
+## Build i kontrola jakosci
 
 ```bash
+npm run lint:strict
 npm run build
 npm run preview
 ```
+
+Desktop smoke check jest uruchamiany w CI przez workflow `.github/workflows/ci.yml`.
 
 ## Struktura
 
 ```txt
 src/
   components/     UI renderera desktopowego
-  data/           presety efektów i formatów
+  data/           presety efektow i formatow
   hooks/          project-engine, canvas, eksport, desktop bridge
+  stores/         stan UI i preferencji
   utils/          selekcja, rytm, render pipeline, eksport projektu
 
 desktop/
-  src/main.cjs        Electron main process
-  src/preload.cjs     bezpieczny bridge do renderera
-  src/renderQueue.cjs lokalne joby renderu i workspace na dysku
+  src/main.cjs                 Electron main process
+  src/preload.cjs              bezpieczny bridge do renderera
+  src/renderQueue.cjs          lokalne joby renderu i workspace na dysku
+  src/nativeFfmpegRenderer.cjs natywny renderer FFmpeg
+  src/renderPlan.cjs           plan renderowania dla eksportu
 
 docs/             decyzje produktowe i techniczne
-public/assets/    tła, ikony, sample i statyczne zasoby
+public/assets/    tla, ikony, sample i statyczne zasoby
 ```
 
 ## Status
 
-To repo jest od teraz traktowane jako **FotoBeat Desktop**, a nie jako web/SaaS. Webowy produkt rozwijamy w `KumatyTomi/FotoBeat---saas`.
+To repo jest traktowane jako **FotoBeat Desktop**, a nie jako web/SaaS. Webowy produkt rozwijamy w `KumatyTomi/FotoBeat---saas`.
 
-## Aktywny etap prac
+Najblizszy etap to doprowadzenie Desktop do samodzielnego local-first MVP:
 
-Najbliższy etap to doprowadzenie Desktop do samodzielnego local-first MVP:
+1. domkniecie formatu manifestu desktopowego,
+2. stabilny zapis workspace render joba na dysku,
+3. `render-plan.json` pod FFmpeg,
+4. realny lokalny MP4,
+5. demo wideo/screenshoty do README.
 
-1. oddzielenie języka UI od SaaS,
-2. utrwalenie formatu manifestu desktopowego,
-3. zapis workspace render joba na dysku,
-4. `render-plan.json` pod FFmpeg,
-5. realny lokalny MP4.
+## Portfolio notes
+
+Repo jest przygotowywane tak, aby dalo sie szybko ocenic produkt i warsztat techniczny. Najwazniejsze sygnaly jakosci to czytelne README, przypiete wersje zaleznosci, CI, brak wrzucanych paczek ZIP oraz dokumenty architektoniczne w `docs/`.
