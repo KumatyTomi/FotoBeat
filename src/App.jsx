@@ -134,8 +134,13 @@ export default function App() {
     setProjectIoStatus({ type: 'success', message: 'Projekt JSON skopiowany do schowka.' });
   }
 
-  async function createMp4Plan(sequence) {
-    const plan = buildMp4ExportPlan({ sequence });
+  async function createMp4Plan(sequence, includeAudio = false) {
+    const audioFile = includeAudio ? audio : null;
+    const plan = buildMp4ExportPlan({
+      sequence,
+      audioFile,
+      profileId: audioFile ? 'mp4-audio-poc' : 'mp4-poc'
+    });
     setMp4Plan(plan);
     await renderJobs.addMp4PlanJob({
       projectName: project.name,
@@ -147,8 +152,13 @@ export default function App() {
     });
   }
 
-  async function createMp4Poc(sequence) {
-    const plan = buildMp4ExportPlan({ sequence });
+  async function createMp4Poc(sequence, includeAudio = false) {
+    const audioFile = includeAudio ? audio : null;
+    const plan = buildMp4ExportPlan({
+      sequence,
+      audioFile,
+      profileId: audioFile ? 'mp4-audio-poc' : 'mp4-poc'
+    });
     setMp4Plan(plan);
     if (plan.status !== 'blocked') {
       await renderJobs.addMp4PlanJob({
@@ -160,7 +170,7 @@ export default function App() {
         plan
       });
     }
-    await mp4Exporter.exportSequenceToMp4(sequence);
+    await mp4Exporter.exportSequenceToMp4(sequence, audioFile);
   }
 
   async function createZip(sequence) {
@@ -232,6 +242,7 @@ export default function App() {
   }
 
   const mp4Busy = ['loading', 'preparing', 'encoding'].includes(mp4Exporter.mp4State.status);
+  const canMuxAudio = Boolean(audio);
 
   return (
     <main className="app-shell">
@@ -339,8 +350,10 @@ export default function App() {
                 {frameZip.zipState.sequenceId === sequence.id && frameZip.zipState.downloadUrl && (
                   <a className="ghost-button compact" href={frameZip.zipState.downloadUrl} download={frameZip.zipState.fileName}><Download size={16} />Pobierz ZIP</a>
                 )}
-                <button className="ghost-button compact" onClick={() => createMp4Plan(sequence)}><Film size={16} />Plan MP4</button>
-                <button className="ghost-button compact" onClick={() => createMp4Poc(sequence)} disabled={mp4Busy}><Film size={16} />Eksport MP4 POC</button>
+                <button className="ghost-button compact" onClick={() => createMp4Plan(sequence, false)}><Film size={16} />Plan MP4</button>
+                {canMuxAudio && <button className="ghost-button compact" onClick={() => createMp4Plan(sequence, true)}><Music size={16} />Plan + audio</button>}
+                <button className="ghost-button compact" onClick={() => createMp4Poc(sequence, false)} disabled={mp4Busy}><Film size={16} />MP4 bez audio</button>
+                <button className="ghost-button compact" onClick={() => createMp4Poc(sequence, true)} disabled={mp4Busy || !canMuxAudio}><Music size={16} />MP4 + audio</button>
                 <button className="primary-button compact" onClick={() => createDesktopRenderJob(sequence)} disabled={!desktop.available || !desktop.ffmpegReady}><Monitor size={16} />Desktop MP4</button>
                 <button className="ghost-button compact" onClick={() => frameSequence.removeSequence(sequence.id)}><Trash2 size={16} />Usuń</button>
               </div>
@@ -352,8 +365,8 @@ export default function App() {
       <section className="render-export-panel">
         <div>
           <p className="panel-kicker">MP4 proof of concept</p>
-          <h2>ffmpeg.wasm MP4 bez audio</h2>
-          <p>Lokalny POC koduje zapisane klatki PNG do MP4 bez ścieżki audio. Docelowo zastąpi go natywny FFmpeg w desktop rendererze.</p>
+          <h2>ffmpeg.wasm MP4 z opcjonalnym audio</h2>
+          <p>{audio ? `Eksport MP4 może połączyć zapisaną sekwencję PNG z lokalnym audio: ${audio.name}.` : 'Eksport MP4 działa bez audio. Dodaj MP3/WAV, aby odblokować wariant MP4 + audio.'}</p>
         </div>
         <div className="render-export-actions">
           {mp4Exporter.mp4Exports.length > 0 && <button className="ghost-button compact" onClick={mp4Exporter.clearMp4History}><Trash2 size={16} />Wyczyść MP4</button>}
@@ -363,9 +376,9 @@ export default function App() {
         </div>
         <p className={`render-status ${mp4Exporter.mp4State.status}`}>{mp4Exporter.mp4State.message}</p>
         <div className="render-history">
-          {mp4Exporter.mp4Exports.length === 0 ? <span className="empty-state">Brak eksportów MP4. Wyrenderuj sekwencję PNG i kliknij `Eksport MP4 POC`.</span> : mp4Exporter.mp4Exports.map((item) => (
+          {mp4Exporter.mp4Exports.length === 0 ? <span className="empty-state">Brak eksportów MP4. Wyrenderuj sekwencję PNG i wybierz MP4 bez audio albo MP4 + audio.</span> : mp4Exporter.mp4Exports.map((item) => (
             <article key={item.id} className="render-history-item">
-              <div><strong>{item.fileName}</strong><span>{new Date(item.createdAt).toLocaleString('pl-PL')} · {item.duration}s · {item.fps} fps · {item.width}×{item.height} · {formatBytes(item.size)}</span></div>
+              <div><strong>{item.fileName}</strong><span>{new Date(item.createdAt).toLocaleString('pl-PL')} · {item.duration}s · {item.fps} fps · {item.width}×{item.height} · {formatBytes(item.size)} · {item.hasAudio ? `audio + video (${item.audioName || 'audio'})` : 'video only'}</span></div>
               <div className="render-history-actions">
                 <a className="ghost-button compact" href={item.downloadUrl} download={item.fileName}><Download size={16} />Pobierz MP4</a>
                 <button className="ghost-button compact" onClick={() => mp4Exporter.removeMp4Export(item.id)}><Trash2 size={16} />Usuń</button>

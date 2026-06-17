@@ -77,7 +77,7 @@
 - [x] lokalna historia eksportów MP4 w IndexedDB
 - [x] MP4 audio mux foundation w exporterze
 - [x] ffmpeg core load config przez toBlobURL
-- [ ] UI dla MP4 audio mux
+- [x] UI dla MP4 audio mux
 - [ ] eksport MP4 9:16 produkcyjny
 - [ ] eksport MP4 16:9 produkcyjny
 
@@ -100,4 +100,4 @@
 
 ## Najbliższy następny duży krok
 
-Podpiąć UI dla MP4 audio mux i przetestować synchronizację audio/video na krótkim materiale. Potem zwiększać parametry renderu stopniowo, nie od razu 1080p/30fps.
+Zweryfikować MP4 + audio na krótkim materiale i przejść z POC do profili produkcyjnych 9:16 oraz 16:9 z limitami jakości, rozdzielczości i czasu renderu.
