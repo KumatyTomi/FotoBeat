@@ -1,5 +1,6 @@
 import { ExternalLink, FolderOpen, Monitor, RefreshCcw, RotateCcw, Square, Trash2 } from 'lucide-react';
 import DesktopRenderHistory from './DesktopRenderHistory.jsx';
+import Mp4ProfileSelector from './Mp4ProfileSelector.jsx';
 
 const TERMINAL_RENDER_STATUSES = ['done', 'failed', 'canceled'];
 
@@ -26,6 +27,8 @@ export default function DesktopRenderPanel({ desktop, onCreateDesktopRenderJob }
       </div>
 
       <p className={`render-status ${desktop.status.type}`}>{desktop.status.message}</p>
+
+      <Mp4ProfileSelector />
 
       <div className="desktop-health-grid">
         <p className={desktop.ffmpegReady ? 'desktop-health ready' : 'desktop-health warning'}>
