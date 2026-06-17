@@ -87,7 +87,7 @@ Priorytety:
 
 ## Kontrakty między produktami
 
-Docelowo warto utrzymać osobny kontrakt/specyfikację:
+Źródłem prawdy dla wspólnych danych jest `docs/CONTRACTS.md` oraz pliki w `contracts/`:
 
 ```text
 fotobeat.project.v1
@@ -95,7 +95,9 @@ fotobeat.render.v1
 fotobeat.preset.v1
 ```
 
-Może żyć jako dokumentacja w obu repo albo później jako osobne repo `fotobeat-contracts`.
+Kontrakty są walidowane przez `npm run contracts:check`. Zmiana łamiąca zgodność wymaga nowej wersji schematu, a nie cichej zmiany `v1`.
+
+Później kontrakty mogą zostać wydzielone do osobnego repo `fotobeat-contracts`, ale dopóki Desktop prowadzi render E2E, trzymamy je tutaj jako źródło prawdy i synchronizujemy SaaS osobnymi PR-ami.
 
 ## Zasada rozwoju
 
