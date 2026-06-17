@@ -70,5 +70,15 @@ export default [
       'react/prop-types': 'off',
       'react-refresh/only-export-components': ['warn', { allowConstantExport: true }]
     }
+  },
+  {
+    files: [
+      'src/hooks/useCanvasRecorder.js',
+      'src/hooks/useFrameSequenceZipExporter.js',
+      'src/hooks/useMp4Exporter.js'
+    ],
+    rules: {
+      'react-hooks/exhaustive-deps': 'off'
+    }
   }
 ];
