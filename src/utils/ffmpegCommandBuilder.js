@@ -10,10 +10,11 @@ export function buildImageSequenceMp4Command({
   return [
     '-framerate', String(fps),
     '-i', inputPattern,
-    '-vf', `scale=${width}:${height}:force_original_aspect_ratio=decrease,pad=${width}:${height}:(ow-iw)/2:(oh-ih)/2,format=yuv420p`,
+    '-vf', buildScalePadFilter({ width, height }),
     '-c:v', 'libx264',
     '-preset', preset,
     '-crf', String(crf),
+    '-pix_fmt', 'yuv420p',
     '-movflags', '+faststart',
     outputName
   ];
@@ -28,17 +29,20 @@ export function buildImageSequenceMp4WithAudioCommand({
   outputName = 'output.mp4',
   crf = 23,
   preset = 'veryfast',
+  audioBitrate = '192k',
   duration
 }) {
   const command = [
     '-framerate', String(fps),
     '-i', inputPattern,
     '-i', audioName,
-    '-vf', `scale=${width}:${height}:force_original_aspect_ratio=decrease,pad=${width}:${height}:(ow-iw)/2:(oh-ih)/2,format=yuv420p`,
+    '-vf', buildScalePadFilter({ width, height }),
     '-c:v', 'libx264',
     '-preset', preset,
     '-crf', String(crf),
+    '-pix_fmt', 'yuv420p',
     '-c:a', 'aac',
+    '-b:a', audioBitrate,
     '-shortest'
   ];
 
@@ -68,6 +72,10 @@ export function buildFfmpegVirtualFilePlan(sequence) {
 
 export function commandToShellString(command) {
   return ['ffmpeg', ...command].map(quoteShellArg).join(' ');
+}
+
+function buildScalePadFilter({ width, height }) {
+  return `scale=${width}:${height}:force_original_aspect_ratio=decrease,pad=${width}:${height}:(ow-iw)/2:(oh-ih)/2,format=yuv420p`;
 }
 
 function quoteShellArg(value) {

@@ -1,6 +1,9 @@
-export function validateFrameSequence(sequence) {
+export function validateFrameSequence(sequence, limits = {}) {
   const blockers = [];
   const warnings = [];
+  const maxDuration = limits.maxDuration ?? 30;
+  const maxFps = limits.maxFps ?? 30;
+  const maxFrameCount = limits.maxFrameCount ?? maxDuration * maxFps;
 
   if (!sequence) {
     return {
@@ -15,8 +18,13 @@ export function validateFrameSequence(sequence) {
   if (!sequence.width || !sequence.height) blockers.push('Sekwencja nie ma poprawnej rozdzielczości.');
   if (!sequence.fps) blockers.push('Sekwencja nie ma ustawionego FPS.');
   if (sequence.frames?.length && sequence.frameCount !== sequence.frames.length) warnings.push('frameCount nie zgadza się z liczbą klatek.');
-  if (sequence.fps > 30) warnings.push('FPS powyżej 30 może przeciążyć ffmpeg.wasm.');
-  if (sequence.seconds > 30) warnings.push('Długie sekwencje mogą przekroczyć pamięć przeglądarki.');
+  if (sequence.fps > maxFps) blockers.push(`FPS ${sequence.fps} przekracza limit profilu: ${maxFps}.`);
+  if (sequence.seconds > maxDuration) blockers.push(`Sekwencja ${sequence.seconds}s przekracza limit profilu: ${maxDuration}s.`);
+  if (sequence.frameCount > maxFrameCount) blockers.push(`Sekwencja ma ${sequence.frameCount} klatek, limit profilu to ${maxFrameCount}.`);
+
+  if (limits.width && limits.height && (sequence.width !== limits.width || sequence.height !== limits.height)) {
+    warnings.push(`Sekwencja ma ${sequence.width}x${sequence.height}, profil docelowy użyje ${limits.width}x${limits.height}.`);
+  }
 
   const missingBlobs = sequence.frames?.filter((frame) => !frame.blob).length ?? 0;
   if (missingBlobs) blockers.push(`${missingBlobs} klatek nie ma Blob PNG.`);
