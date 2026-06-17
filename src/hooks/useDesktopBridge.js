@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { getResolvedMp4Profile } from '../utils/mp4ProfileSelection.js';
 
 const INITIAL_STATUS = {
   type: 'idle',
@@ -242,8 +243,9 @@ export function useDesktopBridge() {
     }
 
     setStatus({ type: 'info', message: 'Tworzę lokalny desktop render job...' });
+    const payloadWithRenderProfile = attachMp4RenderProfile(payload);
     const job = await api.createLocalRenderJob({
-      ...payload,
+      ...payloadWithRenderProfile,
       outputFolder
     });
     setLocalRenderJob(job);
@@ -352,6 +354,24 @@ function describeDesktopJob(job) {
   }
 
   return base;
+}
+
+function attachMp4RenderProfile(payload = {}) {
+  if (!payload?.manifest || payload.manifest.renderProfile) return payload;
+
+  const sequenceOrFormat = payload.manifest.sequence ?? payload.manifest.format ?? null;
+  return {
+    ...payload,
+    manifest: {
+      ...payload.manifest,
+      renderProfile: getResolvedMp4Profile({
+        profileId: 'auto',
+        sequence: sequenceOrFormat,
+        includeAudio: Boolean(payload.manifest.audio),
+        preferStored: true
+      })
+    }
+  };
 }
 
 function validateSequencePayload(sequence) {
