@@ -11,7 +11,7 @@ export function useMp4Exporter() {
   const [mp4Exports, setMp4Exports] = useState([]);
   const [mp4State, setMp4State] = useState({
     status: 'idle',
-    message: 'MP4 POC gotowe do uruchomienia.',
+    message: 'Eksport MP4 gotowy do uruchomienia.',
     progress: 0,
     activeExportId: ''
   });
@@ -48,8 +48,8 @@ export function useMp4Exporter() {
     };
   }, []);
 
-  async function exportSequenceToMp4(sequence, audioFile = null) {
-    const plan = buildMp4ExportPlan({ sequence, audioFile });
+  async function exportSequenceToMp4(sequence, audioFile = null, profileId = getDefaultMp4ProfileId(sequence)) {
+    const plan = buildMp4ExportPlan({ sequence, audioFile, profileId });
     const exportId = `mp4-${Date.now()}`;
 
     if (plan.status === 'blocked') {
@@ -85,19 +85,20 @@ export function useMp4Exporter() {
       ffmpeg.on('progress', ({ progress }) => {
         setMp4State({
           status: 'encoding',
-          message: `Koduję MP4${audioFile ? ' + audio' : ''}... ${Math.round(progress * 100)}%`,
+          message: `Koduję ${plan.profile.label}${audioFile ? ' + audio' : ''}... ${Math.round(progress * 100)}%`,
           progress: 30 + Math.round(progress * 60),
           activeExportId: exportId
         });
       });
 
-      setMp4State({ status: 'encoding', message: `Uruchamiam ffmpeg MP4 ${audioFile ? 'z audio' : 'bez audio'}...`, progress: 30, activeExportId: exportId });
+      setMp4State({ status: 'encoding', message: `Uruchamiam ${plan.profile.label} ${audioFile ? 'z audio' : 'bez audio'}...`, progress: 30, activeExportId: exportId });
       await ffmpeg.exec(plan.command);
 
       const outputData = await ffmpeg.readFile('fotobeat-output.mp4');
       const outputBlob = new Blob([outputData], { type: 'video/mp4' });
       const downloadUrl = URL.createObjectURL(outputBlob);
-      const fileName = `${safeFilename(sequence.projectName)}-${audioFile ? 'audio' : 'poc'}-${sequence.id}.mp4`;
+      const profileSlug = plan.profileId.replace(/^mp4-/, '');
+      const fileName = `${safeFilename(sequence.projectName)}-${profileSlug}-${sequence.id}.mp4`;
       const exportItem = {
         id: exportId,
         createdAt: new Date().toISOString(),
@@ -107,8 +108,8 @@ export function useMp4Exporter() {
         size: outputBlob.size,
         duration: sequence.seconds,
         fps: sequence.fps,
-        width: sequence.width,
-        height: sequence.height,
+        width: plan.profile.width,
+        height: plan.profile.height,
         sequenceId: sequence.id,
         hasAudio: Boolean(audioFile),
         audioName: audioFile?.name ?? '',
@@ -169,6 +170,15 @@ export function useMp4Exporter() {
     removeMp4Export,
     clearMp4History
   };
+}
+
+function getDefaultMp4ProfileId(sequence) {
+  if (sequence?.width && sequence?.height) {
+    if (sequence.width === sequence.height) return 'mp4-square-social';
+    if (sequence.width > sequence.height) return 'mp4-wide-hd';
+  }
+
+  return 'mp4-mobile-vertical';
 }
 
 async function getLoadedFfmpeg(onLoadProgress) {
