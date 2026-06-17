@@ -1,0 +1,9 @@
+{
+  "name": "@fotobeat/common",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./manifest": "./manifest.d.ts"
+  }
+}
