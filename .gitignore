@@ -25,17 +25,13 @@ Thumbs.db
 .vscode/
 .idea/
 
-# Generated archives and render artifacts
+# Generated archives
 *.zip
-*.mp4
-*.mov
-*.webm
-*.png
-*.jpg
-*.jpeg
-*.wav
-*.mp3
 
-# Keep explicit asset placeholders tracked
-!public/assets/.gitkeep
-!public/assets/backgrounds/.gitkeep
+# Local render/export output
+exports/
+render-output/
+renders/
+desktop/exports/
+desktop/render-output/
+desktop/renders/
