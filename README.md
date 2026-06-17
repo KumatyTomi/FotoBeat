@@ -1,5 +1,7 @@
 # FotoBeat Desktop
 
+*English translation: see [README_EN.md](README_EN.md)*
+
 FotoBeat Desktop to lokalna aplikacja pod marką FotoBeat.me do tworzenia filmów ze zdjęć i audio bez zależności od backendu SaaS. Ten produkt ma być narzędziem local-first: import mediów, analiza audio, timeline, eksport sekwencji/MP4 i później pełny lokalny render przez FFmpeg.
 
 ## Relacja do FotoBeat Web/SaaS
