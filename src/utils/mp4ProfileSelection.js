@@ -76,6 +76,10 @@ export function getMp4ProfileSummary(profileId) {
   return getRenderProfile(profileId);
 }
 
+export function getResolvedMp4Profile(options = {}) {
+  return getRenderProfile(resolveMp4ProfileId(options));
+}
+
 function isKnownMp4ProfileId(profileId) {
   return MP4_PROFILE_CHOICES.some((profile) => profile.id === profileId);
 }
