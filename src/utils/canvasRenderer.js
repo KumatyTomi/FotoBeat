@@ -31,14 +31,7 @@ export function renderFrameAtTime(canvas, {
     projectName
   });
 
-  return {
-    time: Number(normalizedTime.toFixed(3)),
-    clip,
-    clipIndex,
-    totalClips: timeline.clips.length,
-    mediaAssetId: mediaAsset?.id ?? null,
-    mediaAssetName: mediaAsset?.name ?? null
-  };
+  return { time: Number(normalizedTime.toFixed(3)), clip, clipIndex, totalClips: timeline.clips.length, mediaAssetId: mediaAsset?.id ?? null, mediaAssetName: mediaAsset?.name ?? null };
 }
 
 export function normalizeFrameTime(time, totalDuration) {
@@ -57,16 +50,16 @@ export function drawRenderPreview(canvas, { time, clip, clipIndex, totalClips, f
   const colors = getPresetColors(preset.id);
 
   ctx.clearRect(0, 0, width, height);
-
   const background = ctx.createLinearGradient(0, 0, width, height);
-  background.addColorStop(0, '#05050a');
+  background.addColorStop(0, preset.id === 'vairaChrono' ? '#070604' : '#05050a');
   background.addColorStop(0.45, colors.deep);
-  background.addColorStop(1, '#10101f');
+  background.addColorStop(1, preset.id === 'vairaChrono' ? '#04070a' : '#10101f');
   ctx.fillStyle = background;
   ctx.fillRect(0, 0, width, height);
 
   drawGlow(ctx, width * (0.28 + pulse * 0.12), height * 0.22, width * 0.38, colors.primary, 0.45 + energy * 0.28);
   drawGlow(ctx, width * (0.74 - pulse * 0.08), height * 0.76, width * 0.44, colors.secondary, 0.25 + energy * 0.22);
+  if (preset.id === 'vairaChrono') drawChronoDial(ctx, width, height, progress, energy, colors);
 
   ctx.save();
   ctx.translate(width / 2, height / 2);
@@ -91,9 +84,9 @@ function getPresetColors(presetId) {
     matrixGlitch: { primary: '#6cff8d', secondary: '#00d3ff', deep: '#061b13' },
     sinCity: { primary: '#ff3b5c', secondary: '#f4f4f4', deep: '#17080c' },
     spiralZoom: { primary: '#ffb86b', secondary: '#7c3cff', deep: '#1c102f' },
-    dreamFade: { primary: '#ffd6f2', secondary: '#8be9ff', deep: '#171429' }
+    dreamFade: { primary: '#ffd6f2', secondary: '#8be9ff', deep: '#171429' },
+    vairaChrono: { primary: '#f7c66a', secondary: '#60f5ff', deep: '#151109' }
   };
-
   return map[presetId] ?? map.neonPulse;
 }
 
@@ -101,6 +94,7 @@ function getPresetRotation(presetId, progress, energy) {
   if (presetId === 'spiralZoom') return progress * 0.16;
   if (presetId === 'matrixGlitch') return Math.sin(progress * 24) * 0.006 * energy;
   if (presetId === 'dreamFade') return Math.sin(progress * Math.PI) * 0.01;
+  if (presetId === 'vairaChrono') return Math.round(progress * 24) * 0.0018 * energy;
   return Math.sin(progress * Math.PI * 2) * 0.018 * energy;
 }
 
@@ -114,14 +108,45 @@ function drawGlow(ctx, x, y, radius, color, alpha) {
   ctx.fill();
 }
 
+function drawChronoDial(ctx, width, height, progress, energy, colors) {
+  const cx = width * 0.5;
+  const cy = height * 0.5;
+  const radius = Math.min(width, height) * 0.38;
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.strokeStyle = hexToRgba(colors.primary, 0.28 + energy * 0.12);
+  ctx.lineWidth = Math.max(2, width * 0.0014);
+  for (let ring = 0; ring < 3; ring += 1) {
+    ctx.beginPath();
+    ctx.arc(0, 0, radius * (0.62 + ring * 0.18), 0, Math.PI * 2);
+    ctx.stroke();
+  }
+  for (let tick = 0; tick < 60; tick += 1) {
+    const angle = (tick / 60) * Math.PI * 2 + progress * 0.12;
+    const inner = radius * (tick % 5 === 0 ? 0.76 : 0.84);
+    const outer = radius * 0.92;
+    ctx.strokeStyle = tick % 5 === 0 ? hexToRgba(colors.primary, 0.55) : hexToRgba(colors.secondary, 0.18);
+    ctx.beginPath();
+    ctx.moveTo(Math.cos(angle) * inner, Math.sin(angle) * inner);
+    ctx.lineTo(Math.cos(angle) * outer, Math.sin(angle) * outer);
+    ctx.stroke();
+  }
+  ctx.rotate(progress * Math.PI * 2);
+  ctx.strokeStyle = hexToRgba(colors.primary, 0.78);
+  ctx.lineWidth = Math.max(3, width * 0.002);
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.lineTo(radius * 0.52, 0);
+  ctx.stroke();
+  ctx.restore();
+}
+
 function drawFrameStack(ctx, width, height, colors, clipIndex, imageCount, mediaAsset) {
   const baseWidth = width * 0.58;
   const baseHeight = height * 0.58;
-
   for (let index = 4; index >= 0; index -= 1) {
     const offset = (index - 2) * width * 0.025;
     const alpha = 0.18 + (5 - index) * 0.08;
-
     ctx.fillStyle = index % 2 === 0 ? hexToRgba(colors.primary, alpha) : hexToRgba(colors.secondary, alpha);
     ctx.strokeStyle = hexToRgba('#ffffff', 0.16 + alpha * 0.22);
     ctx.lineWidth = Math.max(2, width * 0.002);
@@ -129,12 +154,10 @@ function drawFrameStack(ctx, width, height, colors, clipIndex, imageCount, media
     ctx.fill();
     ctx.stroke();
   }
-
   const heroWidth = baseWidth * 0.92;
   const heroHeight = baseHeight * 0.92;
   const heroX = -heroWidth / 2;
   const heroY = -heroHeight / 2;
-
   if (mediaAsset?.status === 'ready' && mediaAsset.image) {
     drawImageCover(ctx, mediaAsset.image, heroX, heroY, heroWidth, heroHeight, width * 0.022);
     ctx.fillStyle = hexToRgba(colors.deep, 0.18);
@@ -154,7 +177,6 @@ function drawImageCover(ctx, image, x, y, width, height, radius) {
   const drawHeight = image.naturalHeight * ratio;
   const drawX = x + (width - drawWidth) / 2;
   const drawY = y + (height - drawHeight) / 2;
-
   ctx.save();
   roundRect(ctx, x, y, width, height, radius);
   ctx.clip();
@@ -163,49 +185,40 @@ function drawImageCover(ctx, image, x, y, width, height, radius) {
 }
 
 function drawScanlines(ctx, width, height, presetId, progress) {
-  if (presetId !== 'matrixGlitch' && presetId !== 'sinCity') return;
-
+  if (presetId !== 'matrixGlitch' && presetId !== 'sinCity' && presetId !== 'vairaChrono') return;
   ctx.save();
-  ctx.globalAlpha = presetId === 'matrixGlitch' ? 0.18 : 0.08;
-  ctx.strokeStyle = '#ffffff';
+  ctx.globalAlpha = presetId === 'matrixGlitch' ? 0.18 : presetId === 'vairaChrono' ? 0.06 : 0.08;
+  ctx.strokeStyle = presetId === 'vairaChrono' ? '#f7c66a' : '#ffffff';
   ctx.lineWidth = 1;
-
   const gap = Math.max(12, height * 0.012);
   const shift = progress * gap * 2;
-
   for (let y = -gap; y < height + gap; y += gap) {
     ctx.beginPath();
     ctx.moveTo(0, y + shift);
     ctx.lineTo(width, y + shift);
     ctx.stroke();
   }
-
   ctx.restore();
 }
 
 function drawPreviewText(ctx, width, height, { projectName, clip, clipIndex, totalClips, preset, format, colors, mediaAsset }) {
   const margin = width * 0.06;
   const bottom = height - margin;
-
   ctx.fillStyle = 'rgba(255, 255, 255, 0.92)';
   ctx.font = `800 ${Math.max(24, width * 0.025)}px Inter, sans-serif`;
   ctx.textAlign = 'left';
   ctx.fillText(projectName || 'FotoBeat Project', margin, margin * 1.25);
-
   ctx.fillStyle = hexToRgba(colors.primary, 0.92);
   ctx.font = `900 ${Math.max(16, width * 0.014)}px Inter, sans-serif`;
   ctx.fillText(`${preset.name} · ${format.label}`, margin, margin * 1.75);
-
   ctx.fillStyle = 'rgba(255, 255, 255, 0.78)';
   ctx.font = `700 ${Math.max(18, width * 0.017)}px Inter, sans-serif`;
   ctx.fillText(`Clip ${clipIndex}/${totalClips} · ${clip?.section ?? 'intro'} · ${clip?.effect ?? 'fade'}`, margin, bottom);
-
   if (mediaAsset?.name) {
     ctx.font = `500 ${Math.max(15, width * 0.013)}px Inter, sans-serif`;
     ctx.fillStyle = 'rgba(255, 255, 255, 0.58)';
     ctx.fillText(mediaAsset.name.slice(0, 42), margin, bottom - margin * 0.42);
   }
-
   ctx.textAlign = 'right';
   ctx.fillText('FotoBeat.me', width - margin, bottom);
 }
