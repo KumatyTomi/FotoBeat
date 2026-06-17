@@ -74,10 +74,63 @@
   opacity: 0.45;
 }
 
+.mp4-profile-selector {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.mp4-profile-selector-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.mp4-profile-selector-heading h3 {
+  margin: 0;
+  font-size: 18px;
+  letter-spacing: 0;
+}
+
+.mp4-profile-selector-heading svg {
+  flex: 0 0 auto;
+  color: rgba(139, 233, 255, 0.8);
+}
+
+.mp4-profile-selector-actions,
+.mp4-profile-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.mp4-profile-meta span {
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  padding: 7px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  color: rgba(245, 247, 251, 0.72);
+  background: rgba(0, 0, 0, 0.14);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
 @media (max-width: 760px) {
   .desktop-render-history-heading {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .mp4-profile-selector-heading {
+    align-items: stretch;
   }
 
   .desktop-render-history-heading .render-export-actions,

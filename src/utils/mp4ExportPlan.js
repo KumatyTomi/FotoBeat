@@ -1,9 +1,17 @@
 import { getRenderProfile } from '../data/renderProfiles.js';
 import { buildFfmpegVirtualFilePlan, buildImageSequenceMp4Command, buildImageSequenceMp4WithAudioCommand, commandToShellString } from './ffmpegCommandBuilder.js';
 import { validateFrameSequence } from './frameSequenceValidation.js';
+import { resolveMp4ProfileId } from './mp4ProfileSelection.js';
 
 export function buildMp4ExportPlan({ sequence, audioFile = null, profileId = 'mp4-poc' }) {
-  const profile = getRenderProfile(profileId);
+  const hasAudio = Boolean(audioFile);
+  const resolvedProfileId = resolveMp4ProfileId({
+    profileId,
+    sequence,
+    includeAudio: hasAudio,
+    preferStored: profileId === 'auto' || (typeof profileId === 'string' && profileId.startsWith('mp4-'))
+  });
+  const profile = getRenderProfile(resolvedProfileId);
   const validation = validateFrameSequence(sequence, {
     maxDuration: profile.maxDuration,
     maxFps: profile.fps,
@@ -11,7 +19,6 @@ export function buildMp4ExportPlan({ sequence, audioFile = null, profileId = 'mp
     width: profile.width,
     height: profile.height
   });
-  const hasAudio = Boolean(audioFile);
   const virtualFilePlan = validation.valid ? buildFfmpegVirtualFilePlan(sequence) : null;
   const command = buildMp4Command({ sequence, validation, hasAudio, profile });
 
