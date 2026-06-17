@@ -8,7 +8,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "lint": "eslint . --quiet",
-    "lint:strict": "eslint . --max-warnings 0"
+    "lint:strict": "eslint . --max-warnings 0",
+    "contracts:check": "node scripts/validate-contracts.mjs"
   },
   "dependencies": {
     "@ffmpeg/ffmpeg": "^0.12.15",
