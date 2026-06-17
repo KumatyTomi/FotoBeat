@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fotobeat.me/contracts/fotobeat.preset.v1.schema.json",
+  "title": "FotoBeat Preset v1",
+  "type": "object",
+  "required": ["schemaVersion", "id", "name", "styleFamily", "supportedFormats", "effects", "transitions"],
+  "properties": {
+    "schemaVersion": { "const": "fotobeat.preset.v1" },
+    "id": { "type": "string", "minLength": 1 },
+    "name": { "type": "string", "minLength": 1 },
+    "description": { "type": "string" },
+    "styleFamily": {
+      "type": "string",
+      "enum": ["neon", "cinematic", "family", "club", "product", "real-estate", "custom"]
+    },
+    "supportedFormats": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "enum": ["vertical", "wide", "square"] },
+      "uniqueItems": true
+    },
+    "effects": {
+      "type": "object",
+      "required": ["defaultEffectId", "intensity", "beatResponse"],
+      "properties": {
+        "defaultEffectId": { "type": "string", "minLength": 1 },
+        "intensity": { "type": "number", "minimum": 0, "maximum": 1 },
+        "beatResponse": { "type": "number", "minimum": 0, "maximum": 1 }
+      },
+      "additionalProperties": true
+    },
+    "transitions": {
+      "type": "object",
+      "required": ["defaultTransitionId", "durationSeconds"],
+      "properties": {
+        "defaultTransitionId": { "type": "string", "minLength": 1 },
+        "durationSeconds": { "type": "number", "minimum": 0, "maximum": 3 }
+      },
+      "additionalProperties": true
+    },
+    "visuals": {
+      "type": "object",
+      "properties": {
+        "background": { "type": "string" },
+        "accentColor": { "type": "string" },
+        "grain": { "type": "number", "minimum": 0, "maximum": 1 },
+        "glow": { "type": "number", "minimum": 0, "maximum": 1 }
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}
