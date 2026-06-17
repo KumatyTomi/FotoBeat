@@ -5,9 +5,29 @@ import reactRefresh from 'eslint-plugin-react-refresh';
 
 export default [
   {
-    ignores: ['dist/**', 'node_modules/**']
+    ignores: ['dist/**', 'desktop/dist/**', 'node_modules/**', 'desktop/node_modules/**']
   },
   js.configs.recommended,
+  {
+    files: ['desktop/**/*.cjs'],
+    languageOptions: {
+      ecmaVersion: 2024,
+      sourceType: 'commonjs',
+      globals: {
+        __dirname: 'readonly',
+        Buffer: 'readonly',
+        clearInterval: 'readonly',
+        clearTimeout: 'readonly',
+        console: 'readonly',
+        exports: 'readonly',
+        module: 'readonly',
+        process: 'readonly',
+        require: 'readonly',
+        setInterval: 'readonly',
+        setTimeout: 'readonly'
+      }
+    }
+  },
   {
     files: ['**/*.{js,jsx}'],
     languageOptions: {
@@ -49,6 +69,16 @@ export default [
       'react/react-in-jsx-scope': 'off',
       'react/prop-types': 'off',
       'react-refresh/only-export-components': ['warn', { allowConstantExport: true }]
+    }
+  },
+  {
+    files: [
+      'src/hooks/useCanvasRecorder.js',
+      'src/hooks/useFrameSequenceZipExporter.js',
+      'src/hooks/useMp4Exporter.js'
+    ],
+    rules: {
+      'react-hooks/exhaustive-deps': 'off'
     }
   }
 ];
