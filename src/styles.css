@@ -106,4 +106,5 @@ p { color: rgba(245, 247, 251, 0.72); line-height: 1.65; }
 .desktop-log-list code { display: block; padding: 8px 10px; border-radius: 12px; color: #dffbff; background: rgba(139, 233, 255, 0.08); border: 1px solid rgba(139, 233, 255, 0.12); white-space: normal; }
 .audio-panel { display: flex; justify-content: space-between; gap: 24px; }
 .audio-stats { align-content: start; flex-wrap: wrap; justify-content: flex-end; min-width: 280px; }
+.local-output-link { color: #8be9ff; font-weight: 800; overflow-wrap: anywhere; }
 @media (max-width: 860px) { .hero-panel, .workspace-grid, .project-grid, .audio-panel, .render-history-item { grid-template-columns: 1fr; } .section-heading { display: grid; align-items: start; } .preset-grid { grid-template-columns: 1fr; } .audio-stats, .preview-hud { justify-content: flex-start; } }
