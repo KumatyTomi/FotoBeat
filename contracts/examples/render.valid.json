@@ -1,0 +1,80 @@
+{
+  "schemaVersion": "fotobeat.render.v1",
+  "project": {
+    "id": "project-demo-001",
+    "title": "Demo Club Recap"
+  },
+  "preset": {
+    "id": "neon-pulse",
+    "name": "Neon Pulse"
+  },
+  "output": {
+    "formatId": "vertical",
+    "ratio": "9:16",
+    "width": 1080,
+    "height": 1920,
+    "fps": 30,
+    "durationSeconds": 8,
+    "container": "mp4"
+  },
+  "assets": [
+    {
+      "id": "asset-image-001",
+      "type": "image",
+      "filename": "club-entrance.jpg",
+      "contentType": "image/jpeg",
+      "sizeBytes": 1843200,
+      "fingerprint": "club-entrance.jpg:1843200:image/jpeg",
+      "source": {
+        "kind": "local-file",
+        "ref": "club-entrance.jpg"
+      }
+    },
+    {
+      "id": "asset-image-002",
+      "type": "image",
+      "filename": "dancefloor.jpg",
+      "contentType": "image/jpeg",
+      "sizeBytes": 2134200,
+      "fingerprint": "dancefloor.jpg:2134200:image/jpeg",
+      "source": {
+        "kind": "local-file",
+        "ref": "dancefloor.jpg"
+      }
+    }
+  ],
+  "audio": {
+    "id": "asset-audio-001",
+    "type": "audio",
+    "filename": "beat.mp3",
+    "contentType": "audio/mpeg",
+    "sizeBytes": 5120000,
+    "fingerprint": "beat.mp3:5120000:audio/mpeg",
+    "source": {
+      "kind": "local-file",
+      "ref": "beat.mp3"
+    }
+  },
+  "timeline": [
+    {
+      "id": "clip-001",
+      "start": 0,
+      "duration": 4,
+      "assetId": "asset-image-001",
+      "section": "intro",
+      "effectId": "slow-push"
+    },
+    {
+      "id": "clip-002",
+      "start": 4,
+      "duration": 4,
+      "assetId": "asset-image-002",
+      "section": "drop",
+      "effectId": "beat-zoom"
+    }
+  ],
+  "renderSettings": {
+    "target": "desktop-native",
+    "quality": "standard"
+  }
+}
