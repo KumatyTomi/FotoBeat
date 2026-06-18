@@ -33,7 +33,9 @@ async function createLocalRenderJob(payload = {}) {
 
   jobs.set(job.id, job);
 
-  if (job.status !== 'failed') {
+  if (job.status !== 'failed' && payload.deferStart) {
+    await holdJobForFrameImport(job);
+  } else if (job.status !== 'failed') {
     scheduleRenderProgress(job.id);
   }
 
@@ -92,6 +94,58 @@ async function retryLocalRenderJob(jobId) {
   return stripHeavyPayload(job);
 }
 
+async function appendLocalRenderJobFrames(jobId, frames = [], options = {}) {
+  const job = jobs.get(jobId);
+  if (!job) {
+    throw new Error('Frame import is available only for jobs still loaded in the current desktop session.');
+  }
+
+  if (['done', 'failed', 'canceled'].includes(job.status)) {
+    throw new Error(`Cannot append frames to job with status ${job.status}.`);
+  }
+
+  if (job.status !== 'importing') {
+    throw new Error(`Frame import is only available while a job is importing, not ${job.status}.`);
+  }
+
+  if (!Array.isArray(frames)) {
+    throw new Error('Frame chunk payload must be an array.');
+  }
+
+  if (frames.length > 0) {
+    job.frameImport = await writeFrameSequenceFiles(job, frames, { append: true });
+    job.logs.push(`Imported frame chunk: ${frames.length} files, ${job.frameImport.count} total.`);
+  }
+
+  job.renderPlan = buildRenderPlan(job);
+  job.nativeReady = await isNativeReady(job);
+  job.updatedAt = new Date().toISOString();
+
+  if (options.complete) {
+    job.status = 'queued';
+    job.mode = job.nativeReady ? 'native-ready' : 'placeholder';
+    job.logs.push(job.nativeReady
+      ? `Frame import complete: ${job.frameImport?.count ?? 0} frames ready for native FFmpeg.`
+      : 'Frame import complete, but native FFmpeg input is still missing.');
+    await writeRenderPlan(job);
+    await writeJobStatus(job);
+    await writeOutputSidecar(job);
+    await persistJobHistory(job);
+    scheduleRenderProgress(job.id);
+  } else {
+    job.status = 'importing';
+    job.mode = 'importing';
+    job.logs.push(`Waiting for next frame chunk: ${job.frameImport?.count ?? 0} frames imported.`);
+    await writeRenderPlan(job);
+    await writeJobStatus(job);
+    await writeOutputSidecar(job);
+    await persistJobHistory(job);
+  }
+
+  jobs.set(job.id, job);
+  return stripHeavyPayload(job);
+}
+
 function createBaseJob({ id, outputFolder, manifest }) {
   return {
     id,
@@ -118,6 +172,18 @@ function createBaseJob({ id, outputFolder, manifest }) {
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
   };
+}
+
+async function holdJobForFrameImport(job) {
+  job.status = 'importing';
+  job.progress = 0;
+  job.mode = 'importing';
+  job.updatedAt = new Date().toISOString();
+  job.logs.push('Render job is waiting for chunked frame import before encoding starts.');
+  await writeJobStatus(job);
+  await writeOutputSidecar(job);
+  await persistJobHistory(job);
+  jobs.set(job.id, job);
 }
 
 async function prepareJobWorkspace(job, payload, preferredFileName) {
@@ -307,26 +373,30 @@ async function writeAudioInputFile(job, audioFile) {
   return audioImport;
 }
 
-async function writeFrameSequenceFiles(job, frames) {
+async function writeFrameSequenceFiles(job, frames, { append = false } = {}) {
   const framesFolder = path.join(job.jobFolder, 'frames');
   const manifestPath = path.join(framesFolder, 'frames-manifest.json');
   await fs.mkdir(framesFolder, { recursive: true });
 
-  let totalSize = 0;
-  const written = [];
+  let totalSize = append ? Number(job.frameImport?.totalSize) || 0 : 0;
+  const written = append && Array.isArray(job.frameImport?.written)
+    ? [...job.frameImport.written]
+    : [];
+  const offset = written.length;
 
   const sortedFrames = [...frames].sort((a, b) => Number(a.index ?? 0) - Number(b.index ?? 0));
 
   for (let index = 0; index < sortedFrames.length; index += 1) {
     const frame = sortedFrames[index];
-    const fileName = `frame_${String(index + 1).padStart(4, '0')}.png`;
+    const sequenceIndex = offset + index;
+    const fileName = `frame_${String(sequenceIndex + 1).padStart(4, '0')}.png`;
     const targetPath = path.join(framesFolder, fileName);
     const buffer = toBuffer(frame);
     await fs.writeFile(targetPath, buffer);
     totalSize += buffer.byteLength;
     written.push({
       sourceIndex: Number(frame.index ?? index),
-      sequenceIndex: index,
+      sequenceIndex,
       fileName,
       path: targetPath,
       sourceFileName: frame.fileName ?? null,
@@ -463,6 +533,7 @@ function createLog(progress, mode) {
 }
 
 module.exports = {
+  appendLocalRenderJobFrames,
   cancelLocalRenderJob,
   createLocalRenderJob,
   getLocalRenderJob,
