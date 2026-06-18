@@ -9,8 +9,10 @@ const INITIAL_STATUS = {
 const TERMINAL_RENDER_STATUSES = ['done', 'failed', 'canceled'];
 
 const DESKTOP_SEQUENCE_LIMITS = {
-  maxFrames: 90,
-  maxTotalBytes: 120 * 1024 * 1024
+  maxFramesPerChunk: 24,
+  maxChunkBytes: 32 * 1024 * 1024,
+  maxSingleFrameBytes: 32 * 1024 * 1024,
+  maxTotalBytes: 512 * 1024 * 1024
 };
 
 const DESKTOP_AUDIO_LIMITS = {
@@ -259,6 +261,12 @@ export function useDesktopBridge() {
       return createLocalRenderJob(payload);
     }
 
+    const api = getDesktopApi();
+    if (!api) {
+      setStatus(INITIAL_STATUS);
+      return null;
+    }
+
     const selectedAudioFile = audioFile ?? getSelectedDesktopAudioFile();
 
     const frameCheck = validateSequencePayload(sequence);
@@ -273,27 +281,51 @@ export function useDesktopBridge() {
       return null;
     }
 
-    setStatus({ type: 'info', message: `Przygotowuję ${sequence.frames.length} klatek PNG${selectedAudioFile ? ' i audio' : ''} do desktop workspace...` });
-    const frames = await Promise.all(sequence.frames.map(async (frame) => ({
-      index: frame.index,
-      fileName: frame.fileName,
-      size: frame.size,
-      arrayBuffer: await frame.blob.arrayBuffer()
-    })));
+    const audioFilePayload = await createAudioFilePayload(selectedAudioFile);
 
-    const audioFilePayload = selectedAudioFile ? {
-      name: selectedAudioFile.name,
-      fileName: selectedAudioFile.name,
-      size: selectedAudioFile.size,
-      type: selectedAudioFile.type,
-      arrayBuffer: await selectedAudioFile.arrayBuffer()
-    } : null;
+    if (typeof api.appendLocalRenderJobFrames !== 'function') {
+      setStatus({ type: 'info', message: `Przygotowuję ${sequence.frames.length} klatek PNG${selectedAudioFile ? ' i audio' : ''} do desktop workspace...` });
+      const frames = await Promise.all(sequence.frames.map(createFramePayload));
+      return createLocalRenderJob({
+        ...payload,
+        frames,
+        audioFile: audioFilePayload
+      });
+    }
 
-    return createLocalRenderJob({
-      ...payload,
-      frames,
-      audioFile: audioFilePayload
+    const chunks = chunkSequenceFrames(sequence.frames);
+    setStatus({
+      type: 'info',
+      message: `Tworzę desktop job i wyślę ${sequence.frames.length} klatek PNG w ${chunks.length} paczkach.`
     });
+
+    const job = await createLocalRenderJob({
+      ...payload,
+      audioFile: audioFilePayload,
+      deferStart: true
+    });
+
+    if (!job?.id) return job;
+
+    let currentJob = job;
+    let importedFrames = 0;
+
+    for (let index = 0; index < chunks.length; index += 1) {
+      const chunk = chunks[index];
+      const complete = index === chunks.length - 1;
+      const frames = await Promise.all(chunk.map(createFramePayload));
+      importedFrames += frames.length;
+      setStatus({
+        type: 'info',
+        message: `Wysyłam klatki do desktop workspace: ${importedFrames}/${sequence.frames.length}`
+      });
+      currentJob = await api.appendLocalRenderJobFrames(job.id, frames, { complete });
+      setLocalRenderJob(currentJob);
+    }
+
+    setStatus({ type: 'info', message: describeDesktopJob(currentJob) });
+    await refreshRenderHistory();
+    return currentJob;
   }
 
   function clearLocalRenderJob() {
@@ -375,18 +407,19 @@ function attachMp4RenderProfile(payload = {}) {
 }
 
 function validateSequencePayload(sequence) {
-  if (sequence.frames.length > DESKTOP_SEQUENCE_LIMITS.maxFrames) {
-    return {
-      ok: false,
-      message: `Sekwencja ma ${sequence.frames.length} klatek. Limit desktop IPC to ${DESKTOP_SEQUENCE_LIMITS.maxFrames}.`
-    };
-  }
-
   const totalSize = sequence.frames.reduce((sum, frame) => sum + (Number(frame.size) || 0), 0);
   if (totalSize > DESKTOP_SEQUENCE_LIMITS.maxTotalBytes) {
     return {
       ok: false,
-      message: `Sekwencja PNG ma ${formatBytes(totalSize)}. Limit desktop IPC to ${formatBytes(DESKTOP_SEQUENCE_LIMITS.maxTotalBytes)}.`
+      message: `Sekwencja PNG ma ${formatBytes(totalSize)}. Limit desktop importu to ${formatBytes(DESKTOP_SEQUENCE_LIMITS.maxTotalBytes)}.`
+    };
+  }
+
+  const oversizedFrame = sequence.frames.find((frame) => (Number(frame.size) || 0) > DESKTOP_SEQUENCE_LIMITS.maxSingleFrameBytes);
+  if (oversizedFrame) {
+    return {
+      ok: false,
+      message: `Klatka ${oversizedFrame.index ?? '?'} ma ${formatBytes(oversizedFrame.size)}. Limit jednej paczki IPC to ${formatBytes(DESKTOP_SEQUENCE_LIMITS.maxSingleFrameBytes)}.`
     };
   }
 
@@ -399,6 +432,54 @@ function validateSequencePayload(sequence) {
   }
 
   return { ok: true, totalSize };
+}
+
+function chunkSequenceFrames(frames) {
+  const chunks = [];
+  let currentChunk = [];
+  let currentBytes = 0;
+
+  frames.forEach((frame) => {
+    const frameSize = Number(frame.size) || 0;
+    const wouldOverflowFrames = currentChunk.length >= DESKTOP_SEQUENCE_LIMITS.maxFramesPerChunk;
+    const wouldOverflowBytes = currentChunk.length > 0 && currentBytes + frameSize > DESKTOP_SEQUENCE_LIMITS.maxChunkBytes;
+
+    if (wouldOverflowFrames || wouldOverflowBytes) {
+      chunks.push(currentChunk);
+      currentChunk = [];
+      currentBytes = 0;
+    }
+
+    currentChunk.push(frame);
+    currentBytes += frameSize;
+  });
+
+  if (currentChunk.length > 0) {
+    chunks.push(currentChunk);
+  }
+
+  return chunks;
+}
+
+async function createFramePayload(frame) {
+  return {
+    index: frame.index,
+    fileName: frame.fileName,
+    size: frame.size,
+    arrayBuffer: await frame.blob.arrayBuffer()
+  };
+}
+
+async function createAudioFilePayload(audioFile) {
+  if (!audioFile) return null;
+
+  return {
+    name: audioFile.name,
+    fileName: audioFile.name,
+    size: audioFile.size,
+    type: audioFile.type,
+    arrayBuffer: await audioFile.arrayBuffer()
+  };
 }
 
 function validateAudioPayload(audioFile) {
