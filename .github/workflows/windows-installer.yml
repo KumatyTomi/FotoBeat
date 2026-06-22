@@ -16,17 +16,16 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
 
-      - name: Install web dependencies
-        run: npm ci
+      - name: Web dependencies
+        run: node scripts/ci-deps.mjs
 
       - name: Build web app
         run: npm run build
 
-      - name: Install desktop dependencies
+      - name: Desktop dependencies
         working-directory: desktop
-        run: npm ci
+        run: node ../scripts/ci-deps.mjs
 
       - name: Build Windows installer
         working-directory: desktop
