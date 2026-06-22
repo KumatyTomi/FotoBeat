@@ -1,7 +1,7 @@
 const { app, BrowserWindow, dialog, ipcMain, shell } = require('electron');
-const path = require('node:path');
 const { getFfmpegStatus, resolveBundledFfmpegPath } = require('./ffmpegDoctor.cjs');
 const { clearRenderHistory, listRenderHistory } = require('./jobHistory.cjs');
+const { assertKnownRenderPath, rememberHistoryRoots, rememberJobRoots, rememberOutputRoot } = require('./pathSafety.cjs');
 const {
   appendLocalRenderJobFrames,
   cancelLocalRenderJob,
@@ -9,36 +9,7 @@ const {
   getLocalRenderJob,
   retryLocalRenderJob
 } = require('./renderQueue.cjs');
-
-const DEV_URL = process.env.FOTOBEAT_DESKTOP_DEV_URL;
-const knownOutputRoots = new Set();
-
-function createMainWindow() {
-  const window = new BrowserWindow({
-    width: 1440,
-    height: 920,
-    minWidth: 1080,
-    minHeight: 720,
-    title: 'FotoBeat.me Desktop',
-    backgroundColor: '#08070d',
-    webPreferences: {
-      preload: path.join(__dirname, 'preload.cjs'),
-      contextIsolation: true,
-      nodeIntegration: false,
-      sandbox: false
-    }
-  });
-
-  if (DEV_URL) {
-    window.loadURL(DEV_URL);
-    window.webContents.openDevTools({ mode: 'detach' });
-    return window;
-  }
-
-  const indexPath = path.join(process.resourcesPath, 'web', 'index.html');
-  window.loadFile(indexPath);
-  return window;
-}
+const { createMainWindow } = require('./windowFactory.cjs');
 
 app.whenReady().then(() => {
   registerIpcHandlers();
@@ -144,76 +115,4 @@ function registerIpcHandlers() {
     }
     return { ok: true, path: safePath };
   });
-}
-
-function rememberOutputRoot(rootPath) {
-  const normalized = normalizeLocalPath(rootPath);
-  if (normalized) knownOutputRoots.add(normalized);
-}
-
-function rememberJobRoots(job) {
-  if (!job) return;
-  [job.outputFolder, job.jobFolder].forEach(rememberOutputRoot);
-}
-
-function rememberHistoryRoots(history = []) {
-  history.forEach((entry) => {
-    [entry.outputFolder, entry.jobFolder, entry.frameImport?.framesFolder].forEach(rememberOutputRoot);
-  });
-}
-
-async function assertKnownRenderPath(targetPath) {
-  const normalized = assertSafeLocalPath(targetPath);
-  rememberHistoryRoots(await listRenderHistory());
-
-  if (!isUnderKnownRoot(normalized)) {
-    throw new Error('Path is outside known FotoBeat render workspaces.');
-  }
-
-  return normalized;
-}
-
-function assertSafeLocalPath(targetPath) {
-  const normalized = normalizeLocalPath(targetPath);
-
-  if (!normalized) {
-    throw new Error('Local path is required.');
-  }
-
-  if (targetPath.includes('\0') || normalized.includes('\0')) {
-    throw new Error('Invalid local path.');
-  }
-
-  if (String(targetPath).includes('://') || String(targetPath).toLowerCase().startsWith('file:')) {
-    throw new Error('Only plain local filesystem paths are allowed.');
-  }
-
-  if (!path.isAbsolute(normalized)) {
-    throw new Error('Only absolute local paths are allowed.');
-  }
-
-  return normalized;
-}
-
-function normalizeLocalPath(targetPath) {
-  if (!targetPath || typeof targetPath !== 'string') return null;
-  return path.resolve(targetPath);
-}
-
-function isUnderKnownRoot(targetPath) {
-  const normalizedTarget = normalizeForCompare(targetPath);
-
-  for (const rootPath of knownOutputRoots) {
-    const normalizedRoot = normalizeForCompare(rootPath);
-    if (normalizedTarget === normalizedRoot || normalizedTarget.startsWith(`${normalizedRoot}${path.sep}`)) {
-      return true;
-    }
-  }
-
-  return false;
-}
-
-function normalizeForCompare(targetPath) {
-  const normalized = path.resolve(targetPath);
-  return process.platform === 'win32' ? normalized.toLowerCase() : normalized;
 }
