@@ -8,6 +8,7 @@ import './styles.css';
 import './render-preview.css';
 import './desktop-render.css';
 import './single-shell.css';
+import './vajra-override.css';
 
 createRoot(document.getElementById('root')).render(
   <React.StrictMode>
