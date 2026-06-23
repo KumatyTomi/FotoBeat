@@ -1,4 +1,4 @@
-import { Activity, CheckSquare, ClipboardList, Film, FolderKanban, Gauge, Headphones, ImagePlus, ListChecks, MonitorDown, Palette, Scissors, Settings2, Share2, SlidersHorizontal, Wrench } from 'lucide-react';
+import { Activity, CheckSquare, ClipboardList, Film, FolderKanban, Headphones, ImagePlus, ListChecks, MonitorDown, Palette, Scissors, Settings2, Share2, SlidersHorizontal, Wrench } from 'lucide-react';
 import AccordionGroup from '../ui/AccordionGroup.jsx';
 import CollapsiblePanel from '../ui/CollapsiblePanel.jsx';
 
