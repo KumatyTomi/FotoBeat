@@ -1,5 +1,10 @@
-export function buildMediaId(file, index) {
-  return `${file.name}-${file.size}-${file.lastModified}-${index}`;
+export function buildMediaFingerprint(file) {
+  return [file.name, file.size, file.type || 'unknown', file.lastModified || 0].join('::');
+}
+
+export function buildMediaId(file, duplicateIndex = 0) {
+  const fingerprint = buildMediaFingerprint(file);
+  return duplicateIndex > 0 ? `${fingerprint}::duplicate-${duplicateIndex + 1}` : fingerprint;
 }
 
 export function getOrientation(width, height) {
