@@ -1,4 +1,4 @@
-import { Maximize2, Minus, Sparkles, X, Zap } from 'lucide-react';
+import { CheckCircle2, Maximize2, Minus, Sparkles, X } from 'lucide-react';
 import PremiumButton from '../ui/PremiumButton.jsx';
 
 export default function TopBar({ profile, profiles, activeProfile, onProfileChange }) {
@@ -26,7 +26,7 @@ export default function TopBar({ profile, profiles, activeProfile, onProfileChan
       </nav>
 
       <div className="shell-window-meta cockpit-window-meta">
-        <PremiumButton variant="ghost" className="shell-title-pill cockpit-render-pill"><Zap size={14} /> Native MP4 Ready</PremiumButton>
+        <PremiumButton variant="ghost" className="shell-title-pill cockpit-render-pill"><CheckCircle2 size={14} /> Workspace Ready</PremiumButton>
         <span className="window-dot"><Minus size={14} /></span>
         <span className="window-dot"><Maximize2 size={13} /></span>
         <span className="window-dot close"><X size={14} /></span>
