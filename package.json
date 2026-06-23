@@ -12,7 +12,7 @@
     "lint": "eslint . --quiet",
     "lint:strict": "eslint . --max-warnings 0",
     "format": "prettier --write .",
-    "test": "jest --coverage",
+    "test": "jest --coverage && node --test tests/mediaAssetState.test.mjs",
     "typecheck": "tsc --noEmit",
     "contracts:check": "node scripts/validate-contracts.mjs",
     "prepare": "husky install",
