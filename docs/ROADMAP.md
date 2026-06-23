@@ -96,8 +96,9 @@
 - [x] odczyt długości audio przez Web Audio API
 - [x] waveform preview
 - [x] wykrywanie transientów jako upgrade beat mapy
-- [ ] stabilne media ID bez indeksu jako części tożsamości
-- [ ] dodawanie nowych zdjęć bez resetu selekcji i przypięć
+- [x] stabilne media ID bez indeksu jako części tożsamości
+- [x] dodawanie nowych zdjęć bez resetu selekcji i przypięć
+- [ ] test zachowania selekcji i pinned clips po dodaniu zdjęć
 - [ ] ocena ostrości zdjęć
 - [ ] pełny media quality report w UI
 
@@ -174,10 +175,9 @@ Tryby pracy:
 
 ### P0 — stabilność i brak utraty pracy
 
-1. Naprawić `useMediaAssets`, żeby dodanie zdjęć nie resetowało selekcji i przypięć.
-2. Usunąć `index` z trwałej tożsamości media ID albo dodać osobny fingerprint.
-3. Dodać test dla zachowania selekcji i pinned clips po dodaniu nowych zdjęć.
-4. Zweryfikować świeży installer po premium cockpit UI.
+1. Dodać test dla zachowania selekcji i pinned clips po dodaniu nowych zdjęć.
+2. Zweryfikować świeży installer po media merge fix.
+3. Dopiąć panel brakujących mediów po imporcie projektu.
 
 ### P1 — premium experience bez burzenia silnika
 
@@ -198,18 +198,16 @@ Tryby pracy:
 ## 4. Następny rekomendowany commit
 
 ```txt
-fix(media): preserve timeline selection when adding photos
+test(media): cover preserved selection when adding photos
 ```
 
 Zakres:
 
-- dodać `buildMediaFingerprint(file)`,
-- zmienić `buildMediaId`, żeby ID nie zależało od pozycji w tablicy,
-- merge’ować nowe pliki z istniejącymi assetami,
-- zachować `selectedAssetIds`,
-- zachować `pinnedAssetsByClip`,
-- usuwać przypięcia tylko dla assetów, które faktycznie zniknęły,
-- dodać test jednostkowy tej logiki.
+- test stabilnego `buildMediaFingerprint(file)`,
+- test `buildMediaId(file)` bez indeksu pozycji,
+- test duplikatów tego samego fingerprinta,
+- test zachowania `selectedAssetIds`,
+- test zachowania `pinnedAssetsByClip`.
 
 ## 5. Następny rekomendowany commit UI
 
