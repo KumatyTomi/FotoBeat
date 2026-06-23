@@ -1,19 +1,77 @@
-# FotoBeat.me — roadmapa techniczna
+# FotoBeat.me Desktop — autorska roadmapa
 
-## Etap 1: Repo i baza frontendowa
+**Autor:** Rafał Zalewski / @zalson  
+**Repo:** `KumatyTomi/FotoBeat`  
+**Kierunek:** lokalna aplikacja desktopowa do montażu klipów ze zdjęć i muzyki, z naciskiem na szybki workflow, mocny wizual, render lokalny i eksport pod social/video.
+
+## 0. Zasoby repo — aktualny przegląd
+
+### Frontend i shell
+
+- `src/App.jsx` — główny orkiestrator aplikacji: projekt, upload, audio, timeline, preview, eksporty i desktop render.
+- `src/components/shell/` — desktopowy shell aplikacji: topbar, lewy rail, centralny workspace, prawy drawer i dolna kolejka.
+- `src/hooks/useProfile.js` — profile trybów pracy: `Create`, `Studio`, `Beat Lab`, `Inspect`.
+- `src/main.jsx` — główne wejście React, importujące warstwy CSS, w tym `premium-cockpit.css`.
+
+### Warstwa wizualna
+
+- `src/styles.css` — bazowy wygląd aplikacji.
+- `src/single-shell.css` — układ single-shell: topbar, rail, drawer, center workspace, bottom queue.
+- `src/vajra-override.css` — wcześniejsza warstwa neon/glass override.
+- `src/premium-cockpit.css` — aktualna warstwa cockpit UI w stylu premium: ciemne szkło, cyan/violet/magenta, amber render status, lepsze panele i kolejka.
+
+### Media, audio i timeline
+
+- `src/hooks/useMediaAssets.js` — tworzy assety zdjęć, miniatury, selekcję, kolejność i przypięcia do klipów.
+- `src/utils/mediaScoring.js` — scoring zdjęć względem formatu oraz rozwiązywanie zdjęcia dla klipu.
+- `src/hooks/useAudioAnalysis.js` — stan analizy audio dla wrzuconego pliku.
+- `src/utils/audioAnalysis.js` — waveform, energy windows, transient beat detection, fallback beat map i szacowanie BPM.
+
+### Render i eksport
+
+- `src/utils/canvasRenderer.js` — deterministic frame renderer / canvas render logic.
+- `src/components/DesktopRenderPanel.jsx` — panel renderu desktopowego, status FFmpeg, folder eksportu, job, historia.
+- `src/components/DesktopRenderHistory.jsx` — historia renderów desktopowych.
+- `src/components/Mp4ProfileSelector.jsx` — wybór profili MP4.
+- Istniejące ścieżki eksportu: PNG frame, frame sequence, ZIP frames, WebM, MP4 POC, desktop render job.
+
+### Desktop / Electron
+
+- `desktop/package.json` — konfiguracja Electron i electron-builder.
+- `desktop/src/main.cjs` — start procesu desktopowego.
+- `desktop/src/windowFactory.cjs` — okno aplikacji i ładowanie zbudowanego web UI.
+- `desktop/src/preload.cjs` — bridge między rendererem a desktop API.
+- `desktop/src/renderQueue.cjs` — lokalna kolejka renderów.
+- `desktop/src/jobHistory.cjs` — historia jobów.
+- `desktop/src/pathSafety.cjs` — ograniczenia bezpiecznych ścieżek lokalnych.
+
+### CI/CD i instalator
+
+- `.github/workflows/ci.yml` — główne CI.
+- `.github/workflows/windows-installer.yml` — budowa instalatora Windows.
+- `scripts/ci-deps.mjs` — instalacja zależności w workflow bez zależności od lockfile.
+- `scripts/assert-electron-assets.mjs` — smoke check assetów po Vite buildzie, żeby packaged Electron nie ładował absolutnych `/assets/...` przez `file://`.
+
+## 1. Stan obecny
+
+### Repo i baza frontendowa
 
 - [x] Vite + React
 - [x] UI landing/editor
+- [x] desktop single-shell layout
+- [x] profile pracy: Create / Studio / Beat Lab / Inspect
+- [x] premium cockpit visual layer
 - [x] upload zdjęć
 - [x] upload audio
 - [x] roboczy timeline
 - [x] presety efektów
 - [x] dokumentacja startowa
 - [x] GitHub Actions CI
-- [x] ESLint flat config
-- [x] Vite config z COOP/COEP dla ffmpeg.wasm
+- [x] Windows Installer workflow
+- [x] Vite `base: './'` dla packaged Electron
+- [x] smoke check assetów Electron przed pakowaniem instalatora
 
-## Etap 2: Projekt użytkownika
+### Projekt użytkownika
 
 - [x] model `Project` w stanie aplikacji
 - [x] autosave w localStorage
@@ -22,82 +80,147 @@
 - [x] import projektu JSON z pliku
 - [x] snapshot wersji timeline
 - [x] eksport decyzji timeline do JSON
-- [x] walidacja i remap mediów po imporcie
-- [x] export manifest model
+- [x] walidacja/remap mediów po imporcie
 - [ ] panel listy projektów
+- [ ] trwała biblioteka projektów lokalnych
+- [ ] czytelny ekran brakujących mediów po imporcie projektu
 
-## Etap 3: Analiza plików
+### Media i analiza plików
 
 - [x] miniatury zdjęć przez object URL
 - [x] wykrywanie orientacji zdjęć
-- [x] prosty scoring jakości i zgodności z formatem
-- [x] media quality report
-- [x] fingerprinty i detekcja potencjalnych duplikatów
-- [ ] ocena ostrości
+- [x] scoring jakości i zgodności z formatem
+- [x] ręczna selekcja aktywnych kadrów
+- [x] ręczna kolejność kadrów
+- [x] przypinanie zdjęcia do konkretnego klipu
 - [x] odczyt długości audio przez Web Audio API
-- [x] szacowanie energii audio
 - [x] waveform preview
+- [x] wykrywanie transientów jako upgrade beat mapy
+- [ ] stabilne media ID bez indeksu jako części tożsamości
+- [ ] dodawanie nowych zdjęć bez resetu selekcji i przypięć
+- [ ] ocena ostrości zdjęć
+- [ ] pełny media quality report w UI
 
-## Etap 4: Beat engine
+### Beat engine
 
-- [x] robocza beat mapa na podstawie BPM
-- [x] wykrycie sekcji timeline: intro, build, drop, outro
+- [x] robocza beat mapa na podstawie BPM/fallback
+- [x] transient beat detection
 - [x] energia audio jako parametr efektów
-- [x] automatyczne cięcia według beat grid
 - [x] wizualny beat grid na waveform
 - [x] ręczna korekta długości klipów przez `clipDurationScale`
-- [x] detekcja transientów jako upgrade heurystyki BPM
+- [ ] Beat Director jako realny panel sterowania decyzjami cięć
+- [ ] wykrywanie sekcji utworu: intro / build / drop / outro w UI
+- [ ] intensywność montażu jako jeden suwak: spokojnie / dynamicznie / agresywnie
 
-## Etap 5: Render
+### Render i eksport
 
 - [x] render preview w canvas
-- [x] animacja `requestAnimationFrame`
 - [x] HUD renderu: format, czas, aktualny klip
 - [x] style canvas dla 16:9, 9:16 i 1:1
-- [x] preview na realnych zdjęciach z uploadu
-- [x] ręczna selekcja aktywnych kadrów do timeline
-- [x] ręczna kolejność kadrów na timeline
-- [x] przypinanie zdjęcia do konkretnego klipu
-- [x] MediaRecorder/WebM proof of concept bez audio
-- [x] WebM z audio track przez Web Audio API
-- [x] render queue / historia eksportów WebM
-- [x] persistent render history po odświeżeniu strony przez IndexedDB
-- [x] render profiles catalog
-- [x] browser storage health utilities
-- [x] ffmpeg readiness checklist
-- [x] deterministic frame renderer
 - [x] testowy eksport pojedynczej klatki PNG
-- [x] frame sequence renderer do IndexedDB
+- [x] frame sequence renderer
 - [x] frame sequence ZIP export
-- [x] render job model i IndexedDB job queue
-- [x] frame sequence validation
-- [x] ffmpeg command builder
-- [x] MP4 export plan adapter
-- [x] ffmpeg.wasm proof of concept bez audio
-- [x] lokalna historia eksportów MP4 w IndexedDB
-- [x] MP4 audio mux foundation w exporterze
-- [x] ffmpeg core load config przez toBlobURL
-- [x] UI dla MP4 audio mux
-- [ ] eksport MP4 9:16 produkcyjny
-- [ ] eksport MP4 16:9 produkcyjny
+- [x] WebM proof of concept
+- [x] WebM z audio track przez Web Audio API
+- [x] render job model i historia
+- [x] ffmpeg command builder / MP4 plan foundation
+- [x] MP4 POC
+- [x] desktop render panel
+- [ ] produkcyjny MP4 9:16
+- [ ] produkcyjny MP4 16:9
+- [ ] Export Hub wybierający najlepszą ścieżkę: Native MP4 → MP4 POC → WebM → ZIP frames
+- [ ] cover frame generator
+- [ ] warianty renderu: clean / hard beat / cinematic
 
-## Etap 6: Produkt
+### Desktop / instalator
 
-- [x] project diagnostics foundation
-- [x] QA checklist
-- [x] ffmpeg / MP4 implementation plan
-- [x] next 10 large stages documentation
-- [x] masterplan 100 etapów
-- [x] React safety boundary
-- [x] storage health hook
-- [x] ffmpeg runtime notes
-- [ ] logowanie
-- [ ] dashboard użytkownika
-- [ ] historia eksportów w profilu użytkownika
-- [ ] presety premium
-- [ ] płatności
-- [ ] landing sprzedażowy
+- [x] Electron wrapper
+- [x] desktop bridge
+- [x] local output folder picker
+- [x] FFmpeg status/readiness w panelu desktopowym
+- [x] Windows NSIS installer przez electron-builder
+- [x] workflow Windows Installer
+- [x] smoke check assetów dla packaged app
+- [ ] podpisywanie instalatora
+- [ ] wersjonowanie release `v0.x.x`
+- [ ] GitHub Release z instalatorem zamiast wyłącznie artifact z Actions
+- [ ] auto-update lub przynajmniej jasna ścieżka aktualizacji
 
-## Najbliższy następny duży krok
+## 2. Autorski kierunek produktu
 
-Zweryfikować MP4 + audio na krótkim materiale i przejść z POC do profili produkcyjnych 9:16 oraz 16:9 z limitami jakości, rozdzielczości i czasu renderu.
+FotoBeat.me Desktop ma nie być kolejnym panelem narzędziowym. Docelowy feeling:
+
+1. użytkownik wrzuca zdjęcia,
+2. wrzuca muzykę,
+3. aplikacja pokazuje puls utworu,
+4. wybiera styl montażu,
+5. widzi żywy preview,
+6. eksportuje klip bez myślenia o technicznych ścieżkach renderu.
+
+Główne doświadczenie:
+
+```txt
+Import → Beat Map → Style DNA → Timeline → Preview → Export
+```
+
+Tryby pracy:
+
+- **Create** — szybkie tworzenie klipu, minimalna liczba decyzji.
+- **Studio** — pełna kontrola timeline, presetów, mediów i eksportów.
+- **Beat Lab** — rytm, transienty, drop markers, cięcia i energia.
+- **Inspect** — manifesty, joby, ścieżki, logi, debug i walidacja.
+
+## 3. Najbliższe priorytety
+
+### P0 — stabilność i brak utraty pracy
+
+1. Naprawić `useMediaAssets`, żeby dodanie zdjęć nie resetowało selekcji i przypięć.
+2. Usunąć `index` z trwałej tożsamości media ID albo dodać osobny fingerprint.
+3. Dodać test dla zachowania selekcji i pinned clips po dodaniu nowych zdjęć.
+4. Zweryfikować świeży installer po premium cockpit UI.
+
+### P1 — premium experience bez burzenia silnika
+
+1. Podpiąć Right Drawer pod realne dane zamiast statycznych wartości.
+2. Zbudować `ExportReadiness` na podstawie audio/media/render/desktop status.
+3. Zbudować `Style DNA` jako rozszerzenie `EFFECT_PRESETS`.
+4. Zbudować `Beat Director` jako warstwę nad `audioAnalysis` i timeline.
+5. Przenieść techniczne eksporty do trybu Studio/Inspect, a w Create pokazać jeden główny Export.
+
+### P2 — produkcyjny output
+
+1. Produkcyjny MP4 9:16.
+2. Produkcyjny MP4 16:9.
+3. Cover frame generator.
+4. Warianty renderu.
+5. GitHub Release z instalatorem.
+
+## 4. Następny rekomendowany commit
+
+```txt
+fix(media): preserve timeline selection when adding photos
+```
+
+Zakres:
+
+- dodać `buildMediaFingerprint(file)`,
+- zmienić `buildMediaId`, żeby ID nie zależało od pozycji w tablicy,
+- merge’ować nowe pliki z istniejącymi assetami,
+- zachować `selectedAssetIds`,
+- zachować `pinnedAssetsByClip`,
+- usuwać przypięcia tylko dla assetów, które faktycznie zniknęły,
+- dodać test jednostkowy tej logiki.
+
+## 5. Następny rekomendowany commit UI
+
+```txt
+feat(experience): connect cockpit drawer to live project state
+```
+
+Zakres:
+
+- `Style DNA` czyta aktywny preset, format i intensywność,
+- `Beat Director` czyta BPM, transient count i beat markers,
+- `Export Readiness` pokazuje realne checklisty,
+- `BottomQueue` pokazuje ostatni render job i FFmpeg status,
+- `Create` pokazuje uproszczony flow, a `Studio/Inspect` zostawiają zaawansowane narzędzia.
