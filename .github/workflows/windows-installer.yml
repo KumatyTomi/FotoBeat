@@ -25,6 +25,9 @@ jobs:
       - name: Build web app
         run: npm run build
 
+      - name: Check packaged web asset paths
+        run: node scripts/assert-electron-assets.mjs
+
       - name: Desktop dependencies
         working-directory: desktop
         run: node ../scripts/ci-deps.mjs
