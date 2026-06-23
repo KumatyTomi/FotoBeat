@@ -7,6 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
+    "check:electron-assets": "node scripts/assert-electron-assets.mjs",
+    "build:electron-safe": "npm run build && npm run check:electron-assets",
     "lint": "eslint . --quiet",
     "lint:strict": "eslint . --max-warnings 0",
     "format": "prettier --write .",
