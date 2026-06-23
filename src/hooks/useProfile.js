@@ -2,10 +2,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useGuiStore } from '../stores/guiStore.js';
 
 export const PROFILE_DEFINITIONS = [
-  { id: 'simple', label: 'Simple', accent: '#8be9ff', background: 'spiral_wide.png' },
-  { id: 'creator', label: 'Creator', accent: '#7c3cff', background: 'corridor_bluepink_wide.png' },
-  { id: 'editor', label: 'Editor', accent: '#00d3ff', background: 'energy_core_editor.png' },
-  { id: 'debug', label: 'Debug', accent: '#ffcb59', background: 'mirror_corridor_wide.png' }
+  { id: 'simple', label: 'Create', accent: '#73f7ff', background: 'spiral_wide.png' },
+  { id: 'creator', label: 'Studio', accent: '#9b5cff', background: 'corridor_bluepink_wide.png' },
+  { id: 'editor', label: 'Beat Lab', accent: '#00d3ff', background: 'energy_core_editor.png' },
+  { id: 'debug', label: 'Inspect', accent: '#ffcb59', background: 'mirror_corridor_wide.png' }
 ];
 
 const PROFILE_SWITCH_MS = 420;
