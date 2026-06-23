@@ -10,8 +10,9 @@
 
 - `src/App.jsx` — główny orkiestrator aplikacji: projekt, upload, audio, timeline, preview, eksporty i desktop render.
 - `src/components/shell/` — desktopowy shell aplikacji: topbar, lewy rail, centralny workspace, prawy drawer i dolna kolejka.
+- `src/components/shell/RightDrawer.jsx` — praktyczne rozwijane boczne slidery: Project, Import & Media, Audio & Beat, Timeline, Style, Export, Desktop Render, Diagnostics.
 - `src/hooks/useProfile.js` — profile trybów pracy: `Create`, `Studio`, `Beat Lab`, `Inspect`.
-- `src/main.jsx` — główne wejście React, importujące warstwy CSS, w tym `premium-cockpit.css`.
+- `src/main.jsx` — główne wejście React, importujące warstwy CSS, w tym `premium-cockpit.css` i `pragmatic-side-sliders.css`.
 
 ### Warstwa wizualna
 
@@ -19,6 +20,7 @@
 - `src/single-shell.css` — układ single-shell: topbar, rail, drawer, center workspace, bottom queue.
 - `src/vajra-override.css` — wcześniejsza warstwa neon/glass override.
 - `src/premium-cockpit.css` — aktualna warstwa cockpit UI w stylu premium: ciemne szkło, cyan/violet/magenta, amber render status, lepsze panele i kolejka.
+- `src/pragmatic-side-sliders.css` — boczne rozwijane slidery i skróty do praktycznych funkcji.
 
 ### Media, audio i timeline
 
@@ -52,7 +54,7 @@
 - `.github/workflows/windows-installer.yml` — budowa instalatora Windows.
 - `scripts/ci-deps.mjs` — instalacja zależności w workflow bez zależności od lockfile.
 - `scripts/assert-electron-assets.mjs` — smoke check assetów po Vite buildzie, żeby packaged Electron nie ładował absolutnych `/assets/...` przez `file://`.
-- `tests/mediaAssetState.test.mjs` — natywny test Node dla stabilnej selekcji mediów i pinów.
+- `tests/mediaAssetState.node.mjs` — natywny test Node dla stabilnej selekcji mediów i pinów.
 
 ## 1. Stan obecny
 
@@ -63,6 +65,7 @@
 - [x] desktop single-shell layout
 - [x] profile pracy: Create / Studio / Beat Lab / Inspect
 - [x] premium cockpit visual layer
+- [x] praktyczne boczne slidery dla koniecznych funkcji
 - [x] upload zdjęć
 - [x] upload audio
 - [x] roboczy timeline
@@ -177,13 +180,13 @@ Tryby pracy:
 
 ### P0 — stabilność i brak utraty pracy
 
-1. Zweryfikować świeży installer po media merge fix.
+1. Zweryfikować świeży installer po zmianach bocznych sliderów.
 2. Dopiąć panel brakujących mediów po imporcie projektu.
 3. Utrzymać testy media state w CI.
 
 ### P1 — premium experience bez burzenia silnika
 
-1. Podpiąć Right Drawer pod realne dane zamiast statycznych wartości.
+1. Podpiąć boczne slidery pod realne dane zamiast statycznych poziomów.
 2. Zbudować `ExportReadiness` na podstawie audio/media/render/desktop status.
 3. Zbudować `Style DNA` jako rozszerzenie `EFFECT_PRESETS`.
 4. Zbudować `Beat Director` jako warstwę nad `audioAnalysis` i timeline.
@@ -200,13 +203,13 @@ Tryby pracy:
 ## 4. Następny rekomendowany commit
 
 ```txt
-feat(experience): connect cockpit drawer to live project state
+feat(experience): connect side sliders to live project state
 ```
 
 Zakres:
 
-- `Style DNA` czyta aktywny preset, format i intensywność,
-- `Beat Director` czyta BPM, transient count i beat markers,
-- `Export Readiness` pokazuje realne checklisty,
-- `BottomQueue` pokazuje ostatni render job i FFmpeg status,
-- `Create` pokazuje uproszczony flow, a `Studio/Inspect` zostawiają zaawansowane narzędzia.
+- Project slider czyta autosave/snapshoty,
+- Import & Media czyta liczbę zdjęć, selekcję i pinned clips,
+- Audio & Beat czyta BPM, transient count i beat markers,
+- Export czyta dostępność PNG/ZIP/WebM/MP4,
+- Desktop Render czyta FFmpeg/output folder/job status.
