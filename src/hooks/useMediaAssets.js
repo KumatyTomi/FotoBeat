@@ -1,24 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { buildMediaFingerprint, buildMediaId, getOrientation, scoreMediaAsset } from '../utils/mediaScoring.js';
-
-function buildMediaDescriptors(images) {
-  const duplicateCounts = new Map();
-
-  return images.map((file) => {
-    const fingerprint = buildMediaFingerprint(file);
-    const duplicateIndex = duplicateCounts.get(fingerprint) ?? 0;
-    duplicateCounts.set(fingerprint, duplicateIndex + 1);
-
-    return {
-      id: buildMediaId(file, duplicateIndex),
-      fingerprint,
-      name: file.name,
-      size: file.size,
-      type: file.type,
-      file
-    };
-  });
-}
+import { buildMediaDescriptors, didObjectShapeChange, getNewAssetIds, mergeSelectedAssetIds, prunePinnedAssetsByClip } from '../utils/mediaAssetState.js';
+import { getOrientation, scoreMediaAsset } from '../utils/mediaScoring.js';
 
 export function useMediaAssets(images, selectedFormat) {
   const [mediaAssets, setMediaAssets] = useState([]);
@@ -51,7 +33,7 @@ export function useMediaAssets(images, selectedFormat) {
     const nextIds = descriptors.map((asset) => asset.id);
     const nextIdSet = new Set(nextIds);
     const previousKnownIds = knownAssetIdsRef.current;
-    const newIds = nextIds.filter((assetId) => !previousKnownIds.has(assetId));
+    const newIds = getNewAssetIds(nextIds, previousKnownIds);
     const isInitialLoad = previousKnownIds.size === 0;
 
     objectUrlsRef.current.forEach((url, assetId) => {
@@ -90,19 +72,11 @@ export function useMediaAssets(images, selectedFormat) {
       });
     });
 
-    setSelectedAssetIds((current) => {
-      if (isInitialLoad) return nextIds;
-
-      const retainedSelection = current.filter((assetId) => nextIdSet.has(assetId));
-      return [...retainedSelection, ...newIds];
-    });
+    setSelectedAssetIds((current) => mergeSelectedAssetIds(current, nextIds, newIds, { isInitialLoad }));
 
     setPinnedAssetsByClip((current) => {
-      const next = Object.fromEntries(
-        Object.entries(current).filter(([, assetId]) => nextIdSet.has(assetId))
-      );
-
-      return Object.keys(next).length === Object.keys(current).length ? current : next;
+      const next = prunePinnedAssetsByClip(current, nextIdSet);
+      return didObjectShapeChange(current, next) ? next : current;
     });
 
     knownAssetIdsRef.current = nextIdSet;
@@ -158,11 +132,8 @@ export function useMediaAssets(images, selectedFormat) {
     const activeIds = new Set(selectedMediaAssets.map((asset) => asset.id));
 
     setPinnedAssetsByClip((current) => {
-      const next = Object.fromEntries(
-        Object.entries(current).filter(([, assetId]) => activeIds.has(assetId))
-      );
-
-      return Object.keys(next).length === Object.keys(current).length ? current : next;
+      const next = prunePinnedAssetsByClip(current, activeIds);
+      return didObjectShapeChange(current, next) ? next : current;
     });
   }, [selectedMediaAssets]);
 
