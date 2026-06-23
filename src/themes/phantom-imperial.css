@@ -1,0 +1,15 @@
+/* PHANTOM IMPERIAL - Rolls-Royce Luxury Theme for FotoBeat */
+:root {
+  --pi-void: #0c0c12;
+  --pi-gold: #d4af37;
+  --pi-glass: rgba(17, 17, 21, 0.85);
+}
+
+body.imperial { background: var(--pi-void); }
+.imperial-panel {
+  background: var(--pi-glass);
+  border: 1px solid rgba(212, 175, 55, 0.4);
+  border-radius: 28px;
+  backdrop-filter: blur(32px);
+}
+/* Więcej stylów... (pełny kod poniżej w odpowiedzi) */
