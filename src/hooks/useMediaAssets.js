@@ -1,72 +1,146 @@
-import { useEffect, useMemo, useState } from 'react';
-import { buildMediaId, getOrientation, scoreMediaAsset } from '../utils/mediaScoring.js';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { buildMediaFingerprint, buildMediaId, getOrientation, scoreMediaAsset } from '../utils/mediaScoring.js';
+
+function buildMediaDescriptors(images) {
+  const duplicateCounts = new Map();
+
+  return images.map((file) => {
+    const fingerprint = buildMediaFingerprint(file);
+    const duplicateIndex = duplicateCounts.get(fingerprint) ?? 0;
+    duplicateCounts.set(fingerprint, duplicateIndex + 1);
+
+    return {
+      id: buildMediaId(file, duplicateIndex),
+      fingerprint,
+      name: file.name,
+      size: file.size,
+      type: file.type,
+      file
+    };
+  });
+}
 
 export function useMediaAssets(images, selectedFormat) {
   const [mediaAssets, setMediaAssets] = useState([]);
   const [selectedAssetIds, setSelectedAssetIds] = useState([]);
   const [pinnedAssetsByClip, setPinnedAssetsByClip] = useState({});
+  const objectUrlsRef = useRef(new Map());
+  const knownAssetIdsRef = useRef(new Set());
+  const loadingAssetIdsRef = useRef(new Set());
+
+  useEffect(() => () => {
+    objectUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
+    objectUrlsRef.current.clear();
+    knownAssetIdsRef.current.clear();
+    loadingAssetIdsRef.current.clear();
+  }, []);
 
   useEffect(() => {
     if (images.length === 0) {
+      objectUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
+      objectUrlsRef.current.clear();
+      knownAssetIdsRef.current.clear();
+      loadingAssetIdsRef.current.clear();
       setMediaAssets([]);
       setSelectedAssetIds([]);
       setPinnedAssetsByClip({});
-      return undefined;
+      return;
     }
 
-    let cancelled = false;
-    const nextAssets = images.map((file, index) => ({
-      id: buildMediaId(file, index),
-      name: file.name,
-      size: file.size,
-      type: file.type,
-      file,
-      url: URL.createObjectURL(file),
-      status: 'loading',
-      width: 0,
-      height: 0,
-      orientation: 'unknown',
-      image: null
-    }));
+    const descriptors = buildMediaDescriptors(images);
+    const nextIds = descriptors.map((asset) => asset.id);
+    const nextIdSet = new Set(nextIds);
+    const previousKnownIds = knownAssetIdsRef.current;
+    const newIds = nextIds.filter((assetId) => !previousKnownIds.has(assetId));
+    const isInitialLoad = previousKnownIds.size === 0;
 
-    setMediaAssets(nextAssets);
-    setSelectedAssetIds(nextAssets.map((asset) => asset.id));
-    setPinnedAssetsByClip({});
-
-    nextAssets.forEach((asset) => {
-      const image = new Image();
-
-      image.onload = () => {
-        if (cancelled) return;
-        setMediaAssets((current) => current.map((item) => (
-          item.id === asset.id
-            ? {
-              ...item,
-              status: 'ready',
-              width: image.naturalWidth,
-              height: image.naturalHeight,
-              orientation: getOrientation(image.naturalWidth, image.naturalHeight),
-              image
-            }
-            : item
-        )));
-      };
-
-      image.onerror = () => {
-        if (cancelled) return;
-        setMediaAssets((current) => current.map((item) => (
-          item.id === asset.id ? { ...item, status: 'error' } : item
-        )));
-      };
-
-      image.src = asset.url;
+    objectUrlsRef.current.forEach((url, assetId) => {
+      if (!nextIdSet.has(assetId)) {
+        URL.revokeObjectURL(url);
+        objectUrlsRef.current.delete(assetId);
+        loadingAssetIdsRef.current.delete(assetId);
+      }
     });
 
-    return () => {
-      cancelled = true;
-      nextAssets.forEach((asset) => URL.revokeObjectURL(asset.url));
-    };
+    setMediaAssets((current) => {
+      const currentById = new Map(current.map((asset) => [asset.id, asset]));
+
+      return descriptors.map((descriptor) => {
+        const existing = currentById.get(descriptor.id);
+        const url = objectUrlsRef.current.get(descriptor.id) ?? URL.createObjectURL(descriptor.file);
+        objectUrlsRef.current.set(descriptor.id, url);
+
+        if (existing) {
+          return {
+            ...existing,
+            ...descriptor,
+            url
+          };
+        }
+
+        return {
+          ...descriptor,
+          url,
+          status: 'loading',
+          width: 0,
+          height: 0,
+          orientation: 'unknown',
+          image: null
+        };
+      });
+    });
+
+    setSelectedAssetIds((current) => {
+      if (isInitialLoad) return nextIds;
+
+      const retainedSelection = current.filter((assetId) => nextIdSet.has(assetId));
+      return [...retainedSelection, ...newIds];
+    });
+
+    setPinnedAssetsByClip((current) => {
+      const next = Object.fromEntries(
+        Object.entries(current).filter(([, assetId]) => nextIdSet.has(assetId))
+      );
+
+      return Object.keys(next).length === Object.keys(current).length ? current : next;
+    });
+
+    knownAssetIdsRef.current = nextIdSet;
   }, [images]);
+
+  useEffect(() => {
+    mediaAssets
+      .filter((asset) => asset.status === 'loading' && !loadingAssetIdsRef.current.has(asset.id))
+      .forEach((asset) => {
+        loadingAssetIdsRef.current.add(asset.id);
+        const image = new Image();
+
+        image.onload = () => {
+          loadingAssetIdsRef.current.delete(asset.id);
+          setMediaAssets((current) => current.map((item) => (
+            item.id === asset.id
+              ? {
+                ...item,
+                status: 'ready',
+                width: image.naturalWidth,
+                height: image.naturalHeight,
+                orientation: getOrientation(image.naturalWidth, image.naturalHeight),
+                image
+              }
+              : item
+          )));
+        };
+
+        image.onerror = () => {
+          loadingAssetIdsRef.current.delete(asset.id);
+          setMediaAssets((current) => current.map((item) => (
+            item.id === asset.id ? { ...item, status: 'error' } : item
+          )));
+        };
+
+        image.src = asset.url;
+      });
+  }, [mediaAssets]);
 
   const mediaById = useMemo(() => new Map(mediaAssets.map((asset) => [asset.id, asset])), [mediaAssets]);
 
