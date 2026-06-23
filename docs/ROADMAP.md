@@ -24,6 +24,7 @@
 
 - `src/hooks/useMediaAssets.js` — tworzy assety zdjęć, miniatury, selekcję, kolejność i przypięcia do klipów.
 - `src/utils/mediaScoring.js` — scoring zdjęć względem formatu oraz rozwiązywanie zdjęcia dla klipu.
+- `src/utils/mediaAssetState.js` — testowalna logika stabilnych ID, merge selekcji i czyszczenia pinów.
 - `src/hooks/useAudioAnalysis.js` — stan analizy audio dla wrzuconego pliku.
 - `src/utils/audioAnalysis.js` — waveform, energy windows, transient beat detection, fallback beat map i szacowanie BPM.
 
@@ -51,6 +52,7 @@
 - `.github/workflows/windows-installer.yml` — budowa instalatora Windows.
 - `scripts/ci-deps.mjs` — instalacja zależności w workflow bez zależności od lockfile.
 - `scripts/assert-electron-assets.mjs` — smoke check assetów po Vite buildzie, żeby packaged Electron nie ładował absolutnych `/assets/...` przez `file://`.
+- `tests/mediaAssetState.test.mjs` — natywny test Node dla stabilnej selekcji mediów i pinów.
 
 ## 1. Stan obecny
 
@@ -98,7 +100,7 @@
 - [x] wykrywanie transientów jako upgrade beat mapy
 - [x] stabilne media ID bez indeksu jako części tożsamości
 - [x] dodawanie nowych zdjęć bez resetu selekcji i przypięć
-- [ ] test zachowania selekcji i pinned clips po dodaniu zdjęć
+- [x] test zachowania selekcji i pinned clips po dodaniu zdjęć
 - [ ] ocena ostrości zdjęć
 - [ ] pełny media quality report w UI
 
@@ -175,9 +177,9 @@ Tryby pracy:
 
 ### P0 — stabilność i brak utraty pracy
 
-1. Dodać test dla zachowania selekcji i pinned clips po dodaniu nowych zdjęć.
-2. Zweryfikować świeży installer po media merge fix.
-3. Dopiąć panel brakujących mediów po imporcie projektu.
+1. Zweryfikować świeży installer po media merge fix.
+2. Dopiąć panel brakujących mediów po imporcie projektu.
+3. Utrzymać testy media state w CI.
 
 ### P1 — premium experience bez burzenia silnika
 
@@ -196,20 +198,6 @@ Tryby pracy:
 5. GitHub Release z instalatorem.
 
 ## 4. Następny rekomendowany commit
-
-```txt
-test(media): cover preserved selection when adding photos
-```
-
-Zakres:
-
-- test stabilnego `buildMediaFingerprint(file)`,
-- test `buildMediaId(file)` bez indeksu pozycji,
-- test duplikatów tego samego fingerprinta,
-- test zachowania `selectedAssetIds`,
-- test zachowania `pinnedAssetsByClip`.
-
-## 5. Następny rekomendowany commit UI
 
 ```txt
 feat(experience): connect cockpit drawer to live project state
