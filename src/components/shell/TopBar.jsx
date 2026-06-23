@@ -1,7 +1,7 @@
 import { CheckCircle2, Maximize2, Minus, Sparkles, X } from 'lucide-react';
 import PremiumButton from '../ui/PremiumButton.jsx';
 
-export default function TopBar({ profile, profiles, activeProfile, onProfileChange }) {
+export default function TopBar({ profiles, activeProfile, onProfileChange }) {
   return (
     <header className="shell-topbar cockpit-topbar">
       <div className="shell-brand cockpit-brand">
