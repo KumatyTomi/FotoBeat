@@ -9,6 +9,7 @@ import './render-preview.css';
 import './desktop-render.css';
 import './single-shell.css';
 import './vajra-override.css';
+import './premium-cockpit.css';
 
 createRoot(document.getElementById('root')).render(
   <React.StrictMode>
