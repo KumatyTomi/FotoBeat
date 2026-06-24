@@ -147,7 +147,7 @@ export default function RightDrawer({ collapsed, onToggle, activeProfile }) {
                 {section.sliders.map((slider) => (
                   <label key={slider.label} className={`cockpit-range side-slider tone-${slider.tone}`}>
                     <span>{slider.label}</span>
-                    <input type="range" min="0" max="100" value={slider.value} readOnly aria-label={slider.label} />
+                    <input type="range" min="0" max="100" defaultValue={slider.value} aria-label={slider.label} />
                     <i><b style={{ width: `${slider.value}%` }} /></i>
                   </label>
                 ))}
