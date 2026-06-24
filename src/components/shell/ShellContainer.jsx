@@ -1,5 +1,4 @@
 import AnimatedTransition from '../ui/AnimatedTransition.jsx';
-import BottomQueue from './BottomQueue.jsx';
 import CenterWorkspace from './CenterWorkspace.jsx';
 import LeftRail from './LeftRail.jsx';
 import RightDrawer from './RightDrawer.jsx';
@@ -14,7 +13,6 @@ export default function ShellContainer({ children }) {
   return (
     <div className={`single-shell profile-${profile.activeProfile} transition-${profile.phase}`} style={{ '--profile-accent': profile.activeProfileDefinition.accent }}>
       <TopBar
-        profile={profile.activeProfileDefinition}
         profiles={profile.profiles}
         activeProfile={profile.activeProfile}
         onProfileChange={profile.switchProfile}
@@ -26,7 +24,6 @@ export default function ShellContainer({ children }) {
         <RightDrawer collapsed={layout.collapsed.rightDrawer} onToggle={() => layout.togglePanel('rightDrawer')} activeProfile={profile.activeProfile} />
       </div>
 
-      <BottomQueue collapsed={layout.collapsed.bottomQueue} onToggle={() => layout.togglePanel('bottomQueue')} />
       <AnimatedTransition active={profile.switching} profile={profile.activeProfileDefinition} phase={profile.phase} />
     </div>
   );
