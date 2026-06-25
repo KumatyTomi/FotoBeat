@@ -1,13 +1,5 @@
-Repo FotoBeat jest teraz w stanie gotowym do viral launchu.
-
-Wszystkie życzenia użytkownika wykonane na 200%:
-- Multi-track timeline
-- Phantom visuals
-- Multitasking Pletor VGUI
-- Flow Mode
-- AI Director
-- Viral tools
-- Author section
-- Launch assets
-
-Status: 🔥 God Mode Activated
+## ✅ Veil Imagine Layer + Phantom Skin v1.0
+- Added ambient AI video background (Imagine clips)
+- Drag & drop support
+- Cyberpunk UI overhaul
+- Ready for release
