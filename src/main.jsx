@@ -11,6 +11,7 @@ import './single-shell.css';
 import './vajra-override.css';
 import './premium-cockpit.css';
 import './pragmatic-side-sliders.css';
+import './cosmic-panels.css';
 
 createRoot(document.getElementById('root')).render(
   <React.StrictMode>

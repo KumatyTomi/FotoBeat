@@ -2,14 +2,42 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useGuiStore } from '../stores/guiStore.js';
 
 export const PROFILE_DEFINITIONS = [
-  { id: 'simple', label: 'Create', accent: '#73f7ff', background: 'spiral_wide.png' },
-  { id: 'creator', label: 'Studio', accent: '#9b5cff', background: 'corridor_bluepink_wide.png' },
-  { id: 'editor', label: 'Beat Lab', accent: '#00d3ff', background: 'energy_core_editor.png' },
-  { id: 'debug', label: 'Inspect', accent: '#ffcb59', background: 'mirror_corridor_wide.png' }
+  {
+    id: 'simple',
+    label: 'Start',
+    shortLabel: 'Panel startowy',
+    accent: '#73f7ff',
+    scene: 'cosmic-water',
+    description: 'Import, szybki projekt i spokojne prowadzenie bez technicznych opcji.'
+  },
+  {
+    id: 'creator',
+    label: 'Studio',
+    shortLabel: 'Panel kreacji',
+    accent: '#9b5cff',
+    scene: 'liquid-gate',
+    description: 'Interaktywny wybór stylu, presetów, tempa i dramaturgii montażu.'
+  },
+  {
+    id: 'editor',
+    label: 'Render',
+    shortLabel: 'Panel renderu',
+    accent: '#00d3ff',
+    scene: 'fractal-engine',
+    description: 'Podgląd, timeline, sekwencje klatek i eksport w jednym panelu pracy.'
+  },
+  {
+    id: 'debug',
+    label: 'Admin',
+    shortLabel: 'Debug admin',
+    accent: '#ffcb59',
+    scene: 'admin-bloom',
+    description: 'Ukryty panel administracyjny z JSON, diagnostyką i opcjami technicznymi.'
+  }
 ];
 
-const PROFILE_SWITCH_MS = 420;
-const WORKSPACE_SWAP_MS = 200;
+const PROFILE_SWITCH_MS = 720;
+const WORKSPACE_SWAP_MS = 320;
 
 export function useProfile() {
   const activeProfile = useGuiStore((state) => state.activeProfile);
@@ -42,12 +70,13 @@ export function useProfile() {
     setPendingProfile(nextProfile);
     setPhase('overlay');
 
-    schedulePhase(() => setPhase('collapse'), 80);
+    schedulePhase(() => setPhase('liquid'), 90);
+    schedulePhase(() => setPhase('collapse'), 180);
     schedulePhase(() => {
       setActiveProfile(nextProfile);
       setPhase('swap');
     }, WORKSPACE_SWAP_MS);
-    schedulePhase(() => setPhase('expand'), 280);
+    schedulePhase(() => setPhase('expand'), 460);
     schedulePhase(() => {
       setPendingProfile(null);
       setPhase('idle');
