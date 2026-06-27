@@ -10,9 +10,11 @@
 
 - `src/App.jsx` — główny orkiestrator aplikacji: projekt, upload, audio, timeline, preview, eksporty i desktop render.
 - `src/components/shell/` — desktopowy shell aplikacji: topbar, lewy rail, centralny workspace, prawy drawer i dolna kolejka.
-- `src/components/shell/RightDrawer.jsx` — praktyczne rozwijane boczne slidery: Project, Import & Media, Audio & Beat, Timeline, Style, Export, Desktop Render, Diagnostics.
+- `src/components/shell/RightDrawer.jsx` — praktyczne rozwijane boczne slidery oraz realne kontrolki Veil Layer.
+- `src/components/shell/VeilLayer.jsx` — ambient background layer dla video/image z Imagine.
+- `src/components/shell/VisualSphere.jsx` — lekka sfera wizualna zsynchronizowana z Veil Layer.
 - `src/hooks/useProfile.js` — profile trybów pracy: `Create`, `Studio`, `Beat Lab`, `Inspect`.
-- `src/main.jsx` — główne wejście React, importujące warstwy CSS, w tym `premium-cockpit.css` i `pragmatic-side-sliders.css`.
+- `src/main.jsx` — główne wejście React, importujące warstwy CSS, w tym `premium-cockpit.css`, `pragmatic-side-sliders.css`, `visual-sphere.css` i `veil-layer.css`.
 
 ### Warstwa wizualna
 
@@ -21,6 +23,17 @@
 - `src/vajra-override.css` — wcześniejsza warstwa neon/glass override.
 - `src/premium-cockpit.css` — aktualna warstwa cockpit UI w stylu premium: ciemne szkło, cyan/violet/magenta, amber render status, lepsze panele i kolejka.
 - `src/pragmatic-side-sliders.css` — boczne rozwijane slidery i skróty do praktycznych funkcji.
+- `src/visual-sphere.css` — atrakcyjna sfera wizualna: aura, glass core, orbit rings, particles i reduced-motion fallback.
+- `src/veil-layer.css` — ambient video/image background, fallback gradient, blur/saturation/opacity i kontrolki Veil Layer.
+
+### State i konfiguracja UI
+
+- `src/stores/guiStore.js` — Zustand persist dla profilu, paneli oraz `veilLayer`.
+- `veilLayer.enabled` — włączenie/wyłączenie ambient layer.
+- `veilLayer.sourceUrl` — URL video lub obrazu z Imagine.
+- `veilLayer.sourceType` — `video` albo `image`.
+- `veilLayer.opacity`, `blur`, `saturation`, `speed`, `reactivity` — parametry oprawy Phantom.
+- `veilLayer.sphereSync` — synchronizacja sfery z intensywnością Veil Layer.
 
 ### Media, audio i timeline
 
@@ -66,6 +79,8 @@
 - [x] profile pracy: Create / Studio / Beat Lab / Inspect
 - [x] premium cockpit visual layer
 - [x] praktyczne boczne slidery dla koniecznych funkcji
+- [x] Veil Layer dla ambient video/image z Imagine
+- [x] Visual Sphere zsynchronizowana z Veil Layer
 - [x] upload zdjęć
 - [x] upload audio
 - [x] roboczy timeline
@@ -166,13 +181,13 @@ FotoBeat.me Desktop ma nie być kolejnym panelem narzędziowym. Docelowy feeling
 Główne doświadczenie:
 
 ```txt
-Import → Beat Map → Style DNA → Timeline → Preview → Export
+Import → Beat Map → Style DNA → Veil Layer → Timeline → Preview → Export
 ```
 
 Tryby pracy:
 
 - **Create** — szybkie tworzenie klipu, minimalna liczba decyzji.
-- **Studio** — pełna kontrola timeline, presetów, mediów i eksportów.
+- **Studio** — pełna kontrola timeline, presetów, mediów, Veil Layer i eksportów.
 - **Beat Lab** — rytm, transienty, drop markers, cięcia i energia.
 - **Inspect** — manifesty, joby, ścieżki, logi, debug i walidacja.
 
@@ -180,17 +195,17 @@ Tryby pracy:
 
 ### P0 — stabilność i brak utraty pracy
 
-1. Zweryfikować świeży installer po zmianach bocznych sliderów.
+1. Zweryfikować świeży installer po Veil Layer.
 2. Dopiąć panel brakujących mediów po imporcie projektu.
 3. Utrzymać testy media state w CI.
 
 ### P1 — premium experience bez burzenia silnika
 
-1. Podpiąć boczne slidery pod realne dane zamiast statycznych poziomów.
-2. Zbudować `ExportReadiness` na podstawie audio/media/render/desktop status.
-3. Zbudować `Style DNA` jako rozszerzenie `EFFECT_PRESETS`.
-4. Zbudować `Beat Director` jako warstwę nad `audioAnalysis` i timeline.
-5. Przenieść techniczne eksporty do trybu Studio/Inspect, a w Create pokazać jeden główny Export.
+1. Podpiąć Veil Layer pod realne pliki z Imagine zamiast ręcznego URL.
+2. Podpiąć boczne slidery pod realne dane zamiast statycznych poziomów.
+3. Zbudować `ExportReadiness` na podstawie audio/media/render/desktop status.
+4. Zbudować `Style DNA` jako rozszerzenie `EFFECT_PRESETS`.
+5. Zbudować `Beat Director` jako warstwę nad `audioAnalysis` i timeline.
 
 ### P2 — produkcyjny output
 
@@ -203,13 +218,13 @@ Tryby pracy:
 ## 4. Następny rekomendowany commit
 
 ```txt
-feat(experience): connect side sliders to live project state
+feat(veil): bind veil layer to imported Imagine media
 ```
 
 Zakres:
 
-- Project slider czyta autosave/snapshoty,
-- Import & Media czyta liczbę zdjęć, selekcję i pinned clips,
-- Audio & Beat czyta BPM, transient count i beat markers,
-- Export czyta dostępność PNG/ZIP/WebM/MP4,
-- Desktop Render czyta FFmpeg/output folder/job status.
+- wykrywać importowane video/image jako kandydatów Veil Layer,
+- wybierać aktywny ambient asset z biblioteki projektu,
+- przełączać Veil Layer automatycznie w Flow Mode,
+- synchronizować reactivity z energią audio,
+- dodać eksport ustawień Veil Layer do `.fotobeat.json`.
