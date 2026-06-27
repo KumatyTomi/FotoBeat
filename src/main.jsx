@@ -14,6 +14,7 @@ import './pragmatic-side-sliders.css';
 import './cosmic-panels.css';
 import './visual-sphere.css';
 import './veil-layer.css';
+import './noir-tab-transitions.css';
 
 createRoot(document.getElementById('root')).render(
   <React.StrictMode>
