@@ -2,7 +2,7 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
-export const GUI_STORE_KEY = 'fotobeat.gui.v3.store';
+export const GUI_STORE_KEY = 'fotobeat.gui.v4.store';
 export const LEGACY_GUI_CONFIG_KEY = 'fotobeat.gui.v3.config';
 export const DEFAULT_PROFILE = 'creator';
 
@@ -25,8 +25,23 @@ export const DEFAULT_VEIL_LAYER = {
   flowMode: true
 };
 
+export const DEFAULT_PHANTOM_UI = {
+  activePanel: 'veil',
+  sphereScale: 1,
+  sphereGlow: 0.72,
+  sphereOrbit: 0.64,
+  sphereParticles: 0.72,
+  motionDrift: 0.46,
+  motionPulse: 0.54,
+  gridEnergy: 0.42,
+  glassOpacity: 0.68,
+  focusDim: 0.42,
+  uiDensity: 0.52
+};
+
 const KNOWN_PROFILES = ['simple', 'creator', 'editor', 'debug'];
 const KNOWN_SOURCE_TYPES = ['video', 'image'];
+const KNOWN_PHANTOM_PANELS = ['veil', 'sphere', 'motion', 'workspace'];
 const legacyConfig = readLegacyGuiConfig();
 
 export const useGuiStore = create(
@@ -40,6 +55,10 @@ export const useGuiStore = create(
       veilLayer: {
         ...DEFAULT_VEIL_LAYER,
         ...sanitizeVeilLayer(legacyConfig.veilLayer)
+      },
+      phantomUi: {
+        ...DEFAULT_PHANTOM_UI,
+        ...sanitizePhantomUi(legacyConfig.phantomUi)
       },
       setActiveProfile: (profileId) => {
         const nextProfile = sanitizeProfileId(profileId);
@@ -73,10 +92,20 @@ export const useGuiStore = create(
         }));
       },
       resetVeilLayer: () => set({ veilLayer: DEFAULT_VEIL_LAYER }),
+      setPhantomUi: (patch) => {
+        set((state) => ({
+          phantomUi: {
+            ...state.phantomUi,
+            ...sanitizePhantomUi(patch)
+          }
+        }));
+      },
+      resetPhantomUi: () => set({ phantomUi: DEFAULT_PHANTOM_UI }),
       resetGuiLayout: () => set({
         activeProfile: DEFAULT_PROFILE,
         collapsed: DEFAULT_COLLAPSED,
-        veilLayer: DEFAULT_VEIL_LAYER
+        veilLayer: DEFAULT_VEIL_LAYER,
+        phantomUi: DEFAULT_PHANTOM_UI
       })
     }),
     {
@@ -85,9 +114,10 @@ export const useGuiStore = create(
       partialize: (state) => ({
         activeProfile: state.activeProfile,
         collapsed: state.collapsed,
-        veilLayer: state.veilLayer
+        veilLayer: state.veilLayer,
+        phantomUi: state.phantomUi
       }),
-      version: 2
+      version: 3
     }
   )
 );
@@ -140,6 +170,26 @@ function sanitizeVeilLayer(candidate) {
   if (Object.hasOwn(candidate, 'reactivity')) next.reactivity = clampNumber(candidate.reactivity, 0, 1, DEFAULT_VEIL_LAYER.reactivity);
   if (Object.hasOwn(candidate, 'sphereSync')) next.sphereSync = Boolean(candidate.sphereSync);
   if (Object.hasOwn(candidate, 'flowMode')) next.flowMode = Boolean(candidate.flowMode);
+
+  return next;
+}
+
+function sanitizePhantomUi(candidate) {
+  if (!candidate || typeof candidate !== 'object') return {};
+
+  const next = {};
+
+  if (KNOWN_PHANTOM_PANELS.includes(candidate.activePanel)) next.activePanel = candidate.activePanel;
+  if (Object.hasOwn(candidate, 'sphereScale')) next.sphereScale = clampNumber(candidate.sphereScale, 0.72, 1.42, DEFAULT_PHANTOM_UI.sphereScale);
+  if (Object.hasOwn(candidate, 'sphereGlow')) next.sphereGlow = clampNumber(candidate.sphereGlow, 0, 1, DEFAULT_PHANTOM_UI.sphereGlow);
+  if (Object.hasOwn(candidate, 'sphereOrbit')) next.sphereOrbit = clampNumber(candidate.sphereOrbit, 0, 1, DEFAULT_PHANTOM_UI.sphereOrbit);
+  if (Object.hasOwn(candidate, 'sphereParticles')) next.sphereParticles = clampNumber(candidate.sphereParticles, 0, 1, DEFAULT_PHANTOM_UI.sphereParticles);
+  if (Object.hasOwn(candidate, 'motionDrift')) next.motionDrift = clampNumber(candidate.motionDrift, 0, 1, DEFAULT_PHANTOM_UI.motionDrift);
+  if (Object.hasOwn(candidate, 'motionPulse')) next.motionPulse = clampNumber(candidate.motionPulse, 0, 1, DEFAULT_PHANTOM_UI.motionPulse);
+  if (Object.hasOwn(candidate, 'gridEnergy')) next.gridEnergy = clampNumber(candidate.gridEnergy, 0, 1, DEFAULT_PHANTOM_UI.gridEnergy);
+  if (Object.hasOwn(candidate, 'glassOpacity')) next.glassOpacity = clampNumber(candidate.glassOpacity, 0.2, 0.95, DEFAULT_PHANTOM_UI.glassOpacity);
+  if (Object.hasOwn(candidate, 'focusDim')) next.focusDim = clampNumber(candidate.focusDim, 0, 0.72, DEFAULT_PHANTOM_UI.focusDim);
+  if (Object.hasOwn(candidate, 'uiDensity')) next.uiDensity = clampNumber(candidate.uiDensity, 0, 1, DEFAULT_PHANTOM_UI.uiDensity);
 
   return next;
 }
