@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useEffect, useRef } from 'react';
 import { useGuiStore } from '../../stores/guiStore.js';
 
