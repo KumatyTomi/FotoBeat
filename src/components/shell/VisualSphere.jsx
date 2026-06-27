@@ -1,6 +1,11 @@
+import { useGuiStore } from '../../stores/guiStore.js';
+
 export default function VisualSphere({ activeProfile = 'creator' }) {
+  const veilLayer = useGuiStore((state) => state.veilLayer);
+  const sphereStyle = veilLayer.sphereSync ? { '--veil-reactivity': veilLayer.reactivity } : undefined;
+
   return (
-    <div className={`visual-sphere sphere-${activeProfile}`} aria-hidden="true">
+    <div className={`visual-sphere sphere-${activeProfile} ${veilLayer.sphereSync ? 'sphere-veil-sync' : ''}`} style={sphereStyle} aria-hidden="true">
       <div className="sphere-aura sphere-aura-cyan" />
       <div className="sphere-aura sphere-aura-violet" />
       <div className="sphere-core">
