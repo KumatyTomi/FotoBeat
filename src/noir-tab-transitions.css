@@ -1,0 +1,213 @@
+.noir-control-head strong {
+  color: #fff;
+  text-shadow: 0 0 1px #fff, 2px 0 0 rgba(196, 0, 24, 0.7);
+}
+
+.noir-control-head span {
+  color: rgba(255,255,255,0.48);
+}
+
+.noir-panel-tabs {
+  border-color: rgba(255,255,255,0.18);
+  background:
+    linear-gradient(135deg, rgba(255,255,255,0.10), transparent 38%),
+    linear-gradient(180deg, rgba(5,5,5,0.92), rgba(18,18,18,0.78));
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.85), 0 12px 28px rgba(0,0,0,0.28);
+}
+
+.noir-panel-tabs button {
+  position: relative;
+  overflow: hidden;
+  color: rgba(255,255,255,0.62);
+  background: linear-gradient(180deg, rgba(255,255,255,0.035), rgba(0,0,0,0.28));
+}
+
+.noir-panel-tabs button::before {
+  content: '';
+  position: absolute;
+  inset: -40% -80%;
+  background: linear-gradient(115deg, transparent 35%, rgba(255,255,255,0.26) 45%, transparent 55%);
+  transform: translateX(-58%) rotate(10deg);
+  opacity: 0;
+}
+
+.noir-panel-tabs button.active {
+  color: #fff;
+  border-color: rgba(255,255,255,0.78);
+  background:
+    linear-gradient(135deg, rgba(255,255,255,0.20), transparent 38%),
+    linear-gradient(180deg, rgba(196, 0, 24, 0.92), rgba(56, 0, 8, 0.90));
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.12), 0 0 22px rgba(196,0,24,0.38);
+  transform: translateY(-1px);
+}
+
+.noir-panel-tabs button.active::before {
+  opacity: 1;
+  animation: noirTabSweep 420ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.noir-panel-tabs button:hover:not(.active) {
+  border-color: rgba(255,255,255,0.34);
+  background: rgba(255,255,255,0.08);
+}
+
+.noir-panel-body {
+  position: relative;
+  border-radius: 18px;
+  background: #050505;
+}
+
+.noir-panel-scene {
+  position: relative;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  isolation: isolate;
+  animation: noirSceneIn 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.noir-cut,
+.noir-ink-flash,
+.noir-grain {
+  position: absolute;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.noir-cut {
+  left: -40%;
+  top: -40%;
+  width: 38%;
+  height: 190%;
+  transform: rotate(18deg) translateX(-140%);
+  transform-origin: center;
+}
+
+.noir-cut-white {
+  background: rgba(255,255,255,0.92);
+  filter: drop-shadow(0 0 12px rgba(255,255,255,0.36));
+  animation: noirWhiteWipe 520ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.noir-cut-red {
+  width: 15%;
+  background: rgba(196, 0, 24, 0.94);
+  box-shadow: 0 0 28px rgba(196,0,24,0.55);
+  animation: noirRedWipe 560ms cubic-bezier(0.16, 1, 0.3, 1) both 60ms;
+}
+
+.noir-ink-flash {
+  inset: 0;
+  background:
+    radial-gradient(circle at 28% 18%, rgba(255,255,255,0.18), transparent 24%),
+    linear-gradient(120deg, transparent 0 42%, rgba(255,255,255,0.12) 46%, rgba(196,0,24,0.28) 48%, transparent 54%);
+  mix-blend-mode: screen;
+  animation: noirInkFlash 420ms ease-out both;
+}
+
+.noir-grain {
+  inset: 0;
+  opacity: 0.18;
+  z-index: 6;
+  background-image:
+    radial-gradient(circle, rgba(255,255,255,0.20) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
+  background-size: 7px 7px, 19px 19px;
+  mix-blend-mode: screen;
+  animation: noirGrainFlicker 320ms steps(3) both;
+}
+
+.noir-panel-card {
+  position: relative;
+  z-index: 1;
+  border-color: rgba(255,255,255,0.20);
+  background:
+    linear-gradient(135deg, rgba(255,255,255,0.11), transparent 36%),
+    radial-gradient(circle at 76% 12%, rgba(196,0,24,0.22), transparent 34%),
+    linear-gradient(180deg, rgba(25,25,25,0.96), rgba(3,3,3,0.96));
+  box-shadow:
+    inset 0 0 0 1px rgba(0,0,0,0.74),
+    inset 0 1px 0 rgba(255,255,255,0.12),
+    0 18px 36px rgba(0,0,0,0.32);
+  animation: noirCardReveal 460ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.noir-panel-title strong {
+  color: #fff;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  text-shadow: 2px 0 0 rgba(196,0,24,0.74);
+}
+
+.noir-panel-title span {
+  color: rgba(255,255,255,0.56);
+}
+
+.noir-slider input[type='range']::-webkit-slider-runnable-track {
+  background: linear-gradient(90deg, rgba(255,255,255,0.86), rgba(196,0,24,0.88), rgba(20,20,20,0.94));
+}
+
+.noir-slider input[type='range']::-moz-range-track {
+  background: linear-gradient(90deg, rgba(255,255,255,0.86), rgba(196,0,24,0.88), rgba(20,20,20,0.94));
+}
+
+.noir-slider input[type='range']::-webkit-slider-thumb {
+  box-shadow: 0 0 0 3px rgba(196,0,24,0.22), 0 0 12px rgba(196,0,24,0.42);
+}
+
+.noir-slider input[type='range']::-moz-range-thumb {
+  box-shadow: 0 0 0 3px rgba(196,0,24,0.22), 0 0 12px rgba(196,0,24,0.42);
+}
+
+@keyframes noirSceneIn {
+  0% { opacity: 0; filter: contrast(2.2) grayscale(1); transform: translateX(12px) scale(0.985); }
+  45% { opacity: 1; filter: contrast(1.9) grayscale(1); }
+  100% { opacity: 1; filter: contrast(1.08) grayscale(0.18); transform: translateX(0) scale(1); }
+}
+
+@keyframes noirCardReveal {
+  0% { clip-path: inset(0 100% 0 0); transform: translateX(-10px); }
+  55% { clip-path: inset(0 0 0 0); transform: translateX(2px); }
+  100% { clip-path: inset(0 0 0 0); transform: translateX(0); }
+}
+
+@keyframes noirWhiteWipe {
+  0% { transform: rotate(18deg) translateX(-180%); opacity: 0; }
+  18% { opacity: 1; }
+  100% { transform: rotate(18deg) translateX(470%); opacity: 0; }
+}
+
+@keyframes noirRedWipe {
+  0% { transform: rotate(18deg) translateX(-210%); opacity: 0; }
+  24% { opacity: 1; }
+  100% { transform: rotate(18deg) translateX(720%); opacity: 0; }
+}
+
+@keyframes noirInkFlash {
+  0% { opacity: 0; filter: contrast(2.5) grayscale(1); }
+  32% { opacity: 1; }
+  100% { opacity: 0; filter: contrast(1) grayscale(0); }
+}
+
+@keyframes noirGrainFlicker {
+  0% { opacity: 0.24; transform: translate(0, 0); }
+  33% { opacity: 0.14; transform: translate(-2px, 1px); }
+  66% { opacity: 0.20; transform: translate(2px, -1px); }
+  100% { opacity: 0.06; transform: translate(0, 0); }
+}
+
+@keyframes noirTabSweep {
+  0% { transform: translateX(-72%) rotate(10deg); }
+  100% { transform: translateX(72%) rotate(10deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .noir-panel-scene,
+  .noir-panel-card,
+  .noir-cut,
+  .noir-ink-flash,
+  .noir-grain,
+  .noir-panel-tabs button.active::before {
+    animation: none !important;
+  }
+}
