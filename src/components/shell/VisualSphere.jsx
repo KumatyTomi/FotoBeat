@@ -1,6 +1,6 @@
 export default function VisualSphere({ activeProfile = 'creator' }) {
   return (
-    <div className={`phantom-visual-sphere sphere-${activeProfile}`} aria-hidden="true">
+    <div className={`visual-sphere sphere-${activeProfile}`} aria-hidden="true">
       <div className="sphere-aura sphere-aura-cyan" />
       <div className="sphere-aura sphere-aura-violet" />
       <div className="sphere-core">
