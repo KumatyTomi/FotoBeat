@@ -11,7 +11,21 @@ export const DEFAULT_COLLAPSED = {
   bottomQueue: true
 };
 
+export const DEFAULT_VEIL_LAYER = {
+  enabled: true,
+  sourceUrl: '',
+  sourceType: 'video',
+  opacity: 0.32,
+  blur: 16,
+  saturation: 1.18,
+  speed: 1,
+  reactivity: 0.58,
+  sphereSync: true,
+  flowMode: true
+};
+
 const KNOWN_PROFILES = ['simple', 'creator', 'editor', 'debug'];
+const KNOWN_SOURCE_TYPES = ['video', 'image'];
 const legacyConfig = readLegacyGuiConfig();
 
 export const useGuiStore = create(
@@ -21,6 +35,10 @@ export const useGuiStore = create(
       collapsed: {
         ...DEFAULT_COLLAPSED,
         ...sanitizeCollapsed(legacyConfig.collapsed)
+      },
+      veilLayer: {
+        ...DEFAULT_VEIL_LAYER,
+        ...sanitizeVeilLayer(legacyConfig.veilLayer)
       },
       setActiveProfile: (profileId) => {
         const nextProfile = sanitizeProfileId(profileId);
@@ -45,9 +63,19 @@ export const useGuiStore = create(
           }
         }));
       },
+      setVeilLayer: (patch) => {
+        set((state) => ({
+          veilLayer: {
+            ...state.veilLayer,
+            ...sanitizeVeilLayer(patch)
+          }
+        }));
+      },
+      resetVeilLayer: () => set({ veilLayer: DEFAULT_VEIL_LAYER }),
       resetGuiLayout: () => set({
         activeProfile: DEFAULT_PROFILE,
-        collapsed: DEFAULT_COLLAPSED
+        collapsed: DEFAULT_COLLAPSED,
+        veilLayer: DEFAULT_VEIL_LAYER
       })
     }),
     {
@@ -55,9 +83,10 @@ export const useGuiStore = create(
       storage: createJSONStorage(() => getBrowserStorage()),
       partialize: (state) => ({
         activeProfile: state.activeProfile,
-        collapsed: state.collapsed
+        collapsed: state.collapsed,
+        veilLayer: state.veilLayer
       }),
-      version: 1
+      version: 2
     }
   )
 );
@@ -93,6 +122,31 @@ function sanitizeCollapsed(candidate) {
     }
     return result;
   }, {});
+}
+
+function sanitizeVeilLayer(candidate) {
+  if (!candidate || typeof candidate !== 'object') return {};
+
+  const next = {};
+
+  if (Object.hasOwn(candidate, 'enabled')) next.enabled = Boolean(candidate.enabled);
+  if (typeof candidate.sourceUrl === 'string') next.sourceUrl = candidate.sourceUrl.trim();
+  if (KNOWN_SOURCE_TYPES.includes(candidate.sourceType)) next.sourceType = candidate.sourceType;
+  if (Object.hasOwn(candidate, 'opacity')) next.opacity = clampNumber(candidate.opacity, 0, 0.86, DEFAULT_VEIL_LAYER.opacity);
+  if (Object.hasOwn(candidate, 'blur')) next.blur = clampNumber(candidate.blur, 0, 42, DEFAULT_VEIL_LAYER.blur);
+  if (Object.hasOwn(candidate, 'saturation')) next.saturation = clampNumber(candidate.saturation, 0.4, 2, DEFAULT_VEIL_LAYER.saturation);
+  if (Object.hasOwn(candidate, 'speed')) next.speed = clampNumber(candidate.speed, 0.25, 2, DEFAULT_VEIL_LAYER.speed);
+  if (Object.hasOwn(candidate, 'reactivity')) next.reactivity = clampNumber(candidate.reactivity, 0, 1, DEFAULT_VEIL_LAYER.reactivity);
+  if (Object.hasOwn(candidate, 'sphereSync')) next.sphereSync = Boolean(candidate.sphereSync);
+  if (Object.hasOwn(candidate, 'flowMode')) next.flowMode = Boolean(candidate.flowMode);
+
+  return next;
+}
+
+function clampNumber(value, min, max, fallback) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return fallback;
+  return Math.min(max, Math.max(min, numeric));
 }
 
 function readLegacyGuiConfig() {
