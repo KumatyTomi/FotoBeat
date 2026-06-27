@@ -1,0 +1,75 @@
+.center-workspace {
+  position: relative;
+  isolation: isolate;
+}
+
+.veil-layer {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  overflow: hidden;
+  border-radius: 28px;
+  pointer-events: none;
+  opacity: var(--veil-opacity, 0.32);
+  contain: layout paint;
+}
+
+.veil-layer-media,
+.veil-layer-fallback,
+.veil-layer-gradient,
+.veil-layer-noise {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.veil-layer-media {
+  object-fit: cover;
+  filter: blur(var(--veil-blur, 16px)) saturate(var(--veil-saturation, 1.18)) contrast(1.08);
+  transform: scale(1.08);
+}
+
+.veil-layer-fallback {
+  background:
+    radial-gradient(circle at 28% 22%, rgba(115, 247, 255, 0.38), transparent 32%),
+    radial-gradient(circle at 72% 18%, rgba(255, 79, 216, 0.30), transparent 34%),
+    radial-gradient(circle at 52% 78%, rgba(155, 92, 255, 0.24), transparent 44%),
+    linear-gradient(135deg, rgba(5, 7, 19, 0.2), rgba(3, 5, 18, 0.9));
+  animation: veilFallbackDrift 18s ease-in-out infinite;
+}
+
+.veil-layer-gradient {
+  background:
+    linear-gradient(180deg, rgba(5, 7, 19, 0.18), rgba(5, 7, 19, 0.78)),
+    radial-gradient(circle at 50% 44%, transparent 0 26%, rgba(5, 7, 19, 0.56) 76%);
+}
+
+.veil-layer-noise {
+  opacity: 0.11;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
+  background-size: 34px 34px;
+  mask-image: radial-gradient(circle at center, black, transparent 76%);
+}
+
+.veil-layer-simple { opacity: calc(var(--veil-opacity, 0.32) * 0.72); }
+.veil-layer-creator { opacity: var(--veil-opacity, 0.32); }
+.veil-layer-editor { opacity: calc(var(--veil-opacity, 0.32) * 0.86); }
+.veil-layer-debug { opacity: calc(var(--veil-opacity, 0.32) * 0.42); }
+
+.visual-sphere {
+  transform: translateZ(0) scale(calc(1 + (var(--veil-reactivity, 0.58) * 0.035)));
+}
+
+@keyframes veilFallbackDrift {
+  0%, 100% { transform: scale(1) translate3d(0, 0, 0); }
+  50% { transform: scale(1.08) translate3d(-2%, 1.5%, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .veil-layer-fallback {
+    animation: none !important;
+  }
+}
