@@ -27,30 +27,30 @@
 .veil-layer-media {
   object-fit: cover;
   filter: blur(var(--veil-blur, 16px)) saturate(var(--veil-saturation, 1.18)) contrast(1.08);
-  transform: scale(1.08);
+  transform: scale(calc(1.04 + (var(--phantom-motion-drift, 0.46) * 0.08)));
 }
 
 .veil-layer-fallback {
   background:
-    radial-gradient(circle at 28% 22%, rgba(115, 247, 255, 0.38), transparent 32%),
-    radial-gradient(circle at 72% 18%, rgba(255, 79, 216, 0.30), transparent 34%),
+    radial-gradient(circle at 28% 22%, rgba(115, 247, 255, calc(0.18 + (var(--phantom-grid-energy, 0.42) * 0.28))), transparent 32%),
+    radial-gradient(circle at 72% 18%, rgba(255, 79, 216, calc(0.14 + (var(--phantom-motion-pulse, 0.54) * 0.26))), transparent 34%),
     radial-gradient(circle at 52% 78%, rgba(155, 92, 255, 0.24), transparent 44%),
     linear-gradient(135deg, rgba(5, 7, 19, 0.2), rgba(3, 5, 18, 0.9));
-  animation: veilFallbackDrift 18s ease-in-out infinite;
+  animation: veilFallbackDrift calc(26s - (var(--phantom-motion-drift, 0.46) * 12s)) ease-in-out infinite;
 }
 
 .veil-layer-gradient {
   background:
-    linear-gradient(180deg, rgba(5, 7, 19, 0.18), rgba(5, 7, 19, 0.78)),
-    radial-gradient(circle at 50% 44%, transparent 0 26%, rgba(5, 7, 19, 0.56) 76%);
+    linear-gradient(180deg, rgba(5, 7, 19, 0.18), rgba(5, 7, 19, calc(0.42 + var(--phantom-focus-dim, 0.42)))),
+    radial-gradient(circle at 50% 44%, transparent 0 26%, rgba(5, 7, 19, calc(0.28 + var(--phantom-focus-dim, 0.42))) 76%);
 }
 
 .veil-layer-noise {
-  opacity: 0.11;
+  opacity: calc(0.04 + (var(--phantom-grid-energy, 0.42) * 0.16));
   background-image:
     linear-gradient(rgba(255,255,255,0.07) 1px, transparent 1px),
     linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
-  background-size: 34px 34px;
+  background-size: calc(44px - (var(--phantom-grid-energy, 0.42) * 18px)) calc(44px - (var(--phantom-grid-energy, 0.42) * 18px));
   mask-image: radial-gradient(circle at center, black, transparent 76%);
 }
 
@@ -59,79 +59,41 @@
 .veil-layer-editor { opacity: calc(var(--veil-opacity, 0.32) * 0.86); }
 .veil-layer-debug { opacity: calc(var(--veil-opacity, 0.32) * 0.42); }
 
-.visual-sphere {
-  transform: translateZ(0) scale(calc(1 + (var(--veil-reactivity, 0.58) * 0.035)));
+.shell-topbar.cockpit-topbar,
+.collapsible-panel,
+.hero-panel,
+.project-panel,
+.render-preview-panel,
+.render-export-panel,
+.workspace-grid,
+.audio-panel,
+.media-panel,
+.control-panel,
+.timeline-panel,
+.roadmap-panel {
+  background:
+    linear-gradient(135deg, rgba(255,255,255,calc(0.04 + (var(--phantom-glass-opacity, 0.68) * 0.08))), rgba(255,255,255,0.025) 32%, rgba(7, 9, 24, calc(0.48 + (var(--phantom-glass-opacity, 0.68) * 0.34)))),
+    rgba(10, 15, 34, calc(0.46 + (var(--phantom-glass-opacity, 0.68) * 0.42))) !important;
 }
 
-.veil-control-panel {
-  display: grid;
-  gap: 12px;
-  padding: 4px 2px 2px;
+.center-workspace,
+.cosmic-workspace-content {
+  gap: calc(18px - (var(--phantom-ui-density, 0.52) * 6px));
 }
 
-.veil-url-field {
-  display: grid;
-  gap: 7px;
-}
-
-.veil-url-field span {
-  color: rgba(236,248,255,0.64);
-  font-size: 11px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.veil-url-field input {
-  width: 100%;
-  min-height: 38px;
-  border: 1px solid rgba(115,247,255,0.16);
-  border-radius: 12px;
-  color: rgba(236,248,255,0.92);
-  background: rgba(255,255,255,0.055);
-  padding: 0 11px;
-  outline: none;
-}
-
-.veil-url-field input:focus {
-  border-color: rgba(115,247,255,0.42);
-  box-shadow: 0 0 0 3px rgba(115,247,255,0.08);
-}
-
-.veil-toggle-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 7px;
-}
-
-.veil-toggle-grid button,
-.veil-reset-button {
-  min-height: 34px;
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 11px;
-  color: rgba(236,248,255,0.78);
-  background: rgba(255,255,255,0.045);
-  cursor: pointer;
-}
-
-.veil-toggle-grid button.active {
-  color: #061018;
-  background: linear-gradient(135deg, rgba(255,255,255,0.94), rgba(115,247,255,0.82));
-  box-shadow: 0 0 22px rgba(115,247,255,0.18);
-}
-
-.veil-reset-button:hover,
-.veil-toggle-grid button:hover {
-  border-color: rgba(115,247,255,0.38);
-}
-
-.veil-live-slider input[type='range'] {
-  pointer-events: auto;
-  cursor: pointer;
+.hero-panel,
+.render-preview-panel,
+.media-panel,
+.render-export-panel,
+.project-panel,
+.audio-panel,
+.timeline-panel {
+  padding: calc(24px - (var(--phantom-ui-density, 0.52) * 6px)) !important;
 }
 
 @keyframes veilFallbackDrift {
   0%, 100% { transform: scale(1) translate3d(0, 0, 0); }
-  50% { transform: scale(1.08) translate3d(-2%, 1.5%, 0); }
+  50% { transform: scale(calc(1.02 + (var(--phantom-motion-drift, 0.46) * 0.10))) translate3d(calc(var(--phantom-motion-drift, 0.46) * -3%), calc(var(--phantom-motion-drift, 0.46) * 2%), 0); }
 }
 
 @media (prefers-reduced-motion: reduce) {
