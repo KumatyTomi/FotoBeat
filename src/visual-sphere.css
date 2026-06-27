@@ -11,9 +11,9 @@
   aspect-ratio: 1;
   z-index: -1;
   pointer-events: none;
-  opacity: 0.92;
-  filter: saturate(122%);
-  transform: translateZ(0);
+  opacity: calc(0.44 + (var(--phantom-sphere-glow, 0.72) * 0.52));
+  filter: saturate(calc(100% + (var(--phantom-sphere-glow, 0.72) * 36%)));
+  transform: translateZ(0) scale(calc(var(--phantom-sphere-scale, 1) + (var(--veil-reactivity, 0.58) * 0.03)));
   contain: layout paint;
 }
 
@@ -24,8 +24,8 @@
 
 .sphere-aura {
   inset: 0;
-  filter: blur(34px);
-  opacity: 0.52;
+  filter: blur(calc(22px + (var(--phantom-sphere-glow, 0.72) * 24px)));
+  opacity: calc(0.22 + (var(--phantom-sphere-glow, 0.72) * 0.48));
 }
 
 .sphere-aura-cyan {
@@ -48,11 +48,11 @@
     linear-gradient(135deg, rgba(255,255,255,0.16), rgba(10,18,46,0.74) 44%, rgba(3,5,18,0.95));
   border: 1px solid rgba(195, 249, 255, 0.38);
   box-shadow:
-    inset 0 0 38px rgba(255,255,255,0.18),
+    inset 0 0 calc(24px + (var(--phantom-sphere-glow, 0.72) * 28px)) rgba(255,255,255,0.18),
     inset -18px -24px 44px rgba(0,0,0,0.36),
-    0 0 44px rgba(115,247,255,0.22),
-    0 0 90px rgba(255,79,216,0.12);
-  animation: spherePulse 6.8s ease-in-out infinite;
+    0 0 calc(18px + (var(--phantom-sphere-glow, 0.72) * 64px)) rgba(115,247,255,0.22),
+    0 0 calc(40px + (var(--phantom-sphere-glow, 0.72) * 90px)) rgba(255,79,216,0.12);
+  animation: spherePulse calc(9s - (var(--phantom-motion-pulse, 0.54) * 4s)) ease-in-out infinite;
 }
 
 .sphere-glass {
@@ -66,7 +66,7 @@
 
 .sphere-grid {
   inset: 6%;
-  opacity: 0.26;
+  opacity: calc(0.10 + (var(--phantom-grid-energy, 0.42) * 0.34));
   mask-image: radial-gradient(circle, black 0 58%, transparent 72%);
 }
 
@@ -103,18 +103,20 @@
 
 .sphere-ring {
   inset: 15%;
+  opacity: calc(0.18 + (var(--phantom-sphere-orbit, 0.64) * 0.62));
   border: 1px solid rgba(115,247,255,0.30);
   box-shadow: 0 0 20px rgba(115,247,255,0.12);
   transform: rotateX(64deg) rotateZ(-18deg);
 }
 
-.sphere-ring-one { animation: sphereOrbitA 16s linear infinite; }
-.sphere-ring-two { inset: 10%; border-color: rgba(255,79,216,0.26); transform: rotateX(72deg) rotateZ(44deg); animation: sphereOrbitB 19s linear infinite reverse; }
-.sphere-ring-three { inset: 22%; border-color: rgba(255,189,89,0.18); transform: rotateX(54deg) rotateZ(108deg); animation: sphereOrbitC 22s linear infinite; }
+.sphere-ring-one { animation: sphereOrbitA calc(26s - (var(--phantom-sphere-orbit, 0.64) * 14s)) linear infinite; }
+.sphere-ring-two { inset: 10%; border-color: rgba(255,79,216,0.26); transform: rotateX(72deg) rotateZ(44deg); animation: sphereOrbitB calc(30s - (var(--phantom-sphere-orbit, 0.64) * 16s)) linear infinite reverse; }
+.sphere-ring-three { inset: 22%; border-color: rgba(255,189,89,0.18); transform: rotateX(54deg) rotateZ(108deg); animation: sphereOrbitC calc(34s - (var(--phantom-sphere-orbit, 0.64) * 18s)) linear infinite; }
 
 .sphere-particle {
   width: 7px;
   height: 7px;
+  opacity: var(--phantom-sphere-particles, 0.72);
   background: #fff;
   box-shadow: 0 0 14px rgba(115,247,255,0.9);
 }
@@ -124,16 +126,16 @@
 .particle-three { left: 42%; bottom: 8%; animation: sphereFloat 9s ease-in-out infinite 1.4s; }
 .particle-four { right: 28%; bottom: 22%; animation: sphereFloat 7.6s ease-in-out infinite 2.1s; }
 
-.sphere-simple { opacity: 0.62; }
-.sphere-creator { opacity: 0.96; }
-.sphere-editor { filter: saturate(130%) hue-rotate(12deg); }
-.sphere-debug { opacity: 0.48; filter: saturate(80%); }
+.sphere-simple { opacity: calc((0.44 + (var(--phantom-sphere-glow, 0.72) * 0.52)) * 0.72); }
+.sphere-creator { opacity: calc(0.44 + (var(--phantom-sphere-glow, 0.72) * 0.52)); }
+.sphere-editor { filter: saturate(calc(112% + (var(--phantom-sphere-glow, 0.72) * 38%))) hue-rotate(12deg); }
+.sphere-debug { opacity: calc((0.44 + (var(--phantom-sphere-glow, 0.72) * 0.52)) * 0.55); filter: saturate(80%); }
 
-@keyframes spherePulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.025); } }
+@keyframes spherePulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(calc(1.01 + (var(--phantom-motion-pulse, 0.54) * 0.035))); } }
 @keyframes sphereOrbitA { to { transform: rotateX(64deg) rotateZ(342deg); } }
 @keyframes sphereOrbitB { to { transform: rotateX(72deg) rotateZ(404deg); } }
 @keyframes sphereOrbitC { to { transform: rotateX(54deg) rotateZ(468deg); } }
-@keyframes sphereFloat { 0%, 100% { transform: translate3d(0, 0, 0) scale(1); opacity: 0.42; } 50% { transform: translate3d(10px, -16px, 0) scale(1.35); opacity: 0.95; } }
+@keyframes sphereFloat { 0%, 100% { transform: translate3d(0, 0, 0) scale(1); opacity: calc(var(--phantom-sphere-particles, 0.72) * 0.42); } 50% { transform: translate3d(10px, -16px, 0) scale(1.35); opacity: var(--phantom-sphere-particles, 0.72); } }
 
 @media (max-width: 1180px) {
   .visual-sphere {
