@@ -1,4 +1,5 @@
 import ModePanel from './ModePanel.jsx';
+import VeilLayer from './VeilLayer.jsx';
 import VisualSphere from './VisualSphere.jsx';
 import { PROFILE_DEFINITIONS } from '../../hooks/useProfile.js';
 
@@ -7,6 +8,7 @@ export default function CenterWorkspace({ activeProfile, children }) {
 
   return (
     <main className={`center-workspace profile-${activeProfile} scene-${profile.scene}`}>
+      <VeilLayer activeProfile={activeProfile} />
       <VisualSphere activeProfile={activeProfile} />
       <div className="center-workspace-header cosmic-workspace-header">
         <span>Interaktywny panel</span>
