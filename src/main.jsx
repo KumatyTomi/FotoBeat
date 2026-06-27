@@ -13,6 +13,7 @@ import './premium-cockpit.css';
 import './pragmatic-side-sliders.css';
 import './cosmic-panels.css';
 import './visual-sphere.css';
+import './veil-layer.css';
 
 createRoot(document.getElementById('root')).render(
   <React.StrictMode>
