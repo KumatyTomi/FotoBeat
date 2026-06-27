@@ -63,6 +63,72 @@
   transform: translateZ(0) scale(calc(1 + (var(--veil-reactivity, 0.58) * 0.035)));
 }
 
+.veil-control-panel {
+  display: grid;
+  gap: 12px;
+  padding: 4px 2px 2px;
+}
+
+.veil-url-field {
+  display: grid;
+  gap: 7px;
+}
+
+.veil-url-field span {
+  color: rgba(236,248,255,0.64);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.veil-url-field input {
+  width: 100%;
+  min-height: 38px;
+  border: 1px solid rgba(115,247,255,0.16);
+  border-radius: 12px;
+  color: rgba(236,248,255,0.92);
+  background: rgba(255,255,255,0.055);
+  padding: 0 11px;
+  outline: none;
+}
+
+.veil-url-field input:focus {
+  border-color: rgba(115,247,255,0.42);
+  box-shadow: 0 0 0 3px rgba(115,247,255,0.08);
+}
+
+.veil-toggle-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.veil-toggle-grid button,
+.veil-reset-button {
+  min-height: 34px;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 11px;
+  color: rgba(236,248,255,0.78);
+  background: rgba(255,255,255,0.045);
+  cursor: pointer;
+}
+
+.veil-toggle-grid button.active {
+  color: #061018;
+  background: linear-gradient(135deg, rgba(255,255,255,0.94), rgba(115,247,255,0.82));
+  box-shadow: 0 0 22px rgba(115,247,255,0.18);
+}
+
+.veil-reset-button:hover,
+.veil-toggle-grid button:hover {
+  border-color: rgba(115,247,255,0.38);
+}
+
+.veil-live-slider input[type='range'] {
+  pointer-events: auto;
+  cursor: pointer;
+}
+
 @keyframes veilFallbackDrift {
   0%, 100% { transform: scale(1) translate3d(0, 0, 0); }
   50% { transform: scale(1.08) translate3d(-2%, 1.5%, 0); }
