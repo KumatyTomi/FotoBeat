@@ -12,6 +12,7 @@ import './vajra-override.css';
 import './premium-cockpit.css';
 import './pragmatic-side-sliders.css';
 import './cosmic-panels.css';
+import './visual-sphere.css';
 
 createRoot(document.getElementById('root')).render(
   <React.StrictMode>
