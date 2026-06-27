@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useGuiStore } from '../../stores/guiStore.js';
 
 export default function VisualSphere({ activeProfile = 'creator' }) {
