@@ -1,10 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { renderFrameAtTime } from '../utils/canvasRenderer.js';
 import { clearFrameSequences, deleteFrameSequence, loadFrameSequences, pruneFrameSequences, saveFrameSequence } from '../utils/frameSequenceStorage.js';
+import { FRAME_SEQUENCE_LIMITS, normalizeFrameSequenceSettings } from '../utils/frameSequenceSettings.js';
 import { safeFilename } from '../utils/projectExport.js';
 
-const MAX_SEQUENCE_SECONDS = 5;
-const MAX_SEQUENCE_FPS = 12;
 const MAX_SEQUENCE_HISTORY = 6;
 
 export function useFrameSequenceRenderer({
@@ -57,7 +56,7 @@ export function useFrameSequenceRenderer({
     };
   }, []);
 
-  async function renderSequence({ seconds = MAX_SEQUENCE_SECONDS, fps = MAX_SEQUENCE_FPS } = {}) {
+  async function renderSequence(settings = {}) {
     const canvas = canvasRef.current;
 
     if (!canvas) {
@@ -65,9 +64,8 @@ export function useFrameSequenceRenderer({
       return;
     }
 
-    const safeSeconds = Math.min(Math.max(Number(seconds) || MAX_SEQUENCE_SECONDS, 1), MAX_SEQUENCE_SECONDS);
-    const safeFps = Math.min(Math.max(Number(fps) || MAX_SEQUENCE_FPS, 1), MAX_SEQUENCE_FPS);
-    const frameCount = Math.max(1, Math.ceil(safeSeconds * safeFps));
+    const renderSettings = normalizeFrameSequenceSettings(settings);
+    const { seconds, fps, frameCount } = renderSettings;
     const sequenceId = `sequence-${Date.now()}`;
     const frames = [];
     let totalSize = 0;
@@ -75,7 +73,9 @@ export function useFrameSequenceRenderer({
     cancelRef.current = false;
     setSequenceState({
       status: 'rendering',
-      message: `Renderuję ${frameCount} klatek PNG (${safeSeconds}s @ ${safeFps} fps)...`,
+      message: renderSettings.clamped
+        ? renderSettings.message
+        : `Renderuję ${frameCount} klatek PNG (${seconds}s @ ${fps} fps)...`,
       progress: 0,
       activeSequenceId: sequenceId
     });
@@ -87,7 +87,7 @@ export function useFrameSequenceRenderer({
           return;
         }
 
-        const time = Number((index / safeFps).toFixed(3));
+        const time = Number((index / fps).toFixed(3));
         const frameMeta = renderFrameAtTime(canvas, {
           time,
           timeline,
@@ -126,11 +126,12 @@ export function useFrameSequenceRenderer({
         format: selectedFormat.id,
         width: selectedFormat.width,
         height: selectedFormat.height,
-        fps: safeFps,
-        seconds: safeSeconds,
+        fps,
+        seconds,
         frameCount,
         totalSize,
         status: 'ready',
+        renderPresetId: settings.presetId ?? '',
         frames
       };
 
@@ -176,8 +177,9 @@ export function useFrameSequenceRenderer({
     removeSequence,
     clearSequences,
     limits: {
-      maxSeconds: MAX_SEQUENCE_SECONDS,
-      maxFps: MAX_SEQUENCE_FPS
+      maxSeconds: FRAME_SEQUENCE_LIMITS.maxSeconds,
+      maxFps: FRAME_SEQUENCE_LIMITS.maxFps,
+      maxFrameCount: FRAME_SEQUENCE_LIMITS.maxFrameCount
     }
   };
 }

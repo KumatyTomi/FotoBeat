@@ -19,6 +19,7 @@ import { useProjectState } from './hooks/useProjectState.js';
 import { useRenderJobs } from './hooks/useRenderJobs.js';
 import { describeAudioAnalysis } from './utils/audioAnalysis.js';
 import { getPinnedLabel, scoreMediaAsset } from './utils/mediaScoring.js';
+import { DEFAULT_FRAME_SEQUENCE_PRESET_ID, FRAME_SEQUENCE_PRESETS, describeFrameSequenceSettings, getFrameSequencePreset } from './utils/frameSequenceSettings.js';
 import { buildMp4ExportPlan, explainMp4ExportPlan } from './utils/mp4ExportPlan.js';
 import { buildProjectExportPayload, parseProjectFile, remapImportedMedia, safeFilename } from './utils/projectExport.js';
 import { buildDraftTimeline } from './utils/timeline.js';
@@ -27,6 +28,7 @@ export default function App() {
   const [images, setImages] = useState([]);
   const [audio, setAudio] = useState(null);
   const [mp4Plan, setMp4Plan] = useState(null);
+  const [frameSequencePresetId, setFrameSequencePresetId] = useState(DEFAULT_FRAME_SEQUENCE_PRESET_ID);
 
   const {
     project,
@@ -112,6 +114,8 @@ export default function App() {
   });
 
   const frameZip = useFrameSequenceZipExporter();
+  const selectedFrameSequencePreset = getFrameSequencePreset(frameSequencePresetId);
+  const selectedFrameSequenceSummary = describeFrameSequenceSettings(selectedFrameSequencePreset);
 
   function addSnapshot() {
     addProjectSnapshot({
@@ -181,6 +185,14 @@ export default function App() {
       preset,
       timelineDuration: timeline.estimatedDuration,
       sequenceId: sequence.id
+    });
+  }
+
+  async function renderSelectedFrameSequence() {
+    await frameSequence.renderSequence({
+      presetId: selectedFrameSequencePreset.id,
+      seconds: selectedFrameSequencePreset.seconds,
+      fps: selectedFrameSequencePreset.fps
     });
   }
 
@@ -317,11 +329,26 @@ export default function App() {
         <div>
           <p className="panel-kicker">Frame sequence</p>
           <h2>Lokalna sekwencja PNG pod MP4</h2>
-          <p>Render do IndexedDB: maksymalnie {frameSequence.limits.maxSeconds}s @ {frameSequence.limits.maxFps} fps. ZIP używa nazw `frames/frame_0001.png` gotowych pod lokalny FFmpeg.</p>
+          <p>Render do IndexedDB: maksymalnie {frameSequence.limits.maxSeconds}s @ {frameSequence.limits.maxFps} fps i {frameSequence.limits.maxFrameCount} klatek. ZIP używa nazw `frames/frame_0001.png` gotowych pod lokalny FFmpeg.</p>
+          <div className="sequence-preset-row" role="group" aria-label="Preset sekwencji PNG">
+            {FRAME_SEQUENCE_PRESETS.map((preset) => (
+              <button
+                key={preset.id}
+                type="button"
+                className={frameSequencePresetId === preset.id ? 'sequence-preset-button active' : 'sequence-preset-button'}
+                onClick={() => setFrameSequencePresetId(preset.id)}
+                disabled={frameSequence.sequenceState.status === 'rendering'}
+              >
+                <strong>{preset.label}</strong>
+                <span>{preset.description}</span>
+              </button>
+            ))}
+          </div>
+          <p className="sequence-preset-summary">Wybrano: {selectedFrameSequenceSummary}</p>
         </div>
         <div className="render-export-actions">
-          <button className="primary-button compact" onClick={() => frameSequence.renderSequence()} disabled={frameSequence.sequenceState.status === 'rendering'}>
-            <Film size={16} />Renderuj klatki PNG
+          <button className="primary-button compact" onClick={renderSelectedFrameSequence} disabled={frameSequence.sequenceState.status === 'rendering'}>
+            <Film size={16} />Renderuj preset
           </button>
           {frameSequence.sequenceState.status === 'rendering' && (
             <button className="ghost-button compact" onClick={frameSequence.cancelSequenceRender}>Przerwij</button>

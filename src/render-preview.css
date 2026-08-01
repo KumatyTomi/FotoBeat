@@ -125,6 +125,52 @@
   border: 1px solid rgba(255, 90, 120, 0.24);
 }
 
+.sequence-preset-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(130px, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.sequence-preset-button {
+  min-height: 72px;
+  display: grid;
+  align-content: center;
+  gap: 4px;
+  padding: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
+  color: #fff;
+  text-align: left;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.sequence-preset-button.active {
+  border-color: rgba(139, 233, 255, 0.9);
+  box-shadow: 0 0 0 3px rgba(139, 233, 255, 0.09);
+}
+
+.sequence-preset-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.sequence-preset-button strong,
+.sequence-preset-button span {
+  overflow-wrap: anywhere;
+}
+
+.sequence-preset-button span,
+.sequence-preset-summary {
+  color: rgba(245, 247, 251, 0.62);
+  font-size: 13px;
+}
+
+.sequence-preset-summary {
+  margin: 10px 0 0;
+}
+
 .sequence-progress {
   grid-column: 1 / -1;
   height: 10px;
@@ -389,6 +435,10 @@
   .waveform-panel,
   .render-export-panel,
   .render-history-item {
+    grid-template-columns: 1fr;
+  }
+
+  .sequence-preset-row {
     grid-template-columns: 1fr;
   }
 }
