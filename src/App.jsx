@@ -219,7 +219,7 @@ export default function App() {
     };
 
     if (sequence) {
-      await desktop.createLocalRenderJobFromSequence(payload, sequence);
+      await desktop.createLocalRenderJobFromSequence(payload, sequence, audio);
       return;
     }
 

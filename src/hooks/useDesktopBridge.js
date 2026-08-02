@@ -1,4 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
+import {
+  createDesktopAudioFilePayload,
+  getSelectedDesktopAudioFile,
+  validateDesktopAudioPayload
+} from '../utils/desktopAudioPayload.js';
 import { getResolvedMp4Profile } from '../utils/mp4ProfileSelection.js';
 
 const INITIAL_STATUS = {
@@ -15,19 +20,9 @@ const DESKTOP_SEQUENCE_LIMITS = {
   maxTotalBytes: 512 * 1024 * 1024
 };
 
-const DESKTOP_AUDIO_LIMITS = {
-  maxBytes: 60 * 1024 * 1024
-};
-
 function getDesktopApi() {
   if (typeof window === 'undefined') return null;
   return window.fotobeatDesktop ?? null;
-}
-
-function getSelectedDesktopAudioFile() {
-  if (typeof window === 'undefined') return null;
-  const candidate = window.__fotobeatDesktopAudioFile;
-  return candidate && typeof candidate.arrayBuffer === 'function' ? candidate : null;
 }
 
 export function useDesktopBridge() {
@@ -256,7 +251,7 @@ export function useDesktopBridge() {
     return job;
   }
 
-  async function createLocalRenderJobFromSequence(payload, sequence, audioFile = null) {
+  async function createLocalRenderJobFromSequence(payload, sequence, audioFile = undefined) {
     if (!sequence?.frames?.length) {
       return createLocalRenderJob(payload);
     }
@@ -267,7 +262,7 @@ export function useDesktopBridge() {
       return null;
     }
 
-    const selectedAudioFile = audioFile ?? getSelectedDesktopAudioFile();
+    const selectedAudioFile = audioFile === undefined ? getSelectedDesktopAudioFile() : audioFile;
 
     const frameCheck = validateSequencePayload(sequence);
     if (!frameCheck.ok) {
@@ -275,13 +270,19 @@ export function useDesktopBridge() {
       return null;
     }
 
-    const audioCheck = validateAudioPayload(selectedAudioFile);
+    const audioCheck = validateDesktopAudioPayload(selectedAudioFile);
     if (!audioCheck.ok) {
       setStatus({ type: 'error', message: audioCheck.message });
       return null;
     }
 
-    const audioFilePayload = await createAudioFilePayload(selectedAudioFile);
+    let audioFilePayload = null;
+    try {
+      audioFilePayload = await createDesktopAudioFilePayload(selectedAudioFile);
+    } catch (error) {
+      setStatus({ type: 'error', message: error.message || 'Nie udało się przygotować audio do desktop renderu.' });
+      return null;
+    }
 
     if (typeof api.appendLocalRenderJobFrames !== 'function') {
       setStatus({ type: 'info', message: `Przygotowuję ${sequence.frames.length} klatek PNG${selectedAudioFile ? ' i audio' : ''} do desktop workspace...` });
@@ -468,35 +469,6 @@ async function createFramePayload(frame) {
     size: frame.size,
     arrayBuffer: await frame.blob.arrayBuffer()
   };
-}
-
-async function createAudioFilePayload(audioFile) {
-  if (!audioFile) return null;
-
-  return {
-    name: audioFile.name,
-    fileName: audioFile.name,
-    size: audioFile.size,
-    type: audioFile.type,
-    arrayBuffer: await audioFile.arrayBuffer()
-  };
-}
-
-function validateAudioPayload(audioFile) {
-  if (!audioFile) return { ok: true };
-
-  if (typeof audioFile.arrayBuffer !== 'function') {
-    return { ok: false, message: 'Plik audio nie ma poprawnego binary payload.' };
-  }
-
-  if ((Number(audioFile.size) || 0) > DESKTOP_AUDIO_LIMITS.maxBytes) {
-    return {
-      ok: false,
-      message: `Audio ma ${formatBytes(audioFile.size)}. Limit desktop IPC to ${formatBytes(DESKTOP_AUDIO_LIMITS.maxBytes)}.`
-    };
-  }
-
-  return { ok: true };
 }
 
 function formatBytes(bytes) {

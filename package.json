@@ -60,9 +60,9 @@
     "*.{js,jsx,ts,tsx,json,css,md}": [
       "prettier --write"
     ],
-    "*.{js,jsx,ts,tsx}": [
+    "*.{js,jsx,cjs,mjs,ts,tsx}": [
       "eslint --fix",
-      "jest --bail --findRelatedTests"
+      "jest --bail --findRelatedTests --passWithNoTests"
     ]
   }
 }
