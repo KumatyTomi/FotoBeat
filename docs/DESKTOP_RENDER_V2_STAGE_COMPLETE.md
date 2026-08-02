@@ -51,9 +51,11 @@ retryLocalRenderJob(jobId)
 - Missing imported audio is treated as a hard validation error.
 - Metadata-only audio is treated as a warning and renders video-only.
 
-## Known limitation
+## Desktop Render v2.1 frontend status
 
-The React UI can pass binary audio only after the browser-side caller includes `audioFile` in the desktop payload. The desktop backend, IPC and render plan are ready for it; the next frontend polish pass should wire the selected `File` into the desktop render payload with an IPC size guard similar to frame limits.
+- The React sequence render action now passes the selected audio `File` into the desktop payload explicitly.
+- Browser-side audio IPC validation rejects invalid, empty and oversized files before reading bytes.
+- The desktop payload keeps the 60 MB audio IPC guard and stores only a normalized binary handoff for Electron.
 
 ## Current backend flow
 
@@ -76,11 +78,9 @@ Desktop Render v2.1 — browser audio payload, persisted retry and fixture tests
 
 Suggested order:
 
-1. Add browser-side selected audio `File` handoff to desktop payload.
-2. Add audio IPC size limit and user-facing validation message.
-3. Add persisted retry by rehydrating jobs from `render-job.json` and workspace files.
-4. Add a fixture smoke test for native FFmpeg with generated frames and short audio.
-5. Add cancel/retry buttons to persistent history entries once persisted retry exists.
+1. Add persisted retry by rehydrating jobs from `render-job.json` and workspace files.
+2. Add a fixture smoke test for native FFmpeg with generated frames and short audio.
+3. Add cancel/retry buttons to persistent history entries once persisted retry exists.
 
 ## Stage close marker
 
