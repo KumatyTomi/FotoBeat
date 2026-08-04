@@ -7,6 +7,7 @@ Windows installer is built by GitHub Actions workflow:
 - `.github/workflows/windows-installer.yml`
 - runner: `windows-latest`
 - output artifact: `FotoBeat-Windows-Installer`
+- tag release: pushing a `v*` tag also creates or updates a GitHub Release with the `.exe`, `.yml` and `.blockmap` assets.
 
 ## Build path
 
@@ -27,3 +28,10 @@ npm run dist
 ```
 
 The generated Windows installer lands in `desktop/release/`.
+
+## GitHub Release flow
+
+1. Update root and desktop package versions in the same release commit.
+2. Push a tag such as `v0.1.0`.
+3. The Windows Installer workflow builds the NSIS installer.
+4. The workflow uploads the installer as an Actions artifact and publishes the same files to the matching GitHub Release.

@@ -3,9 +3,13 @@ name: Windows Installer
 on:
   push:
     branches: [main]
+    tags: ['v*']
   pull_request:
     branches: [main]
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build-windows-installer:
@@ -47,3 +51,22 @@ jobs:
             desktop/release/*.yml
             desktop/release/*.blockmap
           if-no-files-found: error
+
+      - name: Publish GitHub Release artifacts
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $assets = Get-ChildItem -Path desktop/release -File | Where-Object { $_.Extension -in '.exe', '.yml', '.blockmap' }
+          if (-not $assets) {
+            throw "No Windows installer assets found in desktop/release."
+          }
+
+          $tag = "${{ github.ref_name }}"
+          gh release view $tag *> $null
+          if ($LASTEXITCODE -eq 0) {
+            gh release upload $tag @($assets.FullName) --clobber
+          } else {
+            gh release create $tag @($assets.FullName) --title "FotoBeat $tag" --notes "Automated Windows installer release." --latest
+          }
