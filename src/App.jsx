@@ -24,6 +24,7 @@ import { buildExportHubPlan, describeExportHubAction } from './utils/exportHub.j
 import { buildMp4ExportPlan, explainMp4ExportPlan } from './utils/mp4ExportPlan.js';
 import { buildMediaQualityReport } from './utils/mediaQuality.js';
 import { buildImportedMediaReport, buildProjectExportPayload, parseProjectFile, remapImportedMedia, safeFilename } from './utils/projectExport.js';
+import { clipDurationScaleFromIntensity, describeEditIntensity, getEditIntensityLabel, intensityFromClipDurationScale, normalizeEditIntensity } from './utils/editIntensity.js';
 import { DEFAULT_RENDER_VARIANT_ID, RENDER_VARIANTS, getRenderVariant } from './utils/renderVariants.js';
 import { buildDraftTimeline } from './utils/timeline.js';
 
@@ -52,6 +53,8 @@ export default function App() {
   const selectedPreset = EFFECT_PRESETS.find((item) => item.id === preset) ?? EFFECT_PRESETS[0];
   const selectedRenderVariant = getRenderVariant(projectRenderVariant);
   const renderVariant = selectedRenderVariant.id;
+  const editIntensity = normalizeEditIntensity(project.editIntensity ?? intensityFromClipDurationScale(clipDurationScale));
+  const editIntensityLabel = getEditIntensityLabel(editIntensity);
 
   const media = useMediaAssets(images, selectedFormat);
   const audioAnalysis = useAudioAnalysis(audio);
@@ -144,6 +147,7 @@ export default function App() {
       estimatedDuration: timeline.estimatedDuration,
       selectedMediaCount: media.selectedMediaAssets.length,
       pinnedClipCount: Object.keys(media.pinnedAssetsByClip).length,
+      editIntensity,
       clipDurationScale
     });
   }
@@ -346,7 +350,7 @@ export default function App() {
       <section id="preview" className="render-preview-panel">
         <div className="section-heading project-heading">
           <div><p className="panel-kicker">Canvas preview</p><h2>Lokalny podgląd kadrów, timeline i beatów</h2><p>Canvas używa wybranych zdjęć, formatu eksportu, presetu, energii klipu i czasu odtwarzania — wszystko bez wysyłania plików na serwer.</p></div>
-          <div className="preview-hud"><span>{selectedFormat.width}×{selectedFormat.height}</span><span>{previewPlayback.time}s</span><span>Klip {previewPlayback.clipIndex}/{timeline.clips.length}</span><span>{media.selectedMediaAssets.length} kadrów</span><span>{selectedRenderVariant.label}</span><span>Tempo ×{clipDurationScale}</span></div>
+          <div className="preview-hud"><span>{selectedFormat.width}×{selectedFormat.height}</span><span>{previewPlayback.time}s</span><span>Klip {previewPlayback.clipIndex}/{timeline.clips.length}</span><span>{media.selectedMediaAssets.length} kadrów</span><span>{selectedRenderVariant.label}</span><span>{editIntensityLabel}</span></div>
         </div>
         <div className={`canvas-shell canvas-${selectedFormat.id}`}><canvas ref={previewRef} width={selectedFormat.width} height={selectedFormat.height} aria-label="Animowany podgląd renderu FotoBeat" /></div>
         <div className="frame-export-actions">
@@ -563,8 +567,21 @@ export default function App() {
           <p className="panel-kicker">Waveform + beat grid</p>
           <h2>Lokalna analiza utworu i korekta tempa klipów</h2>
           <p>{audioAnalysis ? describeAudioAnalysis(audioAnalysis) : 'Wrzuć audio, aby lokalnie wygenerować waveform, beat mapę i szacunkowe BPM.'}</p>
-          <label className="range-control">Korekta długości klipów: ×{clipDurationScale}
-            <input type="range" min="0.5" max="2" step="0.05" value={clipDurationScale} onChange={(event) => patchProject({ clipDurationScale: Number(event.target.value) })} />
+          <label className="range-control">Intensywność montażu: {describeEditIntensity(editIntensity)}
+            <input
+              type="range"
+              min="0"
+              max="100"
+              step="1"
+              value={editIntensity}
+              onChange={(event) => {
+                const nextIntensity = normalizeEditIntensity(event.target.value);
+                patchProject({
+                  editIntensity: nextIntensity,
+                  clipDurationScale: clipDurationScaleFromIntensity(nextIntensity)
+                });
+              }}
+            />
           </label>
         </div>
         <div className="audio-stats"><span>BPM: {audioAnalysis?.bpm ?? '—'}</span><span>Energia: {audioAnalysis ? `${Math.round(audioAnalysis.energy * 100)}%` : '—'}</span><span>Beatów: {audioAnalysis?.beats?.length ?? 0}</span></div>
