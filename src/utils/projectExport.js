@@ -48,6 +48,7 @@ export function buildProjectExportPayload({
         width: asset.width,
         height: asset.height,
         orientation: asset.orientation,
+        sharpness: asset.sharpness ?? null,
         status: asset.status,
         score: scoreMediaAsset(asset, selectedFormat)
       })),

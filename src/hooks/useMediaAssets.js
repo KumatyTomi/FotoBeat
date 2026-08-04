@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { estimateImageSharpness } from '../utils/imageSharpness.js';
 import { buildMediaDescriptors, didObjectShapeChange, getNewAssetIds, mergeSelectedAssetIds, prunePinnedAssetsByClip } from '../utils/mediaAssetState.js';
 import { getOrientation, scoreMediaAsset } from '../utils/mediaScoring.js';
 
@@ -67,6 +68,7 @@ export function useMediaAssets(images, selectedFormat) {
           width: 0,
           height: 0,
           orientation: 'unknown',
+          sharpness: { score: null, label: 'unknown' },
           image: null
         };
       });
@@ -90,6 +92,8 @@ export function useMediaAssets(images, selectedFormat) {
         const image = new Image();
 
         image.onload = () => {
+          const sharpness = estimateImageSharpness(image);
+
           loadingAssetIdsRef.current.delete(asset.id);
           setMediaAssets((current) => current.map((item) => (
             item.id === asset.id
@@ -99,6 +103,7 @@ export function useMediaAssets(images, selectedFormat) {
                 width: image.naturalWidth,
                 height: image.naturalHeight,
                 orientation: getOrientation(image.naturalWidth, image.naturalHeight),
+                sharpness,
                 image
               }
               : item

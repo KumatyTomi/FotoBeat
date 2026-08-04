@@ -23,6 +23,7 @@ import { DEFAULT_FRAME_SEQUENCE_PRESET_ID, FRAME_SEQUENCE_PRESETS, describeFrame
 import { buildExportHubPlan, describeExportHubAction } from './utils/exportHub.js';
 import { buildMp4ExportPlan, explainMp4ExportPlan } from './utils/mp4ExportPlan.js';
 import { buildMediaQualityReport } from './utils/mediaQuality.js';
+import { describeSharpness } from './utils/imageSharpness.js';
 import { buildImportedMediaReport, buildProjectExportPayload, parseProjectFile, remapImportedMedia, safeFilename } from './utils/projectExport.js';
 import { createProjectLibraryId, loadProjectLibrary, persistProjectLibrary, removeProjectLibraryEntry, upsertProjectLibraryEntry } from './utils/projectLibrary.js';
 import { clipDurationScaleFromIntensity, describeEditIntensity, getEditIntensityLabel, intensityFromClipDurationScale, normalizeEditIntensity } from './utils/editIntensity.js';
@@ -676,7 +677,7 @@ export default function App() {
             const pinnedLabel = getPinnedLabel(asset.id, media.pinnedAssetsByClip);
             return <article key={asset.id} className={selected ? 'media-card selected' : 'media-card'}>
               <button className="media-thumb-button" onClick={() => media.toggleMediaAsset(asset.id)}><span className="media-thumb"><img src={asset.url} alt={asset.name} />{selected && <i><CheckCircle2 size={18} /></i>}</span></button>
-              <strong>{asset.name}</strong><em>{asset.status} · {asset.orientation} · {asset.width || '—'}×{asset.height || '—'}</em>
+              <strong>{asset.name}</strong><em>{asset.status} · {asset.orientation} · {asset.width || '—'}×{asset.height || '—'} · {describeSharpness(asset.sharpness?.score)}</em>
               <div className="score-row"><span>Score {asset.score}</span>{selected && <span>#{activeIndex + 1}</span>}{pinnedLabel && <span>{pinnedLabel}</span>}</div>
               <div className="media-actions"><button onClick={() => media.moveMediaAsset(asset.id, -1)} disabled={!selected || activeIndex <= 0}>↑</button><button onClick={() => media.moveMediaAsset(asset.id, 1)} disabled={!selected || activeIndex === media.selectedAssetIds.length - 1}>↓</button><button onClick={() => media.pinAssetToClip(asset.id, previewPlayback.clipIndex)} disabled={!selected}>Przypnij</button></div>
             </article>;
