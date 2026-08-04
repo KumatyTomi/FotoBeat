@@ -22,6 +22,7 @@ import { getPinnedLabel, scoreMediaAsset } from './utils/mediaScoring.js';
 import { DEFAULT_FRAME_SEQUENCE_PRESET_ID, FRAME_SEQUENCE_PRESETS, describeFrameSequenceSettings, getFrameSequencePreset } from './utils/frameSequenceSettings.js';
 import { buildExportHubPlan, describeExportHubAction } from './utils/exportHub.js';
 import { buildMp4ExportPlan, explainMp4ExportPlan } from './utils/mp4ExportPlan.js';
+import { buildMediaQualityReport } from './utils/mediaQuality.js';
 import { buildImportedMediaReport, buildProjectExportPayload, parseProjectFile, remapImportedMedia, safeFilename } from './utils/projectExport.js';
 import { buildDraftTimeline } from './utils/timeline.js';
 
@@ -78,6 +79,7 @@ export default function App() {
   const projectExportJson = useMemo(() => JSON.stringify(projectExportPayload, null, 2), [projectExportPayload]);
   const projectExportHref = useMemo(() => `data:application/json;charset=utf-8,${encodeURIComponent(projectExportJson)}`, [projectExportJson]);
   const projectExportFilename = `${safeFilename(project.name)}.fotobeat.json`;
+  const mediaQualityReport = useMemo(() => buildMediaQualityReport(media.mediaAssets, selectedFormat), [media.mediaAssets, selectedFormat]);
   const importedMediaReport = useMemo(() => (
     importedMediaManifest ? buildImportedMediaReport(importedMediaManifest, media.mediaAssets) : null
   ), [importedMediaManifest, media.mediaAssets]);
@@ -565,6 +567,7 @@ export default function App() {
           <div><p className="panel-kicker">Timeline control</p><h2>Kolejność, scoring i przypięcia kadrów</h2><p>Zaznacz aktywne zdjęcia, ustaw kolejność i przypnij wybrane zdjęcie do aktualnego klipu.</p></div>
           <div className="preview-hud"><span>{media.mediaAssets.length} plików</span><span>{media.selectedMediaAssets.length} aktywnych</span><span>{Object.keys(media.pinnedAssetsByClip).length} przypięć</span>{media.mediaAssets.length > 0 && <button className="ghost-button compact" onClick={media.selectAllMedia}>Zaznacz wszystko</button>}{media.pinnedAssetsByClip[previewPlayback.clipIndex] && <button className="ghost-button compact" onClick={() => media.clearPinnedClip(previewPlayback.clipIndex)}>Odepnij klip {previewPlayback.clipIndex}</button>}</div>
         </div>
+        {media.mediaAssets.length > 0 && <MediaQualityReportPanel report={mediaQualityReport} />}
         {media.mediaAssets.length === 0 ? <span className="empty-state">Wrzuć zdjęcia, a tutaj pojawią się miniatury, scoring, orientacja i kontrola timeline.</span> : (
           <div className="media-grid">{media.scoredMediaAssets.map((asset) => {
             const selected = media.selectedAssetIds.includes(asset.id);
@@ -626,6 +629,49 @@ function ImportedMediaReportPanel({ report }) {
         <div className="missing-pin-list">
           {report.missingPinnedClips.map((pin) => (
             <span key={`${pin.clipIndex}-${pin.assetId}`}>Klip {pin.clipIndex}: {pin.name}</span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MediaQualityReportPanel({ report }) {
+  const hasWarnings = report.warnings.length > 0;
+  const problemItems = report.items
+    .filter((item) => item.warnings.length > 0 || item.score < 55)
+    .slice(0, 4);
+  const reportReady = report.total > 0 && report.ready === report.total && !hasWarnings;
+
+  return (
+    <div className={`media-quality-report ${reportReady ? 'ready' : 'warning'}`}>
+      <div className="media-quality-header">
+        <div>
+          <strong>Media quality: {report.averageScore}/100</strong>
+          <span>{report.ready}/{report.total} gotowe · {Math.round(report.readyRatio * 100)}% biblioteki</span>
+        </div>
+        <div className="media-quality-metrics">
+          <span>Duplikaty: {report.duplicateGroups.length}</span>
+          <span>Alerty: {report.warnings.length}</span>
+        </div>
+      </div>
+
+      {hasWarnings ? (
+        <ul className="media-quality-warnings" aria-label="Ostrzeżenia jakości mediów">
+          {report.warnings.map((warning) => (
+            <li key={warning}><AlertTriangle size={15} />{warning}</li>
+          ))}
+        </ul>
+      ) : (
+        <span className="media-quality-ok"><CheckCircle2 size={15} />Brak globalnych ostrzeżeń jakości.</span>
+      )}
+
+      {problemItems.length > 0 && (
+        <div className="media-quality-items">
+          {problemItems.map((item) => (
+            <span key={item.id}>
+              {item.name} · score {item.score} · {item.width || '—'}×{item.height || '—'} · {formatBytes(item.size)}
+            </span>
           ))}
         </div>
       )}

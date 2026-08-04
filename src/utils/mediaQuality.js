@@ -1,5 +1,7 @@
-export function buildMediaQualityReport(mediaAssets, selectedFormat) {
-  const items = mediaAssets.map((asset) => analyzeMediaQuality(asset, selectedFormat));
+export function buildMediaQualityReport(mediaAssets = [], selectedFormat = {}) {
+  const assets = Array.isArray(mediaAssets) ? mediaAssets : [];
+  const format = normalizeSelectedFormat(selectedFormat);
+  const items = assets.map((asset) => analyzeMediaQuality(asset, format));
   const readyItems = items.filter((item) => item.status === 'ready');
   const averageScore = readyItems.length
     ? Math.round(readyItems.reduce((sum, item) => sum + item.score, 0) / readyItems.length)
@@ -8,28 +10,30 @@ export function buildMediaQualityReport(mediaAssets, selectedFormat) {
   return {
     total: items.length,
     ready: readyItems.length,
+    readyRatio: items.length ? Number((readyItems.length / items.length).toFixed(2)) : 0,
     averageScore,
     duplicateGroups: detectDuplicateGroups(items),
-    warnings: buildGlobalWarnings(items, selectedFormat),
+    warnings: buildGlobalWarnings(items, format),
     items
   };
 }
 
-export function analyzeMediaQuality(asset, selectedFormat) {
-  const width = asset.width || 0;
-  const height = asset.height || 0;
+export function analyzeMediaQuality(asset = {}, selectedFormat = {}) {
+  const format = normalizeSelectedFormat(selectedFormat);
+  const width = Number.isFinite(asset?.width) ? asset.width : 0;
+  const height = Number.isFinite(asset?.height) ? asset.height : 0;
   const megapixels = Number(((width * height) / 1_000_000).toFixed(2));
   const aspectRatio = height ? Number((width / height).toFixed(3)) : 0;
-  const targetRatio = selectedFormat.height ? selectedFormat.width / selectedFormat.height : 1;
+  const targetRatio = format.width / format.height;
   const ratioDelta = Math.abs(aspectRatio - targetRatio);
   const warnings = [];
   let score = 0;
 
-  if (asset.status === 'ready') score += 20;
+  if (asset?.status === 'ready') score += 20;
   else warnings.push('Plik nie jest gotowy do renderu.');
 
-  if (width >= selectedFormat.width && height >= selectedFormat.height) score += 30;
-  else if (width >= selectedFormat.width * 0.65 || height >= selectedFormat.height * 0.65) score += 18;
+  if (width >= format.width && height >= format.height) score += 30;
+  else if (width >= format.width * 0.65 || height >= format.height * 0.65) score += 18;
   else warnings.push('Rozdzielczość może być za niska dla wybranego formatu.');
 
   if (ratioDelta < 0.08) score += 25;
@@ -40,17 +44,17 @@ export function analyzeMediaQuality(asset, selectedFormat) {
   else if (megapixels >= 1) score += 8;
   else warnings.push('Zdjęcie ma mało megapikseli.');
 
-  if (asset.size > 120000) score += 10;
+  if (asset?.size > 120000) score += 10;
   else warnings.push('Bardzo mały plik może oznaczać mocną kompresję.');
 
   return {
-    id: asset.id,
-    name: asset.name,
-    status: asset.status,
+    id: asset?.id ?? 'unknown-media',
+    name: asset?.name ?? 'unknown-media',
+    status: asset?.status ?? 'unknown',
     width,
     height,
-    orientation: asset.orientation,
-    size: asset.size,
+    orientation: asset?.orientation ?? 'unknown',
+    size: Number.isFinite(asset?.size) ? asset.size : 0,
     megapixels,
     aspectRatio,
     score: Math.min(100, score),
@@ -60,13 +64,14 @@ export function analyzeMediaQuality(asset, selectedFormat) {
 }
 
 export function buildMediaFingerprint(asset) {
-  return `${asset.name}|${asset.size}|${asset.type || 'unknown'}`;
+  return `${asset?.name ?? 'unknown-media'}|${Number.isFinite(asset?.size) ? asset.size : 0}|${asset?.type || 'unknown'}`;
 }
 
-export function detectDuplicateGroups(items) {
+export function detectDuplicateGroups(items = []) {
+  const safeItems = Array.isArray(items) ? items : [];
   const byFingerprint = new Map();
 
-  items.forEach((item) => {
+  safeItems.forEach((item) => {
     const group = byFingerprint.get(item.fingerprint) ?? [];
     group.push(item);
     byFingerprint.set(item.fingerprint, group);
@@ -95,4 +100,12 @@ function buildGlobalWarnings(items, selectedFormat) {
   }
 
   return warnings;
+}
+
+function normalizeSelectedFormat(selectedFormat = {}) {
+  return {
+    id: selectedFormat?.id ?? 'unknown',
+    width: Number.isFinite(selectedFormat?.width) && selectedFormat.width > 0 ? selectedFormat.width : 1,
+    height: Number.isFinite(selectedFormat?.height) && selectedFormat.height > 0 ? selectedFormat.height : 1
+  };
 }

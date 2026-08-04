@@ -120,7 +120,7 @@
 - [x] dodawanie nowych zdjęć bez resetu selekcji i przypięć
 - [x] test zachowania selekcji i pinned clips po dodaniu zdjęć
 - [ ] ocena ostrości zdjęć
-- [ ] pełny media quality report w UI
+- [x] pełny media quality report w UI
 
 ### Beat engine
 
