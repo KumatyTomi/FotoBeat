@@ -5,12 +5,13 @@ const os = require('node:os');
 const { buildRenderPlan } = require('./renderPlan.cjs');
 const {
   cleanupPartialOutput,
+  createCollisionSafePath,
   inspectOutput,
   prepareRenderWorkspace,
   promoteTempOutput,
   writeOutputSidecar
 } = require('./exportIntegrity.cjs');
-const { upsertRenderHistory } = require('./jobHistory.cjs');
+const { findRenderHistoryEntry, upsertRenderHistory } = require('./jobHistory.cjs');
 const { runNativeFfmpegRender, validateRenderPlan } = require('./nativeFfmpegRenderer.cjs');
 
 const jobs = new Map();
@@ -66,17 +67,22 @@ async function cancelLocalRenderJob(jobId) {
   return stripHeavyPayload(job);
 }
 
-async function retryLocalRenderJob(jobId) {
-  const job = jobs.get(jobId);
+async function retryLocalRenderJob(jobId, options = {}) {
+  const job = jobs.get(jobId) ?? await rehydrateLocalRenderJob(jobId, options);
   if (!job) {
-    throw new Error('Retry is available only for jobs still loaded in the current desktop session.');
+    throw new Error('Retry requires an active job or a persisted render workspace.');
   }
 
   if (!['failed', 'canceled', 'done'].includes(job.status)) {
     throw new Error(`Cannot retry job with status ${job.status}.`);
   }
 
+  const previousStatus = job.status;
   await cleanupPartialOutput(job);
+  if (previousStatus === 'done') {
+    await allocateRetryOutputPaths(job);
+  }
+  job.nativeReady = await isNativeReady(job);
   job.status = 'queued';
   job.progress = 0;
   job.mode = job.nativeReady ? 'native-ready' : 'placeholder';
@@ -89,8 +95,10 @@ async function retryLocalRenderJob(jobId) {
   await writeJobStatus(job);
   await writeOutputSidecar(job);
   await persistJobHistory(job);
-  scheduleRenderProgress(job.id);
   jobs.set(job.id, job);
+  if (options.schedule !== false) {
+    scheduleRenderProgress(job.id);
+  }
   return stripHeavyPayload(job);
 }
 
@@ -353,6 +361,65 @@ async function cancelJob(job) {
   await persistJobHistory(job);
 }
 
+async function rehydrateLocalRenderJob(jobId, options = {}) {
+  const historyEntry = options.jobFolder ? null : await findRenderHistoryEntry(jobId);
+  const jobFolder = options.jobFolder ?? historyEntry?.jobFolder ?? null;
+
+  if (!jobFolder) {
+    return null;
+  }
+
+  const statusPath = path.join(jobFolder, 'render-job.json');
+  const persisted = await readJsonFile(statusPath);
+  const persistedId = persisted.id ?? jobId;
+  if (persistedId !== jobId) {
+    throw new Error(`Persisted render job id mismatch: expected ${jobId}, got ${persistedId}.`);
+  }
+
+  const manifestPath = persisted.manifestPath ?? path.join(jobFolder, 'manifest.fotobeat.json');
+  const manifestEnvelope = await readJsonFile(manifestPath);
+  const outputPath = persisted.outputPath ?? historyEntry?.outputPath ?? path.join(jobFolder, `fotobeat-${jobId}.mp4`);
+  const job = createBaseJob({
+    id: jobId,
+    outputFolder: persisted.outputFolder ?? historyEntry?.outputFolder ?? path.dirname(jobFolder),
+    manifest: manifestEnvelope.manifest ?? persisted.manifest ?? null
+  });
+
+  job.status = persisted.status ?? historyEntry?.status ?? 'failed';
+  job.progress = Number(persisted.progress) || 0;
+  job.mode = persisted.mode ?? historyEntry?.mode ?? 'placeholder';
+  job.nativeReady = Boolean(persisted.nativeReady);
+  job.nativeResult = null;
+  job.cancelRequested = false;
+  job.jobFolder = jobFolder;
+  job.manifestPath = manifestPath;
+  job.renderPlanPath = persisted.renderPlanPath ?? path.join(jobFolder, 'render-plan.json');
+  job.statusPath = statusPath;
+  job.outputPath = outputPath;
+  job.tempOutputPath = persisted.tempOutputPath ?? `${outputPath}.partial`;
+  job.sidecarPath = persisted.sidecarPath ?? `${outputPath}.json`;
+  job.integrity = persisted.integrity ?? { freeSpace: null, warnings: [], outputInspection: null };
+  job.frameImport = persisted.frameImport ?? await readOptionalJson(path.join(jobFolder, 'frames', 'frames-manifest.json'));
+  job.audioImport = persisted.audioImport ?? await readOptionalJson(path.join(jobFolder, 'audio', 'audio-manifest.json'));
+  job.logs = Array.isArray(persisted.logs) ? persisted.logs : ['Render job rehydrated from persisted workspace.'];
+  job.createdAt = persisted.createdAt ?? historyEntry?.createdAt ?? new Date().toISOString();
+  job.updatedAt = persisted.updatedAt ?? historyEntry?.updatedAt ?? new Date().toISOString();
+  job.renderPlan = buildRenderPlan(job);
+  job.nativeReady = await isNativeReady(job);
+  job.logs.push('Render job rehydrated from persisted workspace.');
+  return job;
+}
+
+async function allocateRetryOutputPaths(job) {
+  if (!job.jobFolder || !job.outputPath) return;
+  const nextOutputPath = await createCollisionSafePath(job.jobFolder, path.basename(job.outputPath));
+  if (nextOutputPath === job.outputPath) return;
+  job.outputPath = nextOutputPath;
+  job.tempOutputPath = `${nextOutputPath}.partial`;
+  job.sidecarPath = `${nextOutputPath}.json`;
+  job.logs.push(`Retry output path allocated: ${nextOutputPath}`);
+}
+
 async function writeAudioInputFile(job, audioFile) {
   const audioFolder = path.join(job.jobFolder, 'audio');
   const targetPath = path.join(audioFolder, 'input-audio');
@@ -446,6 +513,19 @@ async function pathExists(targetPath) {
     return true;
   } catch {
     return false;
+  }
+}
+
+async function readJsonFile(targetPath) {
+  const raw = await fs.readFile(targetPath, 'utf8');
+  return JSON.parse(raw);
+}
+
+async function readOptionalJson(targetPath) {
+  try {
+    return await readJsonFile(targetPath);
+  } catch {
+    return null;
   }
 }
 

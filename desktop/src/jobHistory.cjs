@@ -11,6 +11,12 @@ async function listRenderHistory(limit = MAX_HISTORY_ITEMS) {
   return history.slice(0, limit);
 }
 
+async function findRenderHistoryEntry(jobId) {
+  if (!jobId) return null;
+  const history = await readHistoryFile();
+  return history.find((entry) => entry.id === jobId) ?? null;
+}
+
 async function upsertRenderHistory(job) {
   if (!job?.id) return null;
 
@@ -92,6 +98,7 @@ function createHistoryEntry(job) {
 module.exports = {
   HISTORY_PATH,
   clearRenderHistory,
+  findRenderHistoryEntry,
   listRenderHistory,
   upsertRenderHistory
 };
