@@ -22,6 +22,7 @@ import { getPinnedLabel, scoreMediaAsset } from './utils/mediaScoring.js';
 import { DEFAULT_FRAME_SEQUENCE_PRESET_ID, FRAME_SEQUENCE_PRESETS, describeFrameSequenceSettings, getFrameSequencePreset } from './utils/frameSequenceSettings.js';
 import { buildExportHubPlan, describeExportHubAction } from './utils/exportHub.js';
 import { buildMp4ExportPlan, explainMp4ExportPlan } from './utils/mp4ExportPlan.js';
+import { MP4_PROFILE_AUTO_ID, readStoredMp4ProfileId } from './utils/mp4ProfileSelection.js';
 import { buildMediaQualityReport } from './utils/mediaQuality.js';
 import { describeSharpness } from './utils/imageSharpness.js';
 import { buildBeatDirector, describeBeatDirector } from './utils/beatDirector.js';
@@ -168,10 +169,11 @@ export default function App() {
 
   async function createMp4Plan(sequence, includeAudio = false) {
     const audioFile = includeAudio ? audio : null;
+    const profileId = getSelectedMp4ProfileId();
     const plan = buildMp4ExportPlan({
       sequence,
       audioFile,
-      profileId: audioFile ? 'mp4-audio-poc' : 'mp4-poc'
+      profileId
     });
     setMp4Plan(plan);
     await renderJobs.addMp4PlanJob({
@@ -186,10 +188,11 @@ export default function App() {
 
   async function createMp4Poc(sequence, includeAudio = false) {
     const audioFile = includeAudio ? audio : null;
+    const profileId = getSelectedMp4ProfileId();
     const plan = buildMp4ExportPlan({
       sequence,
       audioFile,
-      profileId: audioFile ? 'mp4-audio-poc' : 'mp4-poc'
+      profileId
     });
     setMp4Plan(plan);
     if (plan.status !== 'blocked') {
@@ -202,7 +205,7 @@ export default function App() {
         plan
       });
     }
-    await mp4Exporter.exportSequenceToMp4(sequence, audioFile);
+    await mp4Exporter.exportSequenceToMp4(sequence, audioFile, profileId);
   }
 
   async function createZip(sequence) {
@@ -347,6 +350,10 @@ export default function App() {
       editIntensity: normalizedIntensity,
       clipDurationScale: clipDurationScaleFromIntensity(normalizedIntensity)
     });
+  }
+
+  function getSelectedMp4ProfileId() {
+    return readStoredMp4ProfileId(MP4_PROFILE_AUTO_ID);
   }
 
   const mp4Busy = ['loading', 'preparing', 'encoding'].includes(mp4Exporter.mp4State.status);
@@ -567,8 +574,8 @@ export default function App() {
 
       <section className="render-export-panel">
         <div>
-          <p className="panel-kicker">MP4 proof of concept</p>
-          <h2>ffmpeg.wasm MP4 z opcjonalnym audio</h2>
+          <p className="panel-kicker">MP4 export</p>
+          <h2>ffmpeg.wasm MP4 z wybranym profilem</h2>
           <p>{audio ? `Eksport MP4 może połączyć zapisaną sekwencję PNG z lokalnym audio: ${audio.name}.` : 'Eksport MP4 działa bez audio. Dodaj MP3/WAV, aby odblokować wariant MP4 + audio.'}</p>
         </div>
         <div className="render-export-actions">
