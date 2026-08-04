@@ -94,9 +94,11 @@
       "-shortest",
       "-movflags",
       "+faststart",
+      "-f",
+      "mp4",
       "renders/fotobeat-demo.mp4.partial"
     ],
-    "preview": "ffmpeg -y -framerate 30 -i frames/frame_%04d.png -i audio/input-audio -vf scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2 -c:v libx264 -preset medium -crf 20 -pix_fmt yuv420p -c:a aac -b:a 192k -shortest -movflags +faststart renders/fotobeat-demo.mp4.partial"
+    "preview": "ffmpeg -y -framerate 30 -i frames/frame_%04d.png -i audio/input-audio -vf scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2 -c:v libx264 -preset medium -crf 20 -pix_fmt yuv420p -c:a aac -b:a 192k -shortest -movflags +faststart -f mp4 renders/fotobeat-demo.mp4.partial"
   },
   "notes": [
     "This plan writes FFmpeg output to output.tempPath first.",

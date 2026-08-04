@@ -122,6 +122,7 @@ function buildFfmpegCommand({ inputMode, fps, width, height, outputPath, hasAudi
     }
 
     args.push('-movflags', '+faststart');
+    args.push('-f', 'mp4');
     args.push(outputPath);
 
     return {

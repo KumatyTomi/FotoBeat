@@ -2,7 +2,11 @@ const fs = require('node:fs/promises');
 const os = require('node:os');
 const path = require('node:path');
 const { buildRenderPlan } = require('../desktop/src/renderPlan.cjs');
-const { loadRenderPlan, validateRenderPlan } = require('../desktop/src/nativeFfmpegRenderer.cjs');
+const {
+  absolutizeFfmpegArgs,
+  loadRenderPlan,
+  validateRenderPlan
+} = require('../desktop/src/nativeFfmpegRenderer.cjs');
 
 const WIDE_PROFILE = {
   id: 'mp4-wide-hd',
@@ -81,6 +85,8 @@ describe('desktop native render plans', () => {
       '-shortest',
       '-movflags',
       '+faststart',
+      '-f',
+      'mp4',
       job.tempOutputPath
     ]));
   });
@@ -95,6 +101,22 @@ describe('desktop native render plans', () => {
     const validation = await validateRenderPlan(loadedPlan);
 
     expect(validation).toEqual({ ok: true, errors: [], warnings: [] });
+  });
+
+  test('keeps FFmpeg filter expressions intact while absolutizing local IO paths', () => {
+    const args = [
+      '-i',
+      'frames/frame_%04d.png',
+      '-vf',
+      'scale=64:64:force_original_aspect_ratio=decrease,pad=64:64:(ow-iw)/2:(oh-ih)/2',
+      'renders/output.mp4.partial'
+    ];
+
+    const normalized = absolutizeFfmpegArgs(args, workspace);
+
+    expect(normalized[1]).toBe(path.join(workspace, 'frames/frame_%04d.png'));
+    expect(normalized[3]).toBe(args[3]);
+    expect(normalized[4]).toBe(path.join(workspace, 'renders/output.mp4.partial'));
   });
 
   test('blocks native render validation when the first frame is missing', async () => {
