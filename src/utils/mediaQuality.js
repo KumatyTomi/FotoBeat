@@ -47,6 +47,10 @@ export function analyzeMediaQuality(asset = {}, selectedFormat = {}) {
   if (asset?.size > 120000) score += 10;
   else warnings.push('Bardzo mały plik może oznaczać mocną kompresję.');
 
+  const sharpness = normalizeSharpness(asset?.sharpness);
+  if (sharpness.label === 'blurry') warnings.push('Zdjęcie wygląda na rozmyte.');
+  if (asset?.status === 'ready' && sharpness.label === 'unknown') warnings.push('Nie udało się ocenić ostrości zdjęcia.');
+
   return {
     id: asset?.id ?? 'unknown-media',
     name: asset?.name ?? 'unknown-media',
@@ -55,6 +59,7 @@ export function analyzeMediaQuality(asset = {}, selectedFormat = {}) {
     height,
     orientation: asset?.orientation ?? 'unknown',
     size: Number.isFinite(asset?.size) ? asset.size : 0,
+    sharpness,
     megapixels,
     aspectRatio,
     score: Math.min(100, score),
@@ -108,4 +113,13 @@ function normalizeSelectedFormat(selectedFormat = {}) {
     width: Number.isFinite(selectedFormat?.width) && selectedFormat.width > 0 ? selectedFormat.width : 1,
     height: Number.isFinite(selectedFormat?.height) && selectedFormat.height > 0 ? selectedFormat.height : 1
   };
+}
+
+function normalizeSharpness(sharpness = {}) {
+  const score = Number.isFinite(sharpness?.score) ? sharpness.score : null;
+  const label = ['sharp', 'soft', 'blurry'].includes(sharpness?.label)
+    ? sharpness.label
+    : 'unknown';
+
+  return { score, label };
 }

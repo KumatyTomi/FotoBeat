@@ -119,7 +119,7 @@
 - [x] stabilne media ID bez indeksu jako części tożsamości
 - [x] dodawanie nowych zdjęć bez resetu selekcji i przypięć
 - [x] test zachowania selekcji i pinned clips po dodaniu zdjęć
-- [ ] ocena ostrości zdjęć
+- [x] ocena ostrości zdjęć
 - [x] pełny media quality report w UI
 
 ### Beat engine
