@@ -342,16 +342,28 @@ export default function App() {
           <button className="ghost-button compact" onClick={() => frameExporter.exportFrameAtTime(previewPlayback.time)}>
             <Download size={16} />Eksportuj klatkę PNG
           </button>
+          <button className="ghost-button compact" onClick={() => frameExporter.generateCoverFrame(previewPlayback.time)}>
+            <ImagePlus size={16} />Generuj cover
+          </button>
           {frameExporter.frameExport.downloadHref && (
             <a className="ghost-button compact" href={frameExporter.frameExport.downloadHref} download={frameExporter.frameExport.fileName}>
               <Download size={16} />Pobierz PNG
             </a>
           )}
+          {frameExporter.coverExport.downloadHref && (
+            <a className="ghost-button compact" href={frameExporter.coverExport.downloadHref} download={frameExporter.coverExport.fileName}>
+              <Download size={16} />Pobierz cover
+            </a>
+          )}
           {frameExporter.frameExport.downloadHref && (
             <button className="ghost-button compact" onClick={frameExporter.clearFrameExport}>Wyczyść PNG</button>
           )}
+          {frameExporter.coverExport.downloadHref && (
+            <button className="ghost-button compact" onClick={frameExporter.clearCoverExport}>Wyczyść cover</button>
+          )}
         </div>
         <p className={`frame-export-status ${frameExporter.frameExport.status}`}>{frameExporter.frameExport.message}</p>
+        <p className={`frame-export-status ${frameExporter.coverExport.status}`}>{frameExporter.coverExport.message}</p>
       </section>
 
       <DesktopRenderPanel desktop={desktop} onCreateDesktopRenderJob={createDesktopRenderJob} />
