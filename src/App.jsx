@@ -24,6 +24,7 @@ import { buildExportHubPlan, describeExportHubAction } from './utils/exportHub.j
 import { buildMp4ExportPlan, explainMp4ExportPlan } from './utils/mp4ExportPlan.js';
 import { buildMediaQualityReport } from './utils/mediaQuality.js';
 import { buildImportedMediaReport, buildProjectExportPayload, parseProjectFile, remapImportedMedia, safeFilename } from './utils/projectExport.js';
+import { DEFAULT_RENDER_VARIANT_ID, RENDER_VARIANTS, getRenderVariant } from './utils/renderVariants.js';
 import { buildDraftTimeline } from './utils/timeline.js';
 
 export default function App() {
@@ -45,9 +46,12 @@ export default function App() {
 
   const format = project.format;
   const preset = project.preset;
+  const projectRenderVariant = project.renderVariant ?? DEFAULT_RENDER_VARIANT_ID;
   const clipDurationScale = project.clipDurationScale ?? 1;
   const selectedFormat = EXPORT_FORMATS.find((item) => item.id === format) ?? EXPORT_FORMATS[1];
   const selectedPreset = EFFECT_PRESETS.find((item) => item.id === preset) ?? EFFECT_PRESETS[0];
+  const selectedRenderVariant = getRenderVariant(projectRenderVariant);
+  const renderVariant = selectedRenderVariant.id;
 
   const media = useMediaAssets(images, selectedFormat);
   const audioAnalysis = useAudioAnalysis(audio);
@@ -88,6 +92,7 @@ export default function App() {
     timeline,
     selectedFormat,
     selectedPreset,
+    selectedRenderVariant,
     selectedMediaAssets: media.selectedMediaAssets,
     pinnedAssetsByClip: media.pinnedAssetsByClip,
     projectName: project.name
@@ -106,6 +111,7 @@ export default function App() {
     timeline,
     selectedFormat,
     selectedPreset,
+    selectedRenderVariant,
     selectedMediaAssets: media.selectedMediaAssets,
     pinnedAssetsByClip: media.pinnedAssetsByClip
   });
@@ -116,6 +122,7 @@ export default function App() {
     timeline,
     selectedFormat,
     selectedPreset,
+    selectedRenderVariant,
     selectedMediaAssets: media.selectedMediaAssets,
     pinnedAssetsByClip: media.pinnedAssetsByClip
   });
@@ -131,6 +138,7 @@ export default function App() {
       name: `${project.name || 'Projekt'} · ${timeline.clips.length} klipów`,
       format,
       preset,
+      renderVariant,
       notes: project.notes,
       summary: timeline.summary,
       estimatedDuration: timeline.estimatedDuration,
@@ -212,6 +220,7 @@ export default function App() {
         timeline: projectExportPayload.timeline,
         format: selectedFormat,
         preset: selectedPreset,
+        renderVariant: selectedRenderVariant,
         audio: audio ? { name: audio.name, size: audio.size, type: audio.type } : null,
         sequence: sequence ? {
           id: sequence.id,
@@ -300,7 +309,7 @@ export default function App() {
         </div>
         <div className="preview-card">
           <div className="orb orb-a" /><div className="orb orb-b" />
-          <div className="mock-video-frame"><span>FotoBeat Desktop</span><strong>{selectedFormat?.label}</strong><em>{selectedPreset?.name}</em></div>
+        <div className="mock-video-frame"><span>FotoBeat Desktop</span><strong>{selectedFormat?.label}</strong><em>{selectedPreset?.name} · {selectedRenderVariant.label}</em></div>
         </div>
       </section>
 
@@ -337,7 +346,7 @@ export default function App() {
       <section id="preview" className="render-preview-panel">
         <div className="section-heading project-heading">
           <div><p className="panel-kicker">Canvas preview</p><h2>Lokalny podgląd kadrów, timeline i beatów</h2><p>Canvas używa wybranych zdjęć, formatu eksportu, presetu, energii klipu i czasu odtwarzania — wszystko bez wysyłania plików na serwer.</p></div>
-          <div className="preview-hud"><span>{selectedFormat.width}×{selectedFormat.height}</span><span>{previewPlayback.time}s</span><span>Klip {previewPlayback.clipIndex}/{timeline.clips.length}</span><span>{media.selectedMediaAssets.length} kadrów</span><span>Tempo ×{clipDurationScale}</span></div>
+          <div className="preview-hud"><span>{selectedFormat.width}×{selectedFormat.height}</span><span>{previewPlayback.time}s</span><span>Klip {previewPlayback.clipIndex}/{timeline.clips.length}</span><span>{media.selectedMediaAssets.length} kadrów</span><span>{selectedRenderVariant.label}</span><span>Tempo ×{clipDurationScale}</span></div>
         </div>
         <div className={`canvas-shell canvas-${selectedFormat.id}`}><canvas ref={previewRef} width={selectedFormat.width} height={selectedFormat.height} aria-label="Animowany podgląd renderu FotoBeat" /></div>
         <div className="frame-export-actions">
@@ -443,7 +452,7 @@ export default function App() {
             <article key={sequence.id} className="render-history-item">
               <div>
                 <strong>{sequence.projectName} · {sequence.frameCount} klatek</strong>
-                <span>{new Date(sequence.createdAt).toLocaleString('pl-PL')} · {sequence.seconds}s · {sequence.fps} fps · {sequence.width}×{sequence.height} · {formatBytes(sequence.totalSize)}</span>
+                <span>{new Date(sequence.createdAt).toLocaleString('pl-PL')} · {sequence.seconds}s · {sequence.fps} fps · {sequence.width}×{sequence.height} · {sequence.renderVariantId || DEFAULT_RENDER_VARIANT_ID} · {formatBytes(sequence.totalSize)}</span>
               </div>
               <div className="render-history-actions">
                 <button className="ghost-button compact" onClick={() => createZip(sequence)} disabled={frameZip.zipState.status === 'building'}><Download size={16} />Spakuj ZIP</button>
@@ -586,6 +595,7 @@ export default function App() {
       <section className="control-panel">
         <div><h2>Format eksportu</h2><div className="button-row">{EXPORT_FORMATS.map((item) => <button key={item.id} className={format === item.id ? 'chip active' : 'chip'} onClick={() => patchProject({ format: item.id })}>{item.label}</button>)}</div></div>
         <div><h2>Preset efektów</h2><div className="preset-grid">{EFFECT_PRESETS.map((item) => <EffectCard key={item.id} effect={item} active={preset === item.id} onClick={() => patchProject({ preset: item.id })} />)}</div></div>
+        <div><h2>Wariant renderu</h2><div className="button-row">{RENDER_VARIANTS.map((item) => <button key={item.id} className={renderVariant === item.id ? 'chip active' : 'chip'} onClick={() => patchProject({ renderVariant: item.id })}>{item.label}</button>)}</div><p>{selectedRenderVariant.description}</p></div>
       </section>
 
       <TimelinePreview timeline={timeline} />

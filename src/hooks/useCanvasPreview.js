@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { renderFrameAtTime } from '../utils/canvasRenderer.js';
 
-export function useCanvasPreview({ timeline, selectedFormat, selectedPreset, selectedMediaAssets, pinnedAssetsByClip, projectName }) {
+export function useCanvasPreview({ timeline, selectedFormat, selectedPreset, selectedRenderVariant, selectedMediaAssets, pinnedAssetsByClip, projectName }) {
   const previewRef = useRef(null);
   const [previewPlayback, setPreviewPlayback] = useState({ time: 0, clipIndex: 1 });
 
@@ -21,6 +21,7 @@ export function useCanvasPreview({ timeline, selectedFormat, selectedPreset, sel
         timeline,
         selectedFormat,
         selectedPreset,
+        selectedRenderVariant,
         selectedMediaAssets,
         pinnedAssetsByClip,
         projectName
@@ -36,7 +37,7 @@ export function useCanvasPreview({ timeline, selectedFormat, selectedPreset, sel
 
     frameId = requestAnimationFrame(frame);
     return () => cancelAnimationFrame(frameId);
-  }, [pinnedAssetsByClip, projectName, selectedFormat, selectedMediaAssets, selectedPreset, timeline]);
+  }, [pinnedAssetsByClip, projectName, selectedFormat, selectedMediaAssets, selectedPreset, selectedRenderVariant, timeline]);
 
   return {
     previewRef,

@@ -12,6 +12,7 @@ export function useFrameSequenceRenderer({
   timeline,
   selectedFormat,
   selectedPreset,
+  selectedRenderVariant,
   selectedMediaAssets,
   pinnedAssetsByClip
 }) {
@@ -93,6 +94,7 @@ export function useFrameSequenceRenderer({
           timeline,
           selectedFormat,
           selectedPreset,
+          selectedRenderVariant,
           selectedMediaAssets,
           pinnedAssetsByClip,
           projectName
@@ -131,6 +133,7 @@ export function useFrameSequenceRenderer({
         frameCount,
         totalSize,
         status: 'ready',
+        renderVariantId: selectedRenderVariant?.id ?? selectedRenderVariant ?? '',
         renderPresetId: settings.presetId ?? '',
         frames
       };
