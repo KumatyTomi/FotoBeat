@@ -24,6 +24,7 @@ import { buildExportHubPlan, describeExportHubAction } from './utils/exportHub.j
 import { buildMp4ExportPlan, explainMp4ExportPlan } from './utils/mp4ExportPlan.js';
 import { buildMediaQualityReport } from './utils/mediaQuality.js';
 import { buildImportedMediaReport, buildProjectExportPayload, parseProjectFile, remapImportedMedia, safeFilename } from './utils/projectExport.js';
+import { createProjectLibraryId, loadProjectLibrary, persistProjectLibrary, removeProjectLibraryEntry, upsertProjectLibraryEntry } from './utils/projectLibrary.js';
 import { clipDurationScaleFromIntensity, describeEditIntensity, getEditIntensityLabel, intensityFromClipDurationScale, normalizeEditIntensity } from './utils/editIntensity.js';
 import { DEFAULT_RENDER_VARIANT_ID, RENDER_VARIANTS, getRenderVariant } from './utils/renderVariants.js';
 import { buildDraftTimeline } from './utils/timeline.js';
@@ -34,6 +35,7 @@ export default function App() {
   const [mp4Plan, setMp4Plan] = useState(null);
   const [frameSequencePresetId, setFrameSequencePresetId] = useState(DEFAULT_FRAME_SEQUENCE_PRESET_ID);
   const [importedMediaManifest, setImportedMediaManifest] = useState(null);
+  const [projectLibrary, setProjectLibrary] = useState(() => loadProjectLibrary());
 
   const {
     project,
@@ -276,6 +278,62 @@ export default function App() {
     }
   }
 
+  function saveCurrentProjectToLibrary() {
+    try {
+      const libraryId = project.libraryId || createProjectLibraryId(project.name);
+      const payload = {
+        ...projectExportPayload,
+        exportedAt: new Date().toISOString(),
+        project: {
+          ...projectExportPayload.project,
+          libraryId
+        }
+      };
+      const nextLibrary = upsertProjectLibraryEntry(projectLibrary, payload, { id: libraryId });
+
+      persistProjectLibrary(nextLibrary);
+      setProjectLibrary(nextLibrary);
+      if (!project.libraryId) patchProject({ libraryId });
+      setProjectIoStatus({ type: 'success', message: `Zapisano projekt w lokalnej bibliotece: ${payload.project.name}.` });
+    } catch (error) {
+      setProjectIoStatus({ type: 'error', message: error.message || 'Nie udało się zapisać projektu w bibliotece.' });
+    }
+  }
+
+  function openLibraryProject(entryId) {
+    const entry = projectLibrary.find((item) => item.id === entryId);
+
+    if (!entry) {
+      setProjectIoStatus({ type: 'error', message: 'Nie znaleziono projektu w lokalnej bibliotece.' });
+      return;
+    }
+
+    const remapped = remapImportedMedia(entry.payload.media, media.mediaAssets);
+
+    replaceProject(entry.payload.project);
+    setImportedMediaManifest(entry.payload.media ?? null);
+
+    if (remapped.selectedOrder.length) {
+      media.setSelectedAssetIds(remapped.selectedOrder);
+    }
+
+    media.setPinnedAssetsByClip(remapped.pinnedAssetsByClip);
+    setProjectIoStatus({
+      type: 'success',
+      message: remapped.report.missingImageCount
+        ? `Otworzono projekt z biblioteki. Brakuje ${remapped.report.missingImageCount} mediów.`
+        : `Otworzono projekt z biblioteki: ${entry.name}.`
+    });
+  }
+
+  function removeLibraryProject(entryId) {
+    const nextLibrary = removeProjectLibraryEntry(projectLibrary, entryId);
+
+    persistProjectLibrary(nextLibrary);
+    setProjectLibrary(nextLibrary);
+    setProjectIoStatus({ type: 'success', message: 'Usunięto projekt z lokalnej biblioteki.' });
+  }
+
   const mp4Busy = ['loading', 'preparing', 'encoding'].includes(mp4Exporter.mp4State.status);
   const canMuxAudio = Boolean(audio);
   const webmBusy = ['recording', 'preparing'].includes(recorder.recordingState.status);
@@ -331,6 +389,7 @@ export default function App() {
           <label className="field-block">Notatki kreatywne<textarea value={project.notes} onChange={(event) => patchProject({ notes: event.target.value })} placeholder="Np. klub, neon, szybkie cięcia, drop po 12 sekundzie..." /></label>
           <div className="project-actions">
             <button className="primary-button compact" onClick={addSnapshot}><FileJson size={16} />Zrób snapshot</button>
+            <button className="ghost-button compact" onClick={saveCurrentProjectToLibrary}><Save size={16} />Zapisz w bibliotece</button>
             <a className="ghost-button compact" href={projectExportHref} download={projectExportFilename}><Download size={16} />Pobierz JSON</a>
             <button className="ghost-button compact" onClick={copyProjectJson}><FileJson size={16} />Kopiuj JSON</button>
             <label className="ghost-button compact import-project-button"><Upload size={16} />Import JSON<input type="file" accept="application/json,.json,.fotobeat.json" onChange={importProjectFile} /></label>
@@ -340,6 +399,22 @@ export default function App() {
         {importedMediaReport && (importedMediaReport.expectedImageCount > 0 || importedMediaReport.missingPinnedClips.length > 0) && (
           <ImportedMediaReportPanel report={importedMediaReport} />
         )}
+        <div className="project-library-list">
+          {projectLibrary.length === 0 ? (
+            <span className="empty-state">Brak projektów w lokalnej bibliotece. Zapisz aktualny projekt, aby pojawił się na liście.</span>
+          ) : projectLibrary.map((entry) => (
+            <article key={entry.id} className="project-library-card">
+              <div>
+                <strong>{entry.name}</strong>
+                <span>{new Date(entry.savedAt).toLocaleString('pl-PL')} · {entry.format} · {entry.preset} · {entry.selectedImageCount}/{entry.mediaCount} mediów · {entry.estimatedDuration}s</span>
+              </div>
+              <div className="project-library-actions">
+                <button className="ghost-button compact" onClick={() => openLibraryProject(entry.id)}><Upload size={16} />Otwórz</button>
+                <button className="ghost-button compact" onClick={() => removeLibraryProject(entry.id)}><Trash2 size={16} />Usuń</button>
+              </div>
+            </article>
+          ))}
+        </div>
         <div className="snapshot-list">
           {project.snapshots.length === 0 ? <span className="empty-state">Brak snapshotów. Zapisz pierwszy wariant timeline.</span> : project.snapshots.map((snapshot) => (
             <article key={snapshot.id} className="snapshot-card"><strong>{snapshot.name}</strong><span>{new Date(snapshot.createdAt).toLocaleString('pl-PL')}</span><em>{snapshot.format} · {snapshot.preset} · {snapshot.estimatedDuration}s</em></article>

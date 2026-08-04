@@ -101,8 +101,8 @@
 - [x] snapshot wersji timeline
 - [x] eksport decyzji timeline do JSON
 - [x] walidacja/remap mediów po imporcie
-- [ ] panel listy projektów
-- [ ] trwała biblioteka projektów lokalnych
+- [x] panel listy projektów
+- [x] trwała biblioteka projektów lokalnych
 - [x] czytelny ekran brakujących mediów po imporcie projektu
 
 ### Media i analiza plików
