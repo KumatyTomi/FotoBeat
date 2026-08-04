@@ -11,6 +11,8 @@ const INITIAL_STATUS = {
   message: 'Tryb desktop niewykryty. Uruchom aplikację przez Electron.'
 };
 
+const RELEASES_URL = 'https://github.com/KumatyTomi/FotoBeat/releases';
+
 const TERMINAL_RENDER_STATUSES = ['done', 'failed', 'canceled'];
 
 const DESKTOP_SEQUENCE_LIMITS = {
@@ -177,6 +179,20 @@ export function useDesktopBridge() {
     const result = await api.openPath(targetPath);
     setStatus({ type: 'success', message: `Otwieram: ${targetPath}` });
     return result;
+  }
+
+  async function openReleasePage() {
+    const api = getDesktopApi();
+
+    if (api && typeof api.openReleasePage === 'function') {
+      const result = await api.openReleasePage();
+      setStatus({ type: 'success', message: 'Otwieram GitHub Releases z aktualizacjami FotoBeat.' });
+      return result;
+    }
+
+    window.open(RELEASES_URL, '_blank', 'noopener,noreferrer');
+    setStatus({ type: 'info', message: 'Otwieram GitHub Releases z aktualizacjami FotoBeat.' });
+    return { ok: true, url: RELEASES_URL };
   }
 
   async function cancelLocalRenderJob(jobId = localRenderJob?.id) {
@@ -367,6 +383,7 @@ export function useDesktopBridge() {
     clearRenderHistory,
     showItemInFolder,
     openPath,
+    openReleasePage,
     cancelLocalRenderJob,
     retryLocalRenderJob,
     createRenderSupportBundle,

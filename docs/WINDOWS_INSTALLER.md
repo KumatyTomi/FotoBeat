@@ -8,6 +8,7 @@ Windows installer is built by GitHub Actions workflow:
 - runner: `windows-latest`
 - output artifact: `FotoBeat-Windows-Installer`
 - tag release: pushing a `v*` tag also creates or updates a GitHub Release with the `.exe`, `.yml` and `.blockmap` assets.
+- signing: configure `WINDOWS_CSC_LINK` and `WINDOWS_CSC_KEY_PASSWORD` GitHub Actions secrets to sign the installer; otherwise CI builds an unsigned installer.
 
 ## Build path
 
@@ -35,3 +36,5 @@ The generated Windows installer lands in `desktop/release/`.
 2. Push a tag such as `v0.1.0`.
 3. The Windows Installer workflow builds the NSIS installer.
 4. The workflow uploads the installer as an Actions artifact and publishes the same files to the matching GitHub Release.
+
+See `docs/RELEASE_PROCESS.md` for the versioning, signing and manual update checklist.

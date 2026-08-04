@@ -69,5 +69,4 @@ Then enable npm cache in `actions/setup-node`.
 1. Commit root and desktop lockfiles.
 2. Switch CI from `npm install` to `npm ci`.
 3. Add artifact upload for desktop package smoke logs.
-4. Add Windows package job later after installer signing strategy is decided.
-5. Add Electron security checks after preload API hardening.
+4. Add Electron security checks after preload API hardening.

@@ -12,6 +12,8 @@ const {
 } = require('./renderQueue.cjs');
 const { createMainWindow } = require('./windowFactory.cjs');
 
+const RELEASES_URL = 'https://github.com/KumatyTomi/FotoBeat/releases';
+
 app.whenReady().then(() => {
   registerIpcHandlers();
   createMainWindow();
@@ -33,8 +35,14 @@ function registerIpcHandlers() {
   ipcMain.handle('fotobeat:get-version', () => ({
     appVersion: app.getVersion(),
     electronVersion: process.versions.electron,
-    platform: process.platform
+    platform: process.platform,
+    releasesUrl: RELEASES_URL
   }));
+
+  ipcMain.handle('fotobeat:open-release-page', async () => {
+    await shell.openExternal(RELEASES_URL);
+    return { ok: true, url: RELEASES_URL };
+  });
 
   ipcMain.handle('fotobeat:get-ffmpeg-status', async () => {
     return await getFfmpegStatus({

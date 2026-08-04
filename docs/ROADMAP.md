@@ -149,7 +149,7 @@
 - [x] desktop render panel
 - [x] produkcyjny MP4 9:16
 - [x] produkcyjny MP4 16:9
-- [x] Export Hub wybierający najlepszą ścieżkę: Native MP4 → MP4 POC → WebM → ZIP frames
+- [x] Export Hub wybierający najlepszą ścieżkę: Native MP4 → MP4 web → WebM → ZIP frames
 - [x] cover frame generator
 - [x] warianty renderu: clean / hard beat / cinematic
 
@@ -162,10 +162,10 @@
 - [x] Windows NSIS installer przez electron-builder
 - [x] workflow Windows Installer
 - [x] smoke check assetów dla packaged app
-- [ ] podpisywanie instalatora
-- [ ] wersjonowanie release `v0.x.x`
-- [ ] GitHub Release z instalatorem zamiast wyłącznie artifact z Actions
-- [ ] auto-update lub przynajmniej jasna ścieżka aktualizacji
+- [x] podpisywanie instalatora przez sekrety CI `WINDOWS_CSC_LINK` / `WINDOWS_CSC_KEY_PASSWORD`
+- [x] wersjonowanie release `v0.x.x`
+- [x] GitHub Release z instalatorem zamiast wyłącznie artifact z Actions
+- [x] auto-update lub przynajmniej jasna ścieżka aktualizacji
 
 ## 2. Autorski kierunek produktu
 
