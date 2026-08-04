@@ -103,7 +103,7 @@
 - [x] walidacja/remap mediów po imporcie
 - [ ] panel listy projektów
 - [ ] trwała biblioteka projektów lokalnych
-- [ ] czytelny ekran brakujących mediów po imporcie projektu
+- [x] czytelny ekran brakujących mediów po imporcie projektu
 
 ### Media i analiza plików
 
@@ -196,7 +196,7 @@ Tryby pracy:
 ### P0 — stabilność i brak utraty pracy
 
 1. Zweryfikować świeży installer po Veil Layer.
-2. Dopiąć panel brakujących mediów po imporcie projektu.
+2. Dopięty panel brakujących mediów po imporcie projektu.
 3. Utrzymać testy media state w CI.
 
 ### P1 — premium experience bez burzenia silnika

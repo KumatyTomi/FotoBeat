@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { CheckCircle2, Download, FileJson, Film, ImagePlus, Monitor, Music, Play, RefreshCcw, Save, Sparkles, Trash2, Upload, Wand2 } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Download, FileJson, Film, ImagePlus, Monitor, Music, Play, RefreshCcw, Save, Sparkles, Trash2, Upload, Wand2 } from 'lucide-react';
 import DesktopRenderPanel from './components/DesktopRenderPanel.jsx';
 import EffectCard from './components/EffectCard.jsx';
 import FileDropzone from './components/FileDropzone.jsx';
@@ -22,7 +22,7 @@ import { getPinnedLabel, scoreMediaAsset } from './utils/mediaScoring.js';
 import { DEFAULT_FRAME_SEQUENCE_PRESET_ID, FRAME_SEQUENCE_PRESETS, describeFrameSequenceSettings, getFrameSequencePreset } from './utils/frameSequenceSettings.js';
 import { buildExportHubPlan, describeExportHubAction } from './utils/exportHub.js';
 import { buildMp4ExportPlan, explainMp4ExportPlan } from './utils/mp4ExportPlan.js';
-import { buildProjectExportPayload, parseProjectFile, remapImportedMedia, safeFilename } from './utils/projectExport.js';
+import { buildImportedMediaReport, buildProjectExportPayload, parseProjectFile, remapImportedMedia, safeFilename } from './utils/projectExport.js';
 import { buildDraftTimeline } from './utils/timeline.js';
 
 export default function App() {
@@ -30,6 +30,7 @@ export default function App() {
   const [audio, setAudio] = useState(null);
   const [mp4Plan, setMp4Plan] = useState(null);
   const [frameSequencePresetId, setFrameSequencePresetId] = useState(DEFAULT_FRAME_SEQUENCE_PRESET_ID);
+  const [importedMediaManifest, setImportedMediaManifest] = useState(null);
 
   const {
     project,
@@ -77,6 +78,9 @@ export default function App() {
   const projectExportJson = useMemo(() => JSON.stringify(projectExportPayload, null, 2), [projectExportPayload]);
   const projectExportHref = useMemo(() => `data:application/json;charset=utf-8,${encodeURIComponent(projectExportJson)}`, [projectExportJson]);
   const projectExportFilename = `${safeFilename(project.name)}.fotobeat.json`;
+  const importedMediaReport = useMemo(() => (
+    importedMediaManifest ? buildImportedMediaReport(importedMediaManifest, media.mediaAssets) : null
+  ), [importedMediaManifest, media.mediaAssets]);
 
   const { previewRef, previewPlayback } = useCanvasPreview({
     timeline,
@@ -239,6 +243,7 @@ export default function App() {
       const remapped = remapImportedMedia(imported.media, media.mediaAssets);
 
       replaceProject(imported.project);
+      setImportedMediaManifest(imported.media ?? null);
 
       if (remapped.selectedOrder.length) {
         media.setSelectedAssetIds(remapped.selectedOrder);
@@ -247,7 +252,9 @@ export default function App() {
       media.setPinnedAssetsByClip(remapped.pinnedAssetsByClip);
       setProjectIoStatus({
         type: 'success',
-        message: `Zaimportowano projekt. Dopasowano ${remapped.selectedOrder.length}/${imported.media?.selectedImages?.length ?? 0} mediów.`
+        message: remapped.report.missingImageCount
+          ? `Zaimportowano projekt. Dopasowano ${remapped.report.matchedImageCount}/${remapped.report.expectedImageCount} mediów; brakuje ${remapped.report.missingImageCount}.`
+          : `Zaimportowano projekt. Dopasowano ${remapped.report.matchedImageCount}/${remapped.report.expectedImageCount} mediów.`
       });
     } catch (error) {
       setProjectIoStatus({ type: 'error', message: error.message || 'Nie udało się zaimportować projektu.' });
@@ -315,6 +322,9 @@ export default function App() {
           </div>
         </div>
         {projectIoStatus.message && <p className={projectIoStatus.type === 'error' ? 'io-status error' : 'io-status success'}>{projectIoStatus.message}</p>}
+        {importedMediaReport && (importedMediaReport.expectedImageCount > 0 || importedMediaReport.missingPinnedClips.length > 0) && (
+          <ImportedMediaReportPanel report={importedMediaReport} />
+        )}
         <div className="snapshot-list">
           {project.snapshots.length === 0 ? <span className="empty-state">Brak snapshotów. Zapisz pierwszy wariant timeline.</span> : project.snapshots.map((snapshot) => (
             <article key={snapshot.id} className="snapshot-card"><strong>{snapshot.name}</strong><span>{new Date(snapshot.createdAt).toLocaleString('pl-PL')}</span><em>{snapshot.format} · {snapshot.preset} · {snapshot.estimatedDuration}s</em></article>
@@ -566,6 +576,48 @@ export default function App() {
       <TimelinePreview timeline={timeline} />
       <section id="roadmap" className="roadmap-panel"><div><h2>Desktop roadmap</h2><p>Kolejne kroki: render-plan.json, natywny FFmpeg, audio mux i instalator Windows.</p></div><div className="roadmap-list"><span><RefreshCcw size={16} /> render-plan.json</span><span><Film size={16} /> natywny FFmpeg MP4</span><span><Download size={16} /> instalator Windows</span></div></section>
     </main>
+  );
+}
+
+function ImportedMediaReportPanel({ report }) {
+  const statusLabel = report.ready ? 'komplet' : 'braki';
+  const warningMessage = report.missingImageCount > 0
+    ? `Brakuje ${report.missingImageCount} plików zdjęć z importowanego projektu.`
+    : `Brakuje ${report.missingPinnedClips.length} przypięć do klipów z importowanego projektu.`;
+
+  return (
+    <div className={`import-media-report ${report.ready ? 'ready' : 'warning'}`}>
+      <div className="import-media-report-header">
+        <div>
+          <strong>Media po imporcie: {report.matchedImageCount}/{report.expectedImageCount} dopasowane · {statusLabel}</strong>
+          <span>{report.ready ? 'Projekt ma komplet aktualnie wymaganych zdjęć.' : warningMessage}</span>
+        </div>
+        {!report.ready && (
+          <a className="ghost-button compact" href="#upload">
+            <Upload size={16} />Dograj media
+          </a>
+        )}
+      </div>
+
+      {report.missingImages.length > 0 && (
+        <ul className="missing-media-list" aria-label="Brakujące media po imporcie projektu">
+          {report.missingImages.map((asset) => (
+            <li key={asset.id || asset.name}>
+              <span><AlertTriangle size={15} />{asset.name}</span>
+              <em>{asset.width && asset.height ? `${asset.width}×${asset.height}` : 'brak wymiarów'} · {formatBytes(asset.size)}</em>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {report.missingPinnedClips.length > 0 && (
+        <div className="missing-pin-list">
+          {report.missingPinnedClips.map((pin) => (
+            <span key={`${pin.clipIndex}-${pin.assetId}`}>Klip {pin.clipIndex}: {pin.name}</span>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
