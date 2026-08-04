@@ -1,6 +1,8 @@
-import { ExternalLink, FolderOpen, RefreshCcw, Trash2 } from 'lucide-react';
+import { ExternalLink, FolderOpen, RefreshCcw, RotateCcw, Trash2 } from 'lucide-react';
 
-export default function DesktopRenderHistory({ history = [], disabled = false, onRefresh, onClear, onShowItem, onOpenPath }) {
+const TERMINAL_RENDER_STATUSES = ['done', 'failed', 'canceled'];
+
+export default function DesktopRenderHistory({ history = [], disabled = false, onRefresh, onClear, onShowItem, onOpenPath, onRetry }) {
   return (
     <div className="desktop-render-history-panel">
       <div className="desktop-render-history-heading">
@@ -28,6 +30,7 @@ export default function DesktopRenderHistory({ history = [], disabled = false, o
               {entry.lastLog && <code>{entry.lastLog}</code>}
             </div>
             <div className="render-history-actions desktop-path-actions">
+              {canRetry(entry) && <button className="ghost-button compact" onClick={() => onRetry?.(entry)} disabled={disabled}><RotateCcw size={16} />Ponów</button>}
               {entry.outputPath && <button className="ghost-button compact" onClick={() => onShowItem?.(entry.outputPath)} disabled={disabled}><ExternalLink size={16} />Pokaż plik</button>}
               {entry.jobFolder && <button className="ghost-button compact" onClick={() => onOpenPath?.(entry.jobFolder)} disabled={disabled}><FolderOpen size={16} />Folder joba</button>}
             </div>
@@ -36,6 +39,10 @@ export default function DesktopRenderHistory({ history = [], disabled = false, o
       </div>
     </div>
   );
+}
+
+function canRetry(entry) {
+  return Boolean(entry?.id && entry?.jobFolder && TERMINAL_RENDER_STATUSES.includes(entry.status));
 }
 
 function formatDate(value) {

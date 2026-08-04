@@ -85,8 +85,9 @@ function registerIpcHandlers() {
     return job;
   });
 
-  ipcMain.handle('fotobeat:retry-local-render-job', async (_event, jobId) => {
-    const job = await retryLocalRenderJob(jobId);
+  ipcMain.handle('fotobeat:retry-local-render-job', async (_event, jobId, jobFolder) => {
+    const safeJobFolder = jobFolder ? await assertKnownRenderPath(jobFolder) : null;
+    const job = await retryLocalRenderJob(jobId, { jobFolder: safeJobFolder });
     rememberJobRoots(job);
     return job;
   });

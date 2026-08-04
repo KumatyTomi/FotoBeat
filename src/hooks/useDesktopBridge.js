@@ -198,7 +198,7 @@ export function useDesktopBridge() {
     return job;
   }
 
-  async function retryLocalRenderJob(jobId = localRenderJob?.id) {
+  async function retryLocalRenderJob(jobId = localRenderJob?.id, jobFolder = null) {
     const api = getDesktopApi();
     if (!api || typeof api.retryLocalRenderJob !== 'function') {
       setStatus({ type: 'error', message: 'Retry desktop render nie jest dostępny w preload bridge.' });
@@ -210,7 +210,7 @@ export function useDesktopBridge() {
       return null;
     }
 
-    const job = await api.retryLocalRenderJob(jobId);
+    const job = await api.retryLocalRenderJob(jobId, jobFolder);
     if (job) setLocalRenderJob(job);
     setStatus({ type: 'info', message: `Ponawiam desktop render: ${jobId}` });
     await refreshRenderHistory();

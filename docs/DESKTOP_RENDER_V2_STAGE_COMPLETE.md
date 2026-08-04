@@ -57,6 +57,8 @@ retryLocalRenderJob(jobId)
 - Browser-side audio IPC validation rejects invalid, empty and oversized files before reading bytes.
 - The desktop payload keeps the 60 MB audio IPC guard and stores only a normalized binary handoff for Electron.
 - Native FFmpeg smoke coverage generates PNG and WAV fixtures, validates the render plan and renders a short MP4 when FFmpeg is available.
+- Terminal history entries can retry after app restart by rehydrating `render-job.json`, manifest and workspace imports.
+- The desktop history UI exposes retry for persisted terminal jobs.
 
 ## Current backend flow
 
@@ -74,13 +76,14 @@ createLocalRenderJob(payload)
 ## Recommended next stage
 
 ```text
-Desktop Render v2.1 — browser audio payload, persisted retry and fixture tests
+Desktop Render v2.2 — release hardening and support diagnostics
 ```
 
 Suggested order:
 
-1. Add persisted retry by rehydrating jobs from `render-job.json` and workspace files.
-2. Add cancel/retry buttons to persistent history entries once persisted retry exists.
+1. Add support bundle export with render plan, job status, logs and FFmpeg doctor output.
+2. Add release versioning and GitHub Release artifact flow for the Windows installer.
+3. Add installer signing strategy when certificates are available.
 
 ## Stage close marker
 

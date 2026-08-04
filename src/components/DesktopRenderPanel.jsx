@@ -70,6 +70,7 @@ export default function DesktopRenderPanel({ desktop, onCreateDesktopRenderJob }
         onClear={desktop.clearRenderHistory}
         onShowItem={desktop.showItemInFolder}
         onOpenPath={desktop.openPath}
+        onRetry={(entry) => desktop.retryLocalRenderJob(entry.id, entry.jobFolder)}
       />
     </section>
   );
