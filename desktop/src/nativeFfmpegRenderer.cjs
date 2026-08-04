@@ -196,18 +196,15 @@ function normalizePlanPaths(plan, workspaceDir) {
 }
 
 function absolutizeFfmpegArgs(args, workspaceDir) {
-  return args.map((arg) => {
+  if (!workspaceDir) return args;
+
+  return args.map((arg, index) => {
     if (typeof arg !== 'string') return arg;
     if (arg === 'frames/frame_%04d.png') return path.join(workspaceDir, arg);
     if (arg === 'audio/input-audio') return path.join(workspaceDir, arg);
-    return absolutizePathIfLooksLocal(arg, workspaceDir);
+    if (index === args.length - 1) return absolutizePath(arg, workspaceDir);
+    return arg;
   });
-}
-
-function absolutizePathIfLooksLocal(value, workspaceDir) {
-  if (!value || path.isAbsolute(value)) return value;
-  if (value.includes('/') || value.includes('\\')) return path.join(workspaceDir, value);
-  return value;
 }
 
 function absolutizePath(value, workspaceDir) {
@@ -257,6 +254,7 @@ async function pathExists(targetPath) {
 }
 
 module.exports = {
+  absolutizeFfmpegArgs,
   loadRenderPlan,
   validateRenderPlan,
   runNativeFfmpegRender

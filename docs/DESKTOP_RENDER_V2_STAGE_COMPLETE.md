@@ -56,6 +56,7 @@ retryLocalRenderJob(jobId)
 - The React sequence render action now passes the selected audio `File` into the desktop payload explicitly.
 - Browser-side audio IPC validation rejects invalid, empty and oversized files before reading bytes.
 - The desktop payload keeps the 60 MB audio IPC guard and stores only a normalized binary handoff for Electron.
+- Native FFmpeg smoke coverage generates PNG and WAV fixtures, validates the render plan and renders a short MP4 when FFmpeg is available.
 
 ## Current backend flow
 
@@ -79,8 +80,7 @@ Desktop Render v2.1 — browser audio payload, persisted retry and fixture tests
 Suggested order:
 
 1. Add persisted retry by rehydrating jobs from `render-job.json` and workspace files.
-2. Add a fixture smoke test for native FFmpeg with generated frames and short audio.
-3. Add cancel/retry buttons to persistent history entries once persisted retry exists.
+2. Add cancel/retry buttons to persistent history entries once persisted retry exists.
 
 ## Stage close marker
 
