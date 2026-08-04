@@ -9,6 +9,7 @@ contextBridge.exposeInMainWorld('fotobeatDesktop', {
   appendLocalRenderJobFrames: (jobId, frames, options) => ipcRenderer.invoke('fotobeat:append-local-render-job-frames', jobId, frames, options),
   cancelLocalRenderJob: (jobId) => ipcRenderer.invoke('fotobeat:cancel-local-render-job', jobId),
   retryLocalRenderJob: (jobId, jobFolder) => ipcRenderer.invoke('fotobeat:retry-local-render-job', jobId, jobFolder),
+  createRenderSupportBundle: (jobId, jobFolder) => ipcRenderer.invoke('fotobeat:create-render-support-bundle', jobId, jobFolder),
   listRenderHistory: (limit) => ipcRenderer.invoke('fotobeat:list-render-history', limit),
   clearRenderHistory: () => ipcRenderer.invoke('fotobeat:clear-render-history'),
   showItemInFolder: (targetPath) => ipcRenderer.invoke('fotobeat:show-item-in-folder', targetPath),

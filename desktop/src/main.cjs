@@ -2,6 +2,7 @@ const { app, BrowserWindow, dialog, ipcMain, shell } = require('electron');
 const { getFfmpegStatus, resolveBundledFfmpegPath } = require('./ffmpegDoctor.cjs');
 const { clearRenderHistory, listRenderHistory } = require('./jobHistory.cjs');
 const { assertKnownRenderPath, rememberHistoryRoots, rememberJobRoots, rememberOutputRoot } = require('./pathSafety.cjs');
+const { createRenderSupportBundle } = require('./supportBundle.cjs');
 const {
   appendLocalRenderJobFrames,
   cancelLocalRenderJob,
@@ -100,6 +101,21 @@ function registerIpcHandlers() {
 
   ipcMain.handle('fotobeat:clear-render-history', async () => {
     return await clearRenderHistory();
+  });
+
+  ipcMain.handle('fotobeat:create-render-support-bundle', async (_event, jobId, jobFolder) => {
+    const safeJobFolder = await assertKnownRenderPath(jobFolder);
+    const ffmpegStatus = await getFfmpegStatus({
+      candidates: [
+        process.env.FOTOBEAT_FFMPEG_PATH,
+        resolveBundledFfmpegPath(process.resourcesPath),
+        'ffmpeg',
+        process.platform === 'win32' ? 'ffmpeg.exe' : null
+      ].filter(Boolean)
+    });
+    const bundle = await createRenderSupportBundle({ jobId, jobFolder: safeJobFolder, ffmpegStatus });
+    rememberOutputRoot(safeJobFolder);
+    return bundle;
   });
 
   ipcMain.handle('fotobeat:show-item-in-folder', async (_event, targetPath) => {

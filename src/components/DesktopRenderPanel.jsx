@@ -1,4 +1,4 @@
-import { ExternalLink, FolderOpen, Monitor, RefreshCcw, RotateCcw, Square, Trash2 } from 'lucide-react';
+import { ExternalLink, FileJson, FolderOpen, Monitor, RefreshCcw, RotateCcw, Square, Trash2 } from 'lucide-react';
 import DesktopRenderHistory from './DesktopRenderHistory.jsx';
 import Mp4ProfileSelector from './Mp4ProfileSelector.jsx';
 
@@ -54,6 +54,7 @@ export default function DesktopRenderPanel({ desktop, onCreateDesktopRenderJob }
             <div className="render-history-actions desktop-path-actions">
               {activeJob.outputPath && <button className="ghost-button compact" onClick={() => desktop.showItemInFolder(activeJob.outputPath)}><ExternalLink size={16} />Pokaż plik</button>}
               {activeJob.jobFolder && <button className="ghost-button compact" onClick={() => desktop.openPath(activeJob.jobFolder)}><FolderOpen size={16} />Folder joba</button>}
+              {activeJob.jobFolder && <button className="ghost-button compact" onClick={() => desktop.createRenderSupportBundle(activeJob.id, activeJob.jobFolder)}><FileJson size={16} />Support JSON</button>}
               {canCancel && <button className="ghost-button compact" onClick={() => desktop.cancelLocalRenderJob(activeJob.id)}><Square size={16} />Przerwij</button>}
               {canRetry && <button className="ghost-button compact" onClick={() => desktop.retryLocalRenderJob(activeJob.id)}><RotateCcw size={16} />Ponów</button>}
             </div>
@@ -71,6 +72,7 @@ export default function DesktopRenderPanel({ desktop, onCreateDesktopRenderJob }
         onShowItem={desktop.showItemInFolder}
         onOpenPath={desktop.openPath}
         onRetry={(entry) => desktop.retryLocalRenderJob(entry.id, entry.jobFolder)}
+        onSupportBundle={(entry) => desktop.createRenderSupportBundle(entry.id, entry.jobFolder)}
       />
     </section>
   );

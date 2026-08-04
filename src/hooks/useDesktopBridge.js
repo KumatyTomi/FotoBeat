@@ -217,6 +217,23 @@ export function useDesktopBridge() {
     return job;
   }
 
+  async function createRenderSupportBundle(jobId = localRenderJob?.id, jobFolder = localRenderJob?.jobFolder) {
+    const api = getDesktopApi();
+    if (!api || typeof api.createRenderSupportBundle !== 'function') {
+      setStatus({ type: 'error', message: 'Support bundle nie jest dostępny w preload bridge.' });
+      return null;
+    }
+
+    if (!jobId || !jobFolder) {
+      setStatus({ type: 'error', message: 'Brak desktop jobId albo jobFolder dla support bundle.' });
+      return null;
+    }
+
+    const bundle = await api.createRenderSupportBundle(jobId, jobFolder);
+    setStatus({ type: 'success', message: `Support bundle zapisany: ${bundle.path}` });
+    return bundle;
+  }
+
   async function pickOutputFolder() {
     const api = getDesktopApi();
     if (!api) {
@@ -352,6 +369,7 @@ export function useDesktopBridge() {
     openPath,
     cancelLocalRenderJob,
     retryLocalRenderJob,
+    createRenderSupportBundle,
     pickOutputFolder,
     createLocalRenderJob,
     createLocalRenderJobFromSequence,
