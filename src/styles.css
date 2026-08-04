@@ -82,7 +82,11 @@ p { color: rgba(245, 247, 251, 0.72); line-height: 1.65; }
 .missing-media-list em { min-width: max-content; }
 .missing-pin-list { display: flex; gap: 8px; flex-wrap: wrap; }
 .missing-pin-list span { padding: 7px 9px; border-radius: 999px; background: rgba(255, 255, 255, 0.07); }
-.snapshot-list, .render-history, .desktop-log-list { display: grid; gap: 10px; margin-top: 18px; }
+.snapshot-list, .project-library-list, .render-history, .desktop-log-list { display: grid; gap: 10px; margin-top: 18px; }
+.project-library-card { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 14px 16px; border-radius: 18px; background: rgba(255, 255, 255, 0.055); border: 1px solid rgba(139, 233, 255, 0.12); }
+.project-library-card strong, .project-library-card span { display: block; min-width: 0; overflow-wrap: anywhere; }
+.project-library-card span { color: rgba(245, 247, 251, 0.58); font-size: 13px; }
+.project-library-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
 .snapshot-card, .render-history-item, .media-card { display: grid; gap: 8px; padding: 14px 16px; border-radius: 18px; background: rgba(255, 255, 255, 0.055); border: 1px solid rgba(255, 255, 255, 0.08); }
 .snapshot-card span, .snapshot-card em, .render-history-item span, .media-card em { color: rgba(245, 247, 251, 0.58); font-size: 13px; font-style: normal; }
 .render-export-actions, .render-history-actions, .frame-export-actions, .media-actions, .score-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
@@ -129,4 +133,4 @@ p { color: rgba(245, 247, 251, 0.72); line-height: 1.65; }
 .audio-panel { display: flex; justify-content: space-between; gap: 24px; }
 .audio-stats { align-content: start; flex-wrap: wrap; justify-content: flex-end; min-width: 280px; }
 .local-output-link { color: #8be9ff; font-weight: 800; overflow-wrap: anywhere; }
-@media (max-width: 860px) { .hero-panel, .workspace-grid, .project-grid, .audio-panel, .render-history-item { grid-template-columns: 1fr; } .section-heading { display: grid; align-items: start; } .preset-grid { grid-template-columns: 1fr; } .audio-stats, .preview-hud { justify-content: flex-start; } }
+@media (max-width: 860px) { .hero-panel, .workspace-grid, .project-grid, .audio-panel, .project-library-card, .render-history-item { grid-template-columns: 1fr; } .section-heading { display: grid; align-items: start; } .preset-grid { grid-template-columns: 1fr; } .audio-stats, .preview-hud, .project-library-actions { justify-content: flex-start; } }
