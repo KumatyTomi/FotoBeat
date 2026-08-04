@@ -79,11 +79,14 @@ createLocalRenderJob(payload)
 Desktop Render v2.2 — release hardening and support diagnostics
 ```
 
+## Desktop Render v2.2 status
+
+- Desktop support bundle export writes a diagnostics JSON with render job status, render plan, manifest, sidecar, import manifests, file stats and FFmpeg doctor output.
+
 Suggested order:
 
-1. Add support bundle export with render plan, job status, logs and FFmpeg doctor output.
-2. Add release versioning and GitHub Release artifact flow for the Windows installer.
-3. Add installer signing strategy when certificates are available.
+1. Add release versioning and GitHub Release artifact flow for the Windows installer.
+2. Add installer signing strategy when certificates are available.
 
 ## Stage close marker
 
