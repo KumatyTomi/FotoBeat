@@ -70,6 +70,18 @@ p { color: rgba(245, 247, 251, 0.72); line-height: 1.65; }
 .field-block textarea { min-height: 94px; resize: vertical; }
 .project-actions { grid-column: 1 / -1; flex-wrap: wrap; }
 .compact { padding: 11px 14px; }
+.import-media-report { display: grid; gap: 12px; margin-top: 16px; padding: 14px 16px; border-radius: 18px; background: rgba(255, 255, 255, 0.055); border: 1px solid rgba(255, 255, 255, 0.09); }
+.import-media-report.ready { border-color: rgba(89, 255, 177, 0.34); background: rgba(89, 255, 177, 0.07); }
+.import-media-report.warning { border-color: rgba(255, 203, 89, 0.38); background: rgba(255, 203, 89, 0.08); }
+.import-media-report-header { display: flex; justify-content: space-between; gap: 14px; align-items: center; }
+.import-media-report-header strong, .import-media-report-header span { display: block; min-width: 0; overflow-wrap: anywhere; }
+.import-media-report-header span, .missing-media-list em, .missing-pin-list span { color: rgba(245, 247, 251, 0.62); font-size: 13px; font-style: normal; }
+.missing-media-list { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.missing-media-list li { display: flex; justify-content: space-between; gap: 12px; padding: 9px 10px; border-radius: 14px; background: rgba(0, 0, 0, 0.18); }
+.missing-media-list span { display: inline-flex; align-items: center; gap: 8px; min-width: 0; overflow-wrap: anywhere; color: rgba(245, 247, 251, 0.9); }
+.missing-media-list em { min-width: max-content; }
+.missing-pin-list { display: flex; gap: 8px; flex-wrap: wrap; }
+.missing-pin-list span { padding: 7px 9px; border-radius: 999px; background: rgba(255, 255, 255, 0.07); }
 .snapshot-list, .render-history, .desktop-log-list { display: grid; gap: 10px; margin-top: 18px; }
 .snapshot-card, .render-history-item, .media-card { display: grid; gap: 8px; padding: 14px 16px; border-radius: 18px; background: rgba(255, 255, 255, 0.055); border: 1px solid rgba(255, 255, 255, 0.08); }
 .snapshot-card span, .snapshot-card em, .render-history-item span, .media-card em { color: rgba(245, 247, 251, 0.58); font-size: 13px; font-style: normal; }
