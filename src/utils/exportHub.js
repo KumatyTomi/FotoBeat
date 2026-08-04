@@ -52,14 +52,14 @@ function buildNativeMp4Action({ latestSequence, desktopAvailable, ffmpegReady })
 function buildMp4PocAction({ latestSequence, mp4Busy, audioAvailable }) {
   const blockers = [];
   if (!latestSequence) blockers.push('Wymaga zapisanej sekwencji PNG.');
-  if (mp4Busy) blockers.push('MP4 POC jest już w trakcie pracy.');
+  if (mp4Busy) blockers.push('MP4 web jest już w trakcie pracy.');
 
   return createAction({
     id: 'mp4-poc',
-    label: audioAvailable ? 'MP4 POC + audio' : 'MP4 POC',
+    label: audioAvailable ? 'MP4 web + audio' : 'MP4 web',
     description: audioAvailable
-      ? 'Fallback przez ffmpeg.wasm z muxem aktualnego audio.'
-      : 'Fallback przez ffmpeg.wasm bez audio.',
+      ? 'Fallback przez ffmpeg.wasm z wybranym profilem i muxem aktualnego audio.'
+      : 'Fallback przez ffmpeg.wasm z wybranym profilem bez audio.',
     blockers
   });
 }

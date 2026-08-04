@@ -26,8 +26,8 @@ describe('export hub route selection', () => {
         throw new Error(\`Expected native-mp4, got \${plan.recommended?.id}\`);
       }
 
-      if (plan.actions.find((action) => action.id === 'mp4-poc').label !== 'MP4 POC + audio') {
-        throw new Error('Expected audio-aware MP4 POC label.');
+      if (plan.actions.find((action) => action.id === 'mp4-poc').label !== 'MP4 web + audio') {
+        throw new Error('Expected audio-aware MP4 web label.');
       }
     `);
   });

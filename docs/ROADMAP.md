@@ -147,8 +147,8 @@
 - [x] ffmpeg command builder / MP4 plan foundation
 - [x] MP4 POC
 - [x] desktop render panel
-- [ ] produkcyjny MP4 9:16
-- [ ] produkcyjny MP4 16:9
+- [x] produkcyjny MP4 9:16
+- [x] produkcyjny MP4 16:9
 - [x] Export Hub wybierający najlepszą ścieżkę: Native MP4 → MP4 POC → WebM → ZIP frames
 - [x] cover frame generator
 - [x] warianty renderu: clean / hard beat / cinematic
