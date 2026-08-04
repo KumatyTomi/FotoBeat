@@ -1,4 +1,5 @@
 import { resolveMediaForClip } from './mediaScoring.js';
+import { getRenderVariant } from './renderVariants.js';
 
 export function findClipAtTime(clips, time) {
   return [...clips].reverse().find((clip) => time >= clip.start) ?? clips[0];
@@ -9,6 +10,7 @@ export function renderFrameAtTime(canvas, {
   timeline,
   selectedFormat,
   selectedPreset,
+  selectedRenderVariant,
   selectedMediaAssets,
   pinnedAssetsByClip,
   projectName
@@ -18,6 +20,7 @@ export function renderFrameAtTime(canvas, {
   const clip = findClipAtTime(timeline.clips, normalizedTime);
   const clipIndex = Math.max(1, timeline.clips.indexOf(clip) + 1);
   const mediaAsset = resolveMediaForClip(clipIndex, selectedMediaAssets, pinnedAssetsByClip);
+  const renderVariant = getRenderVariant(selectedRenderVariant?.id ?? selectedRenderVariant);
 
   drawRenderPreview(canvas, {
     time: normalizedTime,
@@ -26,12 +29,13 @@ export function renderFrameAtTime(canvas, {
     totalClips: timeline.clips.length,
     format: selectedFormat,
     preset: selectedPreset,
+    renderVariant,
     imageCount: selectedMediaAssets.length,
     mediaAsset,
     projectName
   });
 
-  return { time: Number(normalizedTime.toFixed(3)), clip, clipIndex, totalClips: timeline.clips.length, mediaAssetId: mediaAsset?.id ?? null, mediaAssetName: mediaAsset?.name ?? null };
+  return { time: Number(normalizedTime.toFixed(3)), clip, clipIndex, totalClips: timeline.clips.length, mediaAssetId: mediaAsset?.id ?? null, mediaAssetName: mediaAsset?.name ?? null, renderVariantId: renderVariant.id };
 }
 
 export function normalizeFrameTime(time, totalDuration) {
@@ -40,7 +44,8 @@ export function normalizeFrameTime(time, totalDuration) {
   return time % totalDuration;
 }
 
-export function drawRenderPreview(canvas, { time, clip, clipIndex, totalClips, format, preset, imageCount, mediaAsset, projectName }) {
+export function drawRenderPreview(canvas, { time, clip, clipIndex, totalClips, format, preset, renderVariant, imageCount, mediaAsset, projectName }) {
+  const variant = getRenderVariant(renderVariant?.id ?? renderVariant);
   const ctx = canvas.getContext('2d');
   const width = canvas.width;
   const height = canvas.height;
@@ -57,18 +62,19 @@ export function drawRenderPreview(canvas, { time, clip, clipIndex, totalClips, f
   ctx.fillStyle = background;
   ctx.fillRect(0, 0, width, height);
 
-  drawGlow(ctx, width * (0.28 + pulse * 0.12), height * 0.22, width * 0.38, colors.primary, 0.45 + energy * 0.28);
-  drawGlow(ctx, width * (0.74 - pulse * 0.08), height * 0.76, width * 0.44, colors.secondary, 0.25 + energy * 0.22);
+  drawGlow(ctx, width * (0.28 + pulse * 0.12), height * 0.22, width * 0.38, colors.primary, (0.45 + energy * 0.28) * variant.glowScale);
+  drawGlow(ctx, width * (0.74 - pulse * 0.08), height * 0.76, width * 0.44, colors.secondary, (0.25 + energy * 0.22) * variant.glowScale);
   if (preset.id === 'vairaChrono') drawChronoDial(ctx, width, height, progress, energy, colors);
 
   ctx.save();
   ctx.translate(width / 2, height / 2);
-  ctx.rotate(getPresetRotation(preset.id, progress, energy));
-  ctx.scale(1 + pulse * 0.035 + energy * 0.018, 1 + pulse * 0.035 + energy * 0.018);
+  ctx.rotate(getPresetRotation(preset.id, progress, energy) * variant.motionScale);
+  ctx.scale(1 + (pulse * 0.035 + energy * 0.018) * variant.motionScale, 1 + (pulse * 0.035 + energy * 0.018) * variant.motionScale);
   drawFrameStack(ctx, width, height, colors, clipIndex, imageCount, mediaAsset);
   ctx.restore();
 
-  drawScanlines(ctx, width, height, preset.id, progress);
+  if (variant.scanlines) drawScanlines(ctx, width, height, preset.id, progress);
+  drawVariantOverlay(ctx, width, height, variant);
   drawPreviewText(ctx, width, height, { projectName, clip, clipIndex, totalClips, preset, format, colors, mediaAsset });
 }
 
@@ -199,6 +205,24 @@ function drawScanlines(ctx, width, height, presetId, progress) {
     ctx.stroke();
   }
   ctx.restore();
+}
+
+function drawVariantOverlay(ctx, width, height, variant) {
+  if (variant.tint === 'warm') {
+    ctx.save();
+    ctx.fillStyle = 'rgba(255, 186, 98, 0.08)';
+    ctx.fillRect(0, 0, width, height);
+    ctx.restore();
+  }
+
+  if (variant.letterbox) {
+    const barHeight = height * 0.07;
+    ctx.save();
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.42)';
+    ctx.fillRect(0, 0, width, barHeight);
+    ctx.fillRect(0, height - barHeight, width, barHeight);
+    ctx.restore();
+  }
 }
 
 function drawPreviewText(ctx, width, height, { projectName, clip, clipIndex, totalClips, preset, format, colors, mediaAsset }) {

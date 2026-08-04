@@ -4,6 +4,7 @@ export const DEFAULT_PROJECT = {
   name: 'Nowy projekt FotoBeat',
   format: 'vertical',
   preset: 'neonPulse',
+  renderVariant: 'hardBeat',
   notes: '',
   snapshots: [],
   clipDurationScale: 1

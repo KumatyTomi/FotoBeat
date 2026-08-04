@@ -26,6 +26,7 @@ export function useFrameExporter({
   timeline,
   selectedFormat,
   selectedPreset,
+  selectedRenderVariant,
   selectedMediaAssets,
   pinnedAssetsByClip
 }) {
@@ -92,6 +93,7 @@ export function useFrameExporter({
       timeline,
       selectedFormat,
       selectedPreset,
+      selectedRenderVariant,
       selectedMediaAssets,
       pinnedAssetsByClip,
       projectName
