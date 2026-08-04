@@ -24,6 +24,7 @@ import { buildExportHubPlan, describeExportHubAction } from './utils/exportHub.j
 import { buildMp4ExportPlan, explainMp4ExportPlan } from './utils/mp4ExportPlan.js';
 import { buildMediaQualityReport } from './utils/mediaQuality.js';
 import { describeSharpness } from './utils/imageSharpness.js';
+import { buildBeatDirector, describeBeatDirector } from './utils/beatDirector.js';
 import { buildImportedMediaReport, buildProjectExportPayload, parseProjectFile, remapImportedMedia, safeFilename } from './utils/projectExport.js';
 import { createProjectLibraryId, loadProjectLibrary, persistProjectLibrary, removeProjectLibraryEntry, upsertProjectLibraryEntry } from './utils/projectLibrary.js';
 import { clipDurationScaleFromIntensity, describeEditIntensity, getEditIntensityLabel, intensityFromClipDurationScale, normalizeEditIntensity } from './utils/editIntensity.js';
@@ -93,6 +94,11 @@ export default function App() {
   const importedMediaReport = useMemo(() => (
     importedMediaManifest ? buildImportedMediaReport(importedMediaManifest, media.mediaAssets) : null
   ), [importedMediaManifest, media.mediaAssets]);
+  const beatDirector = useMemo(() => buildBeatDirector({
+    timeline,
+    audioAnalysis,
+    editIntensity
+  }), [audioAnalysis, editIntensity, timeline]);
 
   const { previewRef, previewPlayback } = useCanvasPreview({
     timeline,
@@ -333,6 +339,14 @@ export default function App() {
     persistProjectLibrary(nextLibrary);
     setProjectLibrary(nextLibrary);
     setProjectIoStatus({ type: 'success', message: 'Usunięto projekt z lokalnej biblioteki.' });
+  }
+
+  function setEditIntensity(nextIntensity) {
+    const normalizedIntensity = normalizeEditIntensity(nextIntensity);
+    patchProject({
+      editIntensity: normalizedIntensity,
+      clipDurationScale: clipDurationScaleFromIntensity(normalizedIntensity)
+    });
   }
 
   const mp4Busy = ['loading', 'preparing', 'encoding'].includes(mp4Exporter.mp4State.status);
@@ -650,18 +664,40 @@ export default function App() {
               max="100"
               step="1"
               value={editIntensity}
-              onChange={(event) => {
-                const nextIntensity = normalizeEditIntensity(event.target.value);
-                patchProject({
-                  editIntensity: nextIntensity,
-                  clipDurationScale: clipDurationScaleFromIntensity(nextIntensity)
-                });
-              }}
+              onChange={(event) => setEditIntensity(event.target.value)}
             />
           </label>
         </div>
         <div className="audio-stats"><span>BPM: {audioAnalysis?.bpm ?? '—'}</span><span>Energia: {audioAnalysis ? `${Math.round(audioAnalysis.energy * 100)}%` : '—'}</span><span>Beatów: {audioAnalysis?.beats?.length ?? 0}</span></div>
         <WaveformPreview analysis={audioAnalysis} durationScale={clipDurationScale} />
+      </section>
+
+      <section className="beat-director-panel">
+        <div className="section-heading project-heading">
+          <div>
+            <p className="panel-kicker">Beat Director</p>
+            <h2>Sekcje utworu i decyzje cięć</h2>
+            <p>{describeBeatDirector(beatDirector)}</p>
+          </div>
+          <div className="preview-hud"><span>{beatDirector.analysisMode}</span><span>{beatDirector.beatCount} beatów</span><span>{beatDirector.cutDensity} cięć / 10s</span></div>
+        </div>
+        <div className="beat-director-actions">
+          <button className="ghost-button compact" onClick={() => setEditIntensity(20)}>Spokojnie</button>
+          <button className="ghost-button compact" onClick={() => setEditIntensity(55)}>Dynamicznie</button>
+          <button className="ghost-button compact" onClick={() => setEditIntensity(85)}>Agresywnie</button>
+        </div>
+        <div className="beat-section-grid">
+          {beatDirector.sections.map((section) => (
+            <article key={section.id} className={`beat-section-card section-${section.id}`}>
+              <strong>{section.label}</strong>
+              <span>{section.clipCount} klipów · {section.start}s–{section.end}s</span>
+              <em>Energia {Math.round(section.averageEnergy * 100)}%</em>
+            </article>
+          ))}
+        </div>
+        <div className="beat-decision-list">
+          {beatDirector.decisions.map((decision) => <span key={decision}>{decision}</span>)}
+        </div>
       </section>
 
       <section className="media-panel">

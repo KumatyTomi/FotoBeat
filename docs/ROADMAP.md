@@ -129,8 +129,8 @@
 - [x] energia audio jako parametr efektów
 - [x] wizualny beat grid na waveform
 - [x] ręczna korekta długości klipów przez `clipDurationScale`
-- [ ] Beat Director jako realny panel sterowania decyzjami cięć
-- [ ] wykrywanie sekcji utworu: intro / build / drop / outro w UI
+- [x] Beat Director jako realny panel sterowania decyzjami cięć
+- [x] wykrywanie sekcji utworu: intro / build / drop / outro w UI
 - [x] intensywność montażu jako jeden suwak: spokojnie / dynamicznie / agresywnie
 
 ### Render i eksport
