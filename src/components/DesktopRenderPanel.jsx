@@ -20,6 +20,7 @@ export default function DesktopRenderPanel({ desktop, onCreateDesktopRenderJob }
       <div className="render-export-actions">
         <button className="ghost-button compact" onClick={desktop.refreshFfmpegStatus} disabled={!desktop.available}><RefreshCcw size={16} />Sprawdź FFmpeg</button>
         <button className="ghost-button compact" onClick={desktop.pickOutputFolder} disabled={!desktop.available}><FolderOpen size={16} />Folder eksportu</button>
+        <button className="ghost-button compact" onClick={desktop.openReleasePage}><ExternalLink size={16} />Aktualizacje</button>
         <button className="primary-button compact" onClick={() => onCreateDesktopRenderJob()} disabled={!desktop.available}><Monitor size={16} />Render lokalny</button>
         {canCancel && <button className="ghost-button compact" onClick={() => desktop.cancelLocalRenderJob(activeJob.id)}><Square size={16} />Przerwij</button>}
         {canRetry && <button className="ghost-button compact" onClick={() => desktop.retryLocalRenderJob(activeJob.id)}><RotateCcw size={16} />Ponów</button>}
