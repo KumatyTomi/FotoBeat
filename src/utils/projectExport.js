@@ -7,6 +7,7 @@ export const DEFAULT_PROJECT = {
   renderVariant: 'hardBeat',
   notes: '',
   snapshots: [],
+  editIntensity: 55,
   clipDurationScale: 1
 };
 

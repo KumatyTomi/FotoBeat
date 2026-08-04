@@ -131,7 +131,7 @@
 - [x] ręczna korekta długości klipów przez `clipDurationScale`
 - [ ] Beat Director jako realny panel sterowania decyzjami cięć
 - [ ] wykrywanie sekcji utworu: intro / build / drop / outro w UI
-- [ ] intensywność montażu jako jeden suwak: spokojnie / dynamicznie / agresywnie
+- [x] intensywność montażu jako jeden suwak: spokojnie / dynamicznie / agresywnie
 
 ### Render i eksport
 
