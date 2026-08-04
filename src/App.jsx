@@ -20,6 +20,7 @@ import { useRenderJobs } from './hooks/useRenderJobs.js';
 import { describeAudioAnalysis } from './utils/audioAnalysis.js';
 import { getPinnedLabel, scoreMediaAsset } from './utils/mediaScoring.js';
 import { DEFAULT_FRAME_SEQUENCE_PRESET_ID, FRAME_SEQUENCE_PRESETS, describeFrameSequenceSettings, getFrameSequencePreset } from './utils/frameSequenceSettings.js';
+import { buildExportHubPlan, describeExportHubAction } from './utils/exportHub.js';
 import { buildMp4ExportPlan, explainMp4ExportPlan } from './utils/mp4ExportPlan.js';
 import { buildProjectExportPayload, parseProjectFile, remapImportedMedia, safeFilename } from './utils/projectExport.js';
 import { buildDraftTimeline } from './utils/timeline.js';
@@ -255,6 +256,26 @@ export default function App() {
 
   const mp4Busy = ['loading', 'preparing', 'encoding'].includes(mp4Exporter.mp4State.status);
   const canMuxAudio = Boolean(audio);
+  const webmBusy = ['recording', 'preparing'].includes(recorder.recordingState.status);
+  const latestSequence = frameSequence.sequenceHistory[0] ?? null;
+  const exportHub = buildExportHubPlan({
+    sequences: frameSequence.sequenceHistory,
+    desktopAvailable: desktop.available,
+    ffmpegReady: desktop.ffmpegReady,
+    mp4Busy,
+    zipBusy: frameZip.zipState.status === 'building',
+    webmBusy,
+    audioAvailable: canMuxAudio
+  });
+
+  async function runExportHubAction(actionId = exportHub.recommended?.id) {
+    const sequence = exportHub.latestSequence ?? latestSequence;
+    if (actionId === 'native-mp4' && sequence) return createDesktopRenderJob(sequence);
+    if (actionId === 'mp4-poc' && sequence) return createMp4Poc(sequence, canMuxAudio);
+    if (actionId === 'webm') return recorder.startRecording();
+    if (actionId === 'zip-frames' && sequence) return createZip(sequence);
+    return null;
+  }
 
   return (
     <main className="app-shell">
@@ -324,6 +345,34 @@ export default function App() {
       </section>
 
       <DesktopRenderPanel desktop={desktop} onCreateDesktopRenderJob={createDesktopRenderJob} />
+
+      <section className="render-export-panel">
+        <div>
+          <p className="panel-kicker">Export Hub</p>
+          <h2>Najlepsza ścieżka eksportu</h2>
+          <p>{exportHub.summary}</p>
+        </div>
+        <div className="render-export-actions">
+          <button className="primary-button compact" onClick={() => runExportHubAction()} disabled={!exportHub.recommended}>
+            <CheckCircle2 size={16} />Uruchom rekomendację
+          </button>
+        </div>
+        <div className="render-history">
+          {exportHub.actions.map((action) => (
+            <article key={action.id} className="render-history-item">
+              <div>
+                <strong>{action.priority}. {action.label} · {action.ready ? 'gotowe' : 'zablokowane'}</strong>
+                <span>{describeExportHubAction(action)}</span>
+              </div>
+              <div className="render-history-actions">
+                <button className={action.id === exportHub.recommended?.id ? 'primary-button compact' : 'ghost-button compact'} onClick={() => runExportHubAction(action.id)} disabled={!action.ready}>
+                  <Film size={16} />Wybierz
+                </button>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
 
       <section className="render-export-panel">
         <div>

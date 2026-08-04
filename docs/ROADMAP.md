@@ -149,7 +149,7 @@
 - [x] desktop render panel
 - [ ] produkcyjny MP4 9:16
 - [ ] produkcyjny MP4 16:9
-- [ ] Export Hub wybierający najlepszą ścieżkę: Native MP4 → MP4 POC → WebM → ZIP frames
+- [x] Export Hub wybierający najlepszą ścieżkę: Native MP4 → MP4 POC → WebM → ZIP frames
 - [ ] cover frame generator
 - [ ] warianty renderu: clean / hard beat / cinematic
 
