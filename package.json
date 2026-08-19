@@ -31,7 +31,7 @@
     "react": "19.0.0",
     "react-dom": "19.0.0",
     "vite": "7.0.0",
-    "zustand": "5.0.0",
+    "zustand": "5.0.14",
     "i18next": "23.10.1",
     "react-i18next": "14.0.0"
   },
